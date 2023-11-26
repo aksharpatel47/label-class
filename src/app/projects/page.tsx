@@ -48,7 +48,7 @@ export default async function Page() {
         </TableHeader>
         <TableBody>
           {projects.map((project) => (
-            <TableRow>
+            <TableRow key={project.id}>
               <TableCell className="font-medium">
                 <Link href={`/projects/${project.id}`}>{project.name}</Link>
               </TableCell>
