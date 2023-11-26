@@ -1,0 +1,19 @@
+{
+  "name": "Label Class DevContainer",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "github.copilot",
+        "esbenp.prettier-vscode",
+        "yoavbls.pretty-ts-errors",
+        "ckolkman.vscode-postgres",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  },
+  "forwardPorts": [3000, "55432:5432"]
+}

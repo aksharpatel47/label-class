@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ../..:/workspaces:cached
+    command: sleep infinity
+    network_mode: service:db
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/postgres
+      - AUTH_SECRET=SSNAds759EeBQG64WpKmAwgdgSFj0sH7gXHcgy8mHgE=
+      - AUTH_URL=http://localhost:3000/
+  db:
+    image: postgres:16.1
+    restart: unless-stopped
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    
+volumes:
+  postgres-data:
