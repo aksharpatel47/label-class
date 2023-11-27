@@ -1,4 +1,3 @@
-import { auth, signOut } from "@/auth";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -14,23 +13,11 @@ import { fetchProjects } from "@/lib/data/projects";
 import Link from "next/link";
 
 export default async function Page() {
-  const session = await auth();
   const projects = await fetchProjects();
   return (
     <>
       <div className="flex justify-between mb-8">
         <H1>Projects</H1>
-        <div className="flex items-center gap-8">
-          User: {session?.user?.name}
-          <form
-            action={async () => {
-              "use server";
-              await signOut();
-            }}
-          >
-            <Button type="submit">Sign Out</Button>
-          </form>
-        </div>
       </div>
       <div className="flex mb-8">
         <Button>

@@ -9,6 +9,7 @@ import {
   smallint,
   smallserial,
   timestamp,
+  unique,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -28,6 +29,7 @@ export const users = pgTable("users", {
 
 export const usersRelations = relations(users, ({ many }) => ({
   projects: many(projects),
+  assignedTasks: many(tasks),
 }));
 
 export const projects = pgTable("projects", {
@@ -50,11 +52,11 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     references: [users.id],
   }),
   projectLabels: many(projectLabels),
+  tasks: many(tasks),
 }));
 
 export const labels = pgTable("labels", {
-  id: smallserial("id").primaryKey().notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
+  name: varchar("name", { length: 255 }).primaryKey().notNull(),
   description: varchar("description", { length: 255 }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
@@ -65,23 +67,30 @@ export const labels = pgTable("labels", {
 
 export const labelsRelations = relations(labels, ({ many }) => ({
   projectLabels: many(projectLabels),
+  taskLabels: many(taskLabels),
 }));
 
-export const projectLabels = pgTable("project_labels", {
-  id: smallserial("id").primaryKey().notNull(),
-  projectId: smallint("project_id")
-    .notNull()
-    .references(() => projects.id),
-  labelId: smallint("label_id")
-    .notNull()
-    .references(() => labels.id),
-  sequence: smallint("sequence").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }),
-  deletedAt: timestamp("deleted_at", { withTimezone: true }),
-});
+export const projectLabels = pgTable(
+  "project_labels",
+  {
+    id: smallserial("id").primaryKey().notNull(),
+    projectId: smallint("project_id")
+      .notNull()
+      .references(() => projects.id),
+    labelName: varchar("label_name", { length: 255 })
+      .notNull()
+      .references(() => labels.name),
+    sequence: smallint("sequence").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => ({
+    proj_label_unq: unique().on(t.projectId, t.labelName),
+  })
+);
 
 export const projectLabelsRelations = relations(
   projectLabels,
@@ -91,33 +100,74 @@ export const projectLabelsRelations = relations(
       references: [projects.id],
     }),
     label: one(labels, {
-      fields: [projectLabels.labelId],
-      references: [labels.id],
+      fields: [projectLabels.labelName],
+      references: [labels.name],
     }),
   })
 );
 
-export const tasks = pgTable("tasks", {
-  id: bigserial("id", { mode: "number" }).primaryKey().notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
-  imageUrl: varchar("image_url", { length: 1024 }).notNull(),
-  projectId: smallint("project_id").references(() => projects.id),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }),
-  deletedAt: timestamp("deleted_at", { withTimezone: true }),
-  assignedTo: uuid("assigned_to").references(() => users.id),
-  assignedOn: timestamp("assigned_on", { withTimezone: true }),
-});
+export const tasks = pgTable(
+  "tasks",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey().notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    imageUrl: varchar("image_url", { length: 1024 }).notNull(),
+    projectId: smallint("project_id").references(() => projects.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    assignedTo: uuid("assigned_to").references(() => users.id),
+    assignedOn: timestamp("assigned_on", { withTimezone: true }),
+  },
+  (t) => ({
+    img_proj_unq: unique().on(t.imageUrl, t.projectId),
+  })
+);
 
-export const taskLabels = pgTable("task_labels", {
-  id: smallserial("id").primaryKey().notNull(),
-  taskId: bigint("task_id", { mode: "number" }).references(() => tasks.id),
-  labelId: smallint("label_id").references(() => labels.id),
-  labeledBy: uuid("labeled_by").references(() => users.id),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }),
-});
+export const tasksRelations = relations(tasks, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [tasks.projectId],
+    references: [projects.id],
+  }),
+  assignee: one(users, {
+    fields: [tasks.assignedTo],
+    references: [users.id],
+  }),
+  taskLabels: many(taskLabels),
+}));
+
+export const taskLabels = pgTable(
+  "task_labels",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey().notNull(),
+    taskId: bigint("task_id", { mode: "number" }).references(() => tasks.id),
+    labelName: varchar("label_name", { length: 255 }).references(
+      () => labels.name
+    ),
+    labeledBy: uuid("labeled_by").references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }),
+  },
+  (t) => ({
+    task_label_user_unq: unique().on(t.taskId, t.labelName, t.labeledBy),
+  })
+);
+
+export const taskLabelsRelations = relations(taskLabels, ({ one, many }) => ({
+  task: one(tasks, {
+    fields: [taskLabels.taskId],
+    references: [tasks.id],
+  }),
+  label: one(labels, {
+    fields: [taskLabels.labelName],
+    references: [labels.name],
+  }),
+  labeledBy: one(users, {
+    fields: [taskLabels.labeledBy],
+    references: [users.id],
+  }),
+}));

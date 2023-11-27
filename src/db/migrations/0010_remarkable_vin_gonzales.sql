@@ -1,0 +1,1 @@
+ALTER TABLE "task_labels" ADD CONSTRAINT "task_labels_task_id_label_name_labeled_by_unique" UNIQUE("task_id","label_name","labeled_by");
