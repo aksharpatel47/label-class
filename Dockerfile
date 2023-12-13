@@ -15,6 +15,8 @@ COPY --from=build /app/package*.json ./
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public
 COPY --from=build /app/next.config.js ./
+COPY --from=build /app/src/db ./src/db
+COPY --from=build /app/drizzle.config.ts ./drizzle.config.ts
 
 RUN npm install
 
