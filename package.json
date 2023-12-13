@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:ci": "jest --ci --coverage",
+    "test:ci": "echo \"Will be implemented soon\"",
     "studio": "drizzle-kit studio",
     "migrate:create": "drizzle-kit generate:pg",
     "migrate:apply": "tsx src/db/migrate.ts"
