@@ -16,7 +16,7 @@ COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public
 COPY --from=build /app/next.config.js ./
 
-RUN npm install --only=production
+RUN npm install
 
 EXPOSE 3000
 ENV PORT 3000
