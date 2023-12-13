@@ -35,13 +35,3 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-      - name: update image tag in kube-charts
-        uses: passeidireto/trigger-external-workflow-action@main
-        env:
-          PAYLOAD_PATH: me/base/deployment.yml
-          PAYLOAD_IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          PAYLOAD_IMAGE_TAG: ${{ env.IMAGE_TAG }}
-        with:
-          repository: aksharpatel47/kube-charts
-          event: image_push
-          github_pat: ${{ secrets.PAT_TOKEN }}
