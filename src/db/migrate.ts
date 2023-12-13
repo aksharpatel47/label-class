@@ -1,12 +1,12 @@
 import { migrate } from "drizzle-orm/postgres-js/migrator";
-import { client, db } from ".";
+import { sql, db } from ".";
 
 async function main() {
   await migrate(db, {
     migrationsFolder: "src/db//migrations",
   });
 
-  await client.end();
+  await sql.end();
 }
 
 (async () => {

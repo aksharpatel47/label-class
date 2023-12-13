@@ -9,15 +9,13 @@ export async function fetchProjects() {
     with: {
       creator: true,
       projectLabels: {
-        with: {
-          label: true,
-        },
+        orderBy: (labels, { asc }) => [asc(labels.sequence)],
       },
     },
   });
 }
 
-export async function fetchProjectById(id: number) {
+export async function fetchProjectById(id: string) {
   unstable_noStore();
   return db.query.projects.findFirst({
     where: eq(projects.id, id),

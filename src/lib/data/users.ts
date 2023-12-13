@@ -1,9 +1,9 @@
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { authUser } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-export async function fetchUserByEmail(email: string) {
-  return db.query.users.findFirst({
-    where: eq(users.email, email),
+export async function fetchUserById(id: string) {
+  return db.query.authUser.findFirst({
+    where: eq(authUser.id, id),
   });
 }
