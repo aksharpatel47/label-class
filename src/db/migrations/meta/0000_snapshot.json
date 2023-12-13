@@ -1,16 +1,16 @@
 {
-  "id": "447ee4ff-8daa-425a-9e7b-4c8e995e2393",
+  "id": "c9044092-fafc-4da2-9098-13827012644c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "5",
   "dialect": "pg",
   "tables": {
-    "labels": {
-      "name": "labels",
+    "auth_user": {
+      "name": "auth_user",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "smallserial",
+          "type": "text",
           "primaryKey": true,
           "notNull": true
         },
@@ -20,17 +20,19 @@
           "primaryKey": false,
           "notNull": true
         },
-        "description": {
-          "name": "description",
-          "type": "varchar(255)",
+        "role": {
+          "name": "role",
+          "type": "auth_user_role",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'USER'"
         },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         },
         "updated_at": {
           "name": "updated_at",
@@ -56,18 +58,25 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "smallserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "project_id": {
           "name": "project_id",
-          "type": "smallint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "label_id": {
-          "name": "label_id",
+        "label_name": {
+          "name": "label_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sequence": {
+          "name": "sequence",
           "type": "smallint",
           "primaryKey": false,
           "notNull": true
@@ -76,7 +85,8 @@
           "name": "created_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         },
         "updated_at": {
           "name": "updated_at",
@@ -105,23 +115,19 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "project_labels_label_id_labels_id_fk": {
-          "name": "project_labels_label_id_labels_id_fk",
-          "tableFrom": "project_labels",
-          "tableTo": "labels",
-          "columnsFrom": [
-            "label_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {
+        "project_labels_project_id_label_name_unique": {
+          "name": "project_labels_project_id_label_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "project_id",
+            "label_name"
+          ]
+        }
+      }
     },
     "projects": {
       "name": "projects",
@@ -129,9 +135,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "smallserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "name": {
           "name": "name",
@@ -143,13 +150,14 @@
           "name": "description",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         },
         "updated_at": {
           "name": "updated_at",
@@ -165,17 +173,17 @@
         },
         "created_by": {
           "name": "created_by",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "projects_created_by_users_id_fk": {
-          "name": "projects_created_by_users_id_fk",
+        "projects_created_by_auth_user_id_fk": {
+          "name": "projects_created_by_auth_user_id_fk",
           "tableFrom": "projects",
-          "tableTo": "users",
+          "tableTo": "auth_user",
           "columnsFrom": [
             "created_by"
           ],
@@ -195,25 +203,26 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "smallserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "task_id": {
           "name": "task_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
         "label_id": {
           "name": "label_id",
-          "type": "smallint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
         "labeled_by": {
           "name": "labeled_by",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -221,7 +230,8 @@
           "name": "created_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         },
         "updated_at": {
           "name": "updated_at",
@@ -245,10 +255,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "task_labels_label_id_labels_id_fk": {
-          "name": "task_labels_label_id_labels_id_fk",
+        "task_labels_label_id_project_labels_id_fk": {
+          "name": "task_labels_label_id_project_labels_id_fk",
           "tableFrom": "task_labels",
-          "tableTo": "labels",
+          "tableTo": "project_labels",
           "columnsFrom": [
             "label_id"
           ],
@@ -258,10 +268,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "task_labels_labeled_by_users_id_fk": {
-          "name": "task_labels_labeled_by_users_id_fk",
+        "task_labels_labeled_by_auth_user_id_fk": {
+          "name": "task_labels_labeled_by_auth_user_id_fk",
           "tableFrom": "task_labels",
-          "tableTo": "users",
+          "tableTo": "auth_user",
           "columnsFrom": [
             "labeled_by"
           ],
@@ -273,7 +283,17 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {
+        "task_labels_task_id_label_id_labeled_by_unique": {
+          "name": "task_labels_task_id_label_id_labeled_by_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "task_id",
+            "label_id",
+            "labeled_by"
+          ]
+        }
+      }
     },
     "tasks": {
       "name": "tasks",
@@ -281,9 +301,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "name": {
           "name": "name",
@@ -299,7 +320,7 @@
         },
         "project_id": {
           "name": "project_id",
-          "type": "smallint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -307,7 +328,8 @@
           "name": "created_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         },
         "updated_at": {
           "name": "updated_at",
@@ -323,7 +345,7 @@
         },
         "assigned_to": {
           "name": "assigned_to",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -349,10 +371,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "tasks_assigned_to_users_id_fk": {
-          "name": "tasks_assigned_to_users_id_fk",
+        "tasks_assigned_to_auth_user_id_fk": {
+          "name": "tasks_assigned_to_auth_user_id_fk",
           "tableFrom": "tasks",
-          "tableTo": "users",
+          "tableTo": "auth_user",
           "columnsFrom": [
             "assigned_to"
           ],
@@ -364,76 +386,117 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {
+        "tasks_image_url_project_id_unique": {
+          "name": "tasks_image_url_project_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "image_url",
+            "project_id"
+          ]
+        }
+      }
     },
-    "users": {
-      "name": "users",
+    "user_key": {
+      "name": "user_key",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
           "notNull": true
         },
-        "email": {
-          "name": "email",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "password_hash": {
-          "name": "password_hash",
-          "type": "varchar(255)",
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "first_name": {
-          "name": "first_name",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "last_name": {
-          "name": "last_name",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp with time zone",
+        "hashed_password": {
+          "name": "hashed_password",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         }
       },
       "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "users_email_unique": {
-          "name": "users_email_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+      "foreignKeys": {
+        "user_key_user_id_auth_user_id_fk": {
+          "name": "user_key_user_id_auth_user_id_fk",
+          "tableFrom": "user_key",
+          "tableTo": "auth_user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "user_session": {
+      "name": "user_session",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active_expires": {
+          "name": "active_expires",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idle_expires": {
+          "name": "idle_expires",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_session_user_id_auth_user_id_fk": {
+          "name": "user_session_user_id_auth_user_id_fk",
+          "tableFrom": "user_session",
+          "tableTo": "auth_user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    }
+  },
+  "enums": {
+    "auth_user_role": {
+      "name": "auth_user_role",
+      "values": {
+        "ADMIN": "ADMIN",
+        "USER": "USER"
       }
     }
   },
-  "enums": {},
   "schemas": {},
   "_meta": {
     "schemas": {},

@@ -1,2 +1,0 @@
-ALTER TABLE "project_labels" ADD CONSTRAINT "project_labels_project_id_label_name_unique" UNIQUE("project_id","label_name");--> statement-breakpoint
-ALTER TABLE "tasks" ADD CONSTRAINT "tasks_image_url_project_id_unique" UNIQUE("image_url","project_id");

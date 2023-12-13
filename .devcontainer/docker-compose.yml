@@ -7,7 +7,6 @@ services:
     volumes:
       - ../..:/workspaces:cached
     command: sleep infinity
-    network_mode: service:db
     environment:
       - DATABASE_URL=postgres://postgres:postgres@db:5432/postgres
       - AUTH_SECRET=SSNAds759EeBQG64WpKmAwgdgSFj0sH7gXHcgy8mHgE=
