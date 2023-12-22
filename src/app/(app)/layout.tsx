@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { auth } from "@/lucia";
 import * as context from "next/headers";
 import { redirect } from "next/navigation";
+import { CustomLink } from "@/components/ui/link";
+import NavLinks from "./nav-links";
 
 export default async function RootLayout({
   children,
@@ -19,10 +21,8 @@ export default async function RootLayout({
   return (
     <div className="flex flex-col ml-64 mr-64 mt-16">
       <div className="flex gap-4 mb-8 items-center justify-between">
-        <div className="flex gap-4 items-center">
-          <Link href="/projects">Projects</Link>
-          <Link href="/users">Users</Link>
-          <Link href="/settings">Settings</Link>
+        <div className="flex gap-4 items-center ">
+          <NavLinks />
         </div>
         <div className="flex items-center gap-8">
           {/* User: {session?.user?.name} */}

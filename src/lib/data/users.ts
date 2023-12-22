@@ -7,3 +7,6 @@ export async function fetchUserById(id: string) {
     where: eq(authUser.id, id),
   });
 }
+export async function fetchUsers(){
+  return db.query.authUser.findMany();
+}
