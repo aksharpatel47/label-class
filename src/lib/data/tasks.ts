@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { Task, taskLabels, tasks } from "@/db/schema";
-import { and, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
+import { unstable_noStore } from "next/cache";
 
 export function addTaskInProject(projectId: string, name: string, url: string) {
   return db
@@ -19,25 +20,44 @@ export function addTaskInProject(projectId: string, name: string, url: string) {
     .returning({ insertedId: tasks.id });
 }
 
-export function fetchTasksInProject(
+export async function fetchTasksInProject(
   projectId: string,
-  page: number
-): Promise<
-  (Task & { taskLabels: { labelName: string; userName: string }[] })[]
-> {
-  // raw sql
-  return db.execute(sql`
-    select t.id, t.name, t.image_url as "imageUrl", 
-    coalesce(json_agg(json_build_object('labelName', pl.label_name, 'userName', u.name)) FILTER (WHERE pl.label_name IS NOT NULL), '[]') as "taskLabels"
-    from tasks as t 
-    left join task_labels as tl on tl.task_id = t.id
-    left join project_labels as pl on pl.id = tl.label_id
-    left join auth_user as u on u.id = tl.labeled_by
-    group by t.id
-    having t.project_id = ${projectId}
-    order by t.updated_at desc
-    limit 50 offset ${(page - 1) * 50}
-  `);
+  page: number,
+  user: string
+) {
+  unstable_noStore();
+  console.log("fetchTasksInProject", projectId, page, user);
+  const maxPerPage = 50;
+
+  const userFilter =
+    user === "none"
+      ? isNull(taskLabels.labelId)
+      : user !== ""
+        ? eq(taskLabels.labeledBy, user)
+        : sql`true`;
+
+  const sqlQuery = db
+    .select()
+    .from(tasks)
+    .leftJoin(taskLabels, eq(tasks.id, taskLabels.taskId))
+    .where(and(userFilter, eq(tasks.projectId, projectId)))
+    .limit(maxPerPage)
+    .offset((page - 1) * maxPerPage)
+    .toSQL();
+
+  console.log("sqlQuery", sqlQuery);
+
+  const results = await db
+    .select()
+    .from(tasks)
+    .leftJoin(taskLabels, eq(tasks.id, taskLabels.taskId))
+    .where(and(userFilter, eq(tasks.projectId, projectId)))
+    .limit(maxPerPage)
+    .offset((page - 1) * maxPerPage);
+
+  console.log(JSON.stringify(results, null, 2));
+
+  return results;
 }
 
 export function fetchNumberOfTasksInProject(projectId: string) {

@@ -12,6 +12,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 export const authUserRoleEnum = pgEnum("auth_user_role", ["ADMIN", "USER"]);
+export type AuthUserRole = typeof authUserRoleEnum.enumValues;
 
 export const authUser = pgTable("auth_user", {
   id: text("id").primaryKey().notNull(),
@@ -23,6 +24,8 @@ export const authUser = pgTable("auth_user", {
   updatedAt: timestamp("updated_at", { withTimezone: true }),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });
+
+export type AuthUser = typeof authUser.$inferSelect;
 
 export const userKey = pgTable("user_key", {
   id: text("id").primaryKey().notNull(),
@@ -139,6 +142,14 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   taskLabels: many(taskLabels),
 }));
 
+export const taskLabelValue = pgEnum("task_label_value", [
+  "Present",
+  "Absent",
+  "Difficult",
+  "Skip",
+]);
+export type TaskLabelValue = typeof taskLabelValue.enumValues;
+
 export const taskLabels = pgTable(
   "task_labels",
   {
@@ -149,6 +160,7 @@ export const taskLabels = pgTable(
     labelId: uuid("label_id")
       .references(() => projectLabels.id)
       .notNull(),
+    value: taskLabelValue("label_value").notNull().default("Present"),
     labeledBy: text("labeled_by")
       .references(() => authUser.id)
       .notNull(),

@@ -2,80 +2,191 @@
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ProjectLabel } from "@/db/schema";
+import { ProjectLabel, Task, TaskLabelValue } from "@/db/schema";
 import type { fetchTasksForLabeling } from "@/lib/data/tasks";
 import { Label } from "@radix-ui/react-label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import clsx from "clsx";
 import { Terminal } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { set } from "zod";
+import { useEffect } from "react";
+import { create } from "zustand";
+import { immer } from "zustand/middleware/immer";
+
+const taskLabelValues = [undefined, "Present", "Absent", "Difficult", "Skip"];
+
+type TaskLabels = Record<string, string | undefined>;
+
+type State = {
+  loadingLabels: boolean;
+  savingLabels: boolean;
+  taskLabels: TaskLabels;
+};
+
+type Actions = {
+  next(
+    totalTaskLength: number,
+    currentTaskId: string,
+    currentTaskLabels: TaskLabels
+  ): Promise<void>;
+  setLoadingLabels(loading: boolean): void;
+  setSavingLabels(saving: boolean): void;
+  setLabels(taskLabels: TaskLabels): void;
+  cycleLabelValue(currentTaskId: string, labelId: string): void;
+  setLabelValue(labelId: string, value: string | undefined): void;
+};
+
+const useTaskToolStore = create<State & Actions>()(
+  immer((set) => ({
+    index: 0,
+    loadingLabels: false,
+    savingLabels: false,
+    taskLabels: {},
+    async next(
+      totalTaskLength: number,
+      currentTaskId: string,
+      currentTaskLabels: TaskLabels
+    ) {
+      console.log(
+        `Saving labels for task ${currentTaskId} with labels ${JSON.stringify(
+          currentTaskLabels
+        )}`
+      );
+      const results = await Promise.allSettled(
+        Object.entries(currentTaskLabels).map(async ([labelId, labelValue]) => {
+          const method = labelValue === undefined ? "DELETE" : "POST";
+          const res = await fetch(
+            `/api/tasks/${currentTaskId}/labels/${labelId}`,
+            {
+              method,
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ value: labelValue }),
+            }
+          );
+          console.log(await res.json());
+        })
+      );
+
+      console.log(`Results: ${JSON.stringify(results)}`);
+
+      set((state) => {
+        state.loadingLabels = false;
+        state.savingLabels = false;
+        state.taskLabels = {};
+      });
+    },
+    async prev(currentTaskId: string, currentTaskLabels: TaskLabels) {
+      console.log(
+        `Saving labels for task ${currentTaskId} with labels ${JSON.stringify(
+          currentTaskLabels
+        )}`
+      );
+      const results = await Promise.allSettled(
+        Object.entries(currentTaskLabels).map(async ([labelId, labelValue]) => {
+          const method =
+            labelValue === undefined || labelValue === "" ? "DELETE" : "POST";
+          const res = await fetch(
+            `/api/tasks/${currentTaskId}/labels/${labelId}`,
+            {
+              method,
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ value: labelValue }),
+            }
+          );
+          console.log(await res.json());
+        })
+      );
+
+      console.log(`Results: ${JSON.stringify(results)}`);
+      set((state) => {
+        state.loadingLabels = false;
+        state.savingLabels = false;
+        state.taskLabels = {};
+      });
+    },
+    setLabels(taskLabels: TaskLabels) {
+      set((state) => {
+        state.taskLabels = taskLabels;
+      });
+    },
+    cycleLabelValue(currentTaskId: string, labelId: string) {
+      set((state) => {
+        const currentLabelValue = state.taskLabels[labelId];
+        const currentLabelIndex = taskLabelValues.indexOf(currentLabelValue);
+        const newLabelIndex = (currentLabelIndex + 1) % taskLabelValues.length;
+        console.log(
+          `Updating label ${labelId} to ${newLabelIndex} (${taskLabelValues[newLabelIndex]})`
+        );
+        const newLabelValue = taskLabelValues[newLabelIndex];
+        state.taskLabels[labelId] = newLabelValue;
+        const method =
+          newLabelValue === undefined || newLabelValue === ""
+            ? "DELETE"
+            : "POST";
+        fetch(`/api/tasks/${currentTaskId}/labels/${labelId}`, {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ value: newLabelValue }),
+        })
+          .then((res) => res.json())
+          .then(console.log);
+      });
+    },
+    setLoadingLabels(loading: boolean) {
+      set((state) => {
+        state.loadingLabels = loading;
+      });
+    },
+    setSavingLabels(saving: boolean) {
+      set((state) => {
+        state.savingLabels = saving;
+      });
+    },
+    setLabelValue(labelId: string, value: string | undefined) {
+      set((state) => {
+        state.taskLabels[labelId] = value;
+      });
+    },
+  }))
+);
 
 export function TaskTool({
   projectId,
-  tasks,
-  labels,
+  task,
+  labels: projectLabels,
+  className,
 }: {
   projectId: string;
-  tasks: Awaited<ReturnType<typeof fetchTasksForLabeling>>;
+  task: Task;
   labels: ProjectLabel[];
+  labelValues: TaskLabelValue;
+  className?: string;
 }) {
-  const [index, setIndex] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [showReloadText, setShowReloadText] = useState(false);
-  const [selectedLabels, setSelectedLabels] = useState<number[]>([]);
-  const router = useRouter();
+  const projectLabelKeys = projectLabels.reduce(
+    (acc, d, i) => ({
+      ...acc,
+      [`${i + 1}`]: d.id,
+    }),
+    {}
+  );
 
-  function goForward() {
-    if (index === tasks.length - 1) {
-      setShowReloadText(true);
-    } else {
-      setIndex(index + 1);
-      resetLabels();
-    }
-  }
-
-  function goBack() {
-    if (index === 0) return;
-    setIndex(index - 1);
-    resetLabels();
-    setShowReloadText(false);
-  }
-
-  function resetLabels() {
-    setSelectedLabels([]);
-  }
-
-  function handleLabelClick(i: number) {
-    setLoading(true);
-    fetch(
-      `/api/projects/${projectId}/tasks/${tasks[index].id}/labels/${labels[i].id}`,
-      {
-        method: "POST",
-      }
-    ).then((res) => {
-      setSelectedLabels((prev) => {
-        if (prev.includes(i)) {
-          return prev.filter((index) => index !== i);
-        } else {
-          return [...prev, i];
-        }
-      });
-      setLoading(false);
-    });
-  }
+  const {
+    taskLabels,
+    setLabels,
+    cycleLabelValue,
+    setLoadingLabels,
+    setLabelValue,
+  } = useTaskToolStore();
 
   function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === "ArrowRight") {
-      goForward();
-    } else if (e.key === "ArrowLeft") {
-      goBack();
-    } else if (
-      [...Array(labels.length).keys()].map((i) => String(i + 1)).includes(e.key)
-    ) {
-      handleLabelClick(Number(e.key) - 1);
+    if (projectLabelKeys.hasOwnProperty(Number(e.key))) {
+      cycleLabelValue(task.id, projectLabels[Number(e.key) - 1].id);
     }
   }
 
@@ -85,73 +196,57 @@ export function TaskTool({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [index, selectedLabels, router]);
+  }, [task.id]);
 
   useEffect(() => {
-    setLoading(true);
-    fetch(`/api/projects/${projectId}/tasks/${tasks[index].id}/labels`)
+    setLoadingLabels(true);
+    fetch(`/api/projects/${projectId}/tasks/${task.id}/labels`)
       .then((res) => res.json())
       .then((data) => {
         console.log(data);
-        setSelectedLabels(data.map((l: any) => l.label.sequence) || []);
-        setLoading(false);
+        setLabels(
+          data.reduce(
+            (acc: any, v: any) => ({ ...acc, [v.labelId]: v.value }),
+            {}
+          )
+        );
+        setLoadingLabels(false);
       });
-  }, [index]);
+  }, [task.id]);
 
   return (
-    <>
-      {showReloadText && (
-        <Alert className="mb-8">
-          <Terminal className="h-4 w-4" />
-          <AlertTitle>Finished labeling 50 images.</AlertTitle>
-          <AlertDescription>
-            You can either review them by going back or continue labeling more
-            images by reloading this page. Press F5 to reload. Press the left
-            arrow key to go back or the right arrow key to go forward.
-          </AlertDescription>
-        </Alert>
-      )}
+    <div className={className}>
       <div className="flex">
         <Image
-          src={tasks[index].imageUrl}
-          alt={tasks[index].id}
+          src={task.imageUrl}
+          alt={task.id}
           height={600}
           width={600}
+          className="flex-1"
         />
-        <form className="flex flex-col flex-1 gap-2">
-          {labels.map((l, i) => (
-            <div key={l.id} className="flex">
-              <Input
-                type="checkbox"
-                id={l.id}
-                name="label"
-                value={l.id}
-                className="flex-1"
-                checked={selectedLabels.includes(i)}
-                onChange={() => handleLabelClick(i)}
-                disabled={loading}
-              />
-              <Label htmlFor={l.id} className="flex-1">
-                ( <span className="underline">{i + 1}</span> ) &nbsp;
-                {l.labelName}
-              </Label>
+        <div className="flex flex-col flex-1 pl-8 gap-4">
+          {projectLabels.map((l, i) => (
+            <div key={task.id + "-" + l.id} className="flex items-center">
+              <span className="w-[150px]">
+                ( {i + 1} ) &nbsp;
+                {l.labelName} &nbsp;
+              </span>
+              <ToggleGroup
+                variant="outline"
+                type="single"
+                value={taskLabels[l.id]}
+                onValueChange={(v) => setLabelValue(l.id, v)}
+              >
+                {taskLabelValues.slice(1).map((pl) => (
+                  <ToggleGroupItem key={pl} value={pl!}>
+                    {pl}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
             </div>
           ))}
-        </form>
+        </div>
       </div>
-
-      <div className="flex mt-8 gap-8">
-        <Button onClick={goBack} disabled={index === 0} className="flex-1">
-          ( ← ) Previous
-        </Button>
-        <Button
-          onClick={goForward}
-          className="flex-1"
-          disabled={showReloadText}
-        >
-          ( → ) Next
-        </Button>
-      </div>
-    </>
+    </div>
   );
 }
