@@ -44,7 +44,7 @@ export async function importData(
 
   const fileContents = await file.text();
   try {
-    const data: ILabelStudJsonData[] = JSON.parse(fileContents);
+    const data = JSON.parse(fileContents);
     if (!data) {
       return "No data in file";
     }
@@ -64,20 +64,30 @@ export async function importData(
         )
       );
 
-    for (const item of data) {
-      const imageUrl = new URL(item.data.image);
+    const dataKeys = Object.keys(data);
+    for (let i = 0; i < dataKeys.length; i++) {
+      const key = dataKeys[i];
+      const item = data[key];
+      const imageUrl = new URL(key);
       const fileName = imageUrl.pathname.split("/").pop();
-      const task = await addTaskInProject(
-        projectId,
-        fileName!,
-        item.data.image
-      );
+      const task = await addTaskInProject(projectId, fileName!, key);
       const taskId = task[0].insertedId;
-      for (const annotation of item.annotations) {
-        for (const result of annotation.result) {
-          const labels = result.value.choices;
-          await addLabelToTask(taskId, labelMap, labels, user!.id);
+
+      if (item === null) {
+        continue;
+      }
+
+      const itemKeys = Object.keys(item);
+
+      for (let j = 0; j < itemKeys.length; j++) {
+        const itemKey = itemKeys[j];
+        const annotation = item[itemKey];
+
+        if (annotation === null) {
+          continue;
         }
+
+        await addLabelToTask(taskId, labelMap, itemKey, annotation, user!.id);
       }
     }
 

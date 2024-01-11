@@ -1,21 +1,26 @@
 import { db } from "@/db";
 import { projectLabels, taskLabels } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { unstable_noStore } from "next/cache";
 
 export async function addLabelToTask(
   taskId: string,
   labelMap: Record<string, string>,
-  labelNames: string[],
+  labelName: string,
+  labelValue: string,
   userId: string
 ) {
   unstable_noStore();
-  const values = labelNames.map((labelName) => ({
-    taskId,
-    labelId: labelMap[labelName],
-    labeledBy: userId,
-  }));
-  return db.insert(taskLabels).values(values).onConflictDoNothing();
+
+  return db
+    .insert(taskLabels)
+    .values({
+      taskId,
+      labelId: labelMap[labelName],
+      value: labelValue as any,
+      labeledBy: userId,
+    })
+    .onConflictDoNothing();
 }
 
 export async function fetchProjectLabels(projectId: string) {
