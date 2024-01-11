@@ -20,7 +20,7 @@ import {
   projectLabels,
   taskLabelValue,
 } from "@/db/schema";
-import { TaskTool } from "./label/tasktool";
+import { TaskTool } from "./tasktool";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { useEffect } from "react";
