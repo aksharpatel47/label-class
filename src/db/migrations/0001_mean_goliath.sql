@@ -7,4 +7,4 @@ END $$;
 ALTER TABLE "task_labels" ALTER COLUMN "task_id" SET NOT NULL;--> statement-breakpoint
 ALTER TABLE "task_labels" ALTER COLUMN "label_id" SET NOT NULL;--> statement-breakpoint
 ALTER TABLE "task_labels" ALTER COLUMN "labeled_by" SET NOT NULL;--> statement-breakpoint
-ALTER TABLE "task_labels" ADD COLUMN "label_value" "task_label_value" DEFAULT 'YES' NOT NULL;
+ALTER TABLE "task_labels" ADD COLUMN "label_value" "task_label_value" DEFAULT 'Present' NOT NULL;
