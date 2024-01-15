@@ -2,6 +2,8 @@ import { auth } from "@/lucia";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import * as context from "next/headers";
+import { LuciaError } from "lucia";
+import { unstable_noStore } from "next/cache";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -9,9 +11,8 @@ const loginSchema = z.object({
 });
 
 export const POST = async (req: NextRequest) => {
-  const result = loginSchema.safeParse(
-    Object.fromEntries(await req.formData())
-  );
+  unstable_noStore();
+  const result = loginSchema.safeParse(await req.json());
 
   if (!result.success) {
     return NextResponse.json(
@@ -26,26 +27,53 @@ export const POST = async (req: NextRequest) => {
 
   const { email, password } = result.data;
 
-  const key = await auth.useKey(
-    "username",
-    email.toLocaleLowerCase(),
-    password
-  );
+  try {
+    const key = await auth.useKey(
+      "username",
+      email.toLocaleLowerCase(),
+      password
+    );
 
-  const user = await auth.getUser(key.userId);
+    const session = await auth.createSession({
+      userId: key.userId,
+      attributes: {},
+    });
 
-  const session = await auth.createSession({
-    userId: key.userId,
-    attributes: {},
-  });
+    const authRequest = auth.handleRequest(req.method, context);
+    authRequest.setSession(session);
 
-  const authRequest = auth.handleRequest(req.method, context);
-  authRequest.setSession(session);
+    return NextResponse.json({
+      message: "Success",
+    });
+  } catch (error) {
+    if (error instanceof LuciaError) {
+      if (
+        error.message === "AUTH_INVALID_PASSWORD" ||
+        error.message === "AUTH_INVALID_KEY_ID"
+      ) {
+        return NextResponse.json(
+          {
+            error: "Invalid username or password",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+      return NextResponse.json(
+        {
+          error: error.message,
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
-  return new Response(null, {
-    status: 302,
-    headers: {
-      Location: "/projects",
-    },
-  });
+    console.error(error);
+
+    return NextResponse.json({
+      status: 500,
+    });
+  }
 };

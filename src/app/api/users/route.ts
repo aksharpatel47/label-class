@@ -10,9 +10,7 @@ const signupSchema = z.object({
 });
 
 export const POST = async (req: NextRequest) => {
-  const result = signupSchema.safeParse(
-    Object.fromEntries(await req.formData())
-  );
+  const result = signupSchema.safeParse(await req.json());
 
   if (!result.success) {
     return NextResponse.json(
@@ -27,29 +25,37 @@ export const POST = async (req: NextRequest) => {
 
   const { name, email, password } = result.data;
 
-  const user = await auth.createUser({
-    key: {
-      providerId: "username",
-      providerUserId: email.toLowerCase(),
-      password,
-    },
-    attributes: {
-      name,
-      role: "USER",
-    },
-  });
+  try {
+    const user = await auth.createUser({
+      key: {
+        providerId: "username",
+        providerUserId: email.toLowerCase(),
+        password,
+      },
+      attributes: {
+        name,
+        role: "USER",
+      },
+    });
 
-  const session = await auth.createSession({
-    userId: user.userId,
-    attributes: {},
-  });
+    const session = await auth.createSession({
+      userId: user.userId,
+      attributes: {},
+    });
 
-  const authRequest = auth.handleRequest(req.method, context);
-  authRequest.setSession(session);
-  return new Response(null, {
-    status: 302,
-    headers: {
-      Location: "/projects",
-    },
-  });
+    const authRequest = auth.handleRequest(req.method, context);
+    authRequest.setSession(session);
+    return NextResponse.json({
+      message: "Success",
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: "Unknown error occurred",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
 };

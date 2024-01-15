@@ -26,9 +26,7 @@ import { immer } from "zustand/middleware/immer";
 import { useEffect } from "react";
 import next from "next";
 import PreviousMap from "postcss/lib/previous-map";
-
-const fetcher = (...args: any[]) =>
-  fetch.apply(null, args as any).then((res) => res.json());
+import { fetcher } from "@/app/lib/utils/fetcher";
 
 type State = {
   index: number;
