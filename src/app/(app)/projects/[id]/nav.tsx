@@ -11,6 +11,7 @@ export function ProjectNav({ id }: { id: string }) {
     { href: `/projects/${id}/import`, label: "Import" },
     { href: `/projects/${id}/label`, label: "Label" },
     { href: `/projects/${id}/review`, label: "Review" },
+    { href: `/projects/${id}/statistics`, label: "Statistics" },
     { href: `/projects/${id}/settings`, label: "Settings" },
   ];
   return (
