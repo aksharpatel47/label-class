@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { projectId: string; taskId: string } }
+  { params }: { params: { taskId: string } }
 ) {
   const session = await getRouteSession(req.method);
 

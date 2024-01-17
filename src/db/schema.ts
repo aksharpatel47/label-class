@@ -1,8 +1,10 @@
 import { relations } from "drizzle-orm";
 import {
   bigint,
+  integer,
   pgEnum,
   pgTable,
+  serial,
   smallint,
   text,
   timestamp,
@@ -188,5 +190,39 @@ export const taskLabelsRelations = relations(taskLabels, ({ one, many }) => ({
   labeledBy: one(authUser, {
     fields: [taskLabels.labeledBy],
     references: [authUser.id],
+  }),
+}));
+
+export const trainedModels = pgTable("trained_models", {
+  id: serial("id").primaryKey().notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+});
+
+export type TrainedModels = typeof trainedModels.$inferSelect;
+
+export const taskInferences = pgTable("task_inferences", {
+  id: serial("id").primaryKey().notNull(),
+  taskId: uuid("task_id")
+    .notNull()
+    .references(() => tasks.id),
+  modelId: serial("model_id")
+    .notNull()
+    .references(() => trainedModels.id),
+  inference: integer("inference").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export type TaskInferences = typeof taskInferences.$inferSelect;
+
+export const taskInferencesRelations = relations(taskInferences, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskInferences.taskId],
+    references: [tasks.id],
+  }),
+  model: one(trainedModels, {
+    fields: [taskInferences.modelId],
+    references: [trainedModels.id],
   }),
 }));

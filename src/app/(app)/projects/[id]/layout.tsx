@@ -17,7 +17,7 @@ export default async function ProjectLayout({
   return (
     <>
       <H1>{project?.name}</H1>
-      <div className="mt-8 mb-8">
+      <div className="mt-4 mb-4">
         <ProjectNav id={projectId} />
       </div>
       {children}

@@ -20,47 +20,21 @@ export function addTaskInProject(projectId: string, name: string, url: string) {
     .returning({ insertedId: tasks.id });
 }
 
-export async function fetchTasksInProject(
-  projectId: string,
-  page: number,
-  user: string
-) {
+export async function fetchTasksInProject(projectId: string, page: number) {
   unstable_noStore();
-  console.log("fetchTasksInProject", projectId, page, user);
   const maxPerPage = 50;
 
-  const userFilter =
-    user === "none"
-      ? isNull(taskLabels.labelId)
-      : user !== ""
-        ? eq(taskLabels.labeledBy, user)
-        : sql`true`;
-
-  const sqlQuery = db
-    .select()
-    .from(tasks)
-    .leftJoin(taskLabels, eq(tasks.id, taskLabels.taskId))
-    .where(and(userFilter, eq(tasks.projectId, projectId)))
-    .limit(maxPerPage)
-    .offset((page - 1) * maxPerPage)
-    .toSQL();
-
-  console.log("sqlQuery", sqlQuery);
-
-  const results = await db
-    .select()
-    .from(tasks)
-    .leftJoin(taskLabels, eq(tasks.id, taskLabels.taskId))
-    .where(and(userFilter, eq(tasks.projectId, projectId)))
-    .limit(maxPerPage)
-    .offset((page - 1) * maxPerPage);
-
-  console.log(JSON.stringify(results, null, 2));
-
-  return results;
+  return db.query.tasks.findMany({
+    where: eq(tasks.projectId, projectId),
+    limit: maxPerPage,
+    offset: (page - 1) * maxPerPage,
+    orderBy: (tasks, { desc }) => desc(tasks.updatedAt),
+  });
 }
 
-export function fetchNumberOfTasksInProject(projectId: string) {
+export function fetchNumberOfTasksInProject(
+  projectId: string
+): Promise<number> {
   return db
     .select({
       count: sql<number>`cast(count(*) as integer)`,
@@ -70,27 +44,47 @@ export function fetchNumberOfTasksInProject(projectId: string) {
     .then((res) => res[0].count);
 }
 
-export async function fetchTasksForLabeling(userId: string, projectId: string) {
-  const assignedTasks = await db
+export async function fetchTasksForLabeling(
+  userId: string,
+  projectId: string,
+  labelId?: string | null,
+  labelValue?: string | null
+) {
+  const userFilter = or(
+    eq(tasks.assignedTo, userId),
+    isNull(tasks.assignedTo),
+    lt(tasks.assignedOn, sql`now() - interval '15 minutes'`)
+  );
+
+  const labelValueFilter = !labelId
+    ? userFilter
+    : !labelValue || labelValue === "Unlabeled"
+      ? and(sql`count(${taskLabels.id}) = 0`, userFilter)
+      : and(
+          eq(taskLabels.labelId, labelId),
+          eq(taskLabels.value, labelValue as any),
+          userFilter
+        );
+
+  const assignedTasksSQL = db
     .select({
       id: tasks.id,
       imageUrl: tasks.imageUrl,
     })
     .from(tasks)
     .leftJoin(taskLabels, eq(taskLabels.taskId, tasks.id))
-    .groupBy(tasks.id)
-    .having(
-      and(
-        sql`count(${taskLabels.id}) = 0`,
-        eq(tasks.projectId, projectId),
-        or(
-          eq(tasks.assignedTo, userId),
-          isNull(tasks.assignedTo),
-          lt(tasks.assignedOn, sql`now() - interval '15 minutes'`)
-        )
-      )
-    )
+    .groupBy(tasks.id, taskLabels.labelId, taskLabels.value)
+    .having(and(eq(tasks.projectId, projectId), labelValueFilter))
     .limit(50);
+
+  const gSQL = assignedTasksSQL.toSQL();
+
+  console.log(gSQL);
+
+  const assignedTasks = await assignedTasksSQL;
+  if (!assignedTasks.length) {
+    return assignedTasks;
+  }
 
   await db
     .update(tasks)

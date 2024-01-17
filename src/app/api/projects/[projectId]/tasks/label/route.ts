@@ -1,5 +1,5 @@
 import { getRouteSession } from "@/app/lib/utils/session";
-import { fetchTasksInProject } from "@/lib/data/tasks";
+import { fetchTasksForLabeling, fetchTasksInProject } from "@/lib/data/tasks";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -14,9 +14,16 @@ export async function GET(
 
   const { projectId } = params;
 
-  const page = Number(request.nextUrl.searchParams.get("page")) || 1;
+  const { searchParams } = request.nextUrl;
+  const labelId = searchParams.get("label");
+  const labelValue = searchParams.get("labelvalue");
 
-  const tasks = await fetchTasksInProject(projectId, page);
+  const tasks = await fetchTasksForLabeling(
+    session.user.id,
+    projectId,
+    labelId,
+    labelValue
+  );
 
   return NextResponse.json(tasks);
 }

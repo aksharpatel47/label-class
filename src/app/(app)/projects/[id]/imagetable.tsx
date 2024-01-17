@@ -8,24 +8,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { fetchTasksInProject } from "@/lib/data/tasks";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import useSwr from "swr";
 import { UserDropdown } from "./filters";
-import {
-  AuthUser,
-  ProjectLabel,
-  TaskLabelValue,
-  projectLabels,
-  taskLabelValue,
-} from "@/db/schema";
-import { TaskTool } from "./tasktool";
+import { ProjectLabel, Task, TaskLabelValue } from "@/db/schema";
+import { LabelTask } from "./tasktool";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { useEffect } from "react";
-import next from "next";
-import PreviousMap from "postcss/lib/previous-map";
 import { fetcher } from "@/app/lib/utils/fetcher";
 
 type State = {
@@ -33,21 +24,27 @@ type State = {
 };
 
 type Actions = {
-  next(): void;
-  prev(): void;
+  setIndex(index: number): void;
+  nextImage(): void;
+  prevImage(): void;
 };
 
 const useImageTableStore = create<State & Actions>()(
   immer((set) => ({
     index: 0,
-    next: () => {
+    setIndex: (index) => {
       set((state) => {
-        state.index++;
+        state.index = index;
       });
     },
-    prev: () => {
+    nextImage: () => {
       set((state) => {
-        state.index--;
+        state.index = Math.min(state.index + 1, 49);
+      });
+    },
+    prevImage: () => {
+      set((state) => {
+        state.index = Math.max(0, state.index - 1);
       });
     },
   }))
@@ -55,33 +52,31 @@ const useImageTableStore = create<State & Actions>()(
 
 export function ImageTable(props: {
   projectId: string;
-  users: AuthUser[];
   projectLabels: ProjectLabel[];
   taskLabelValues: TaskLabelValue;
 }) {
   const searchParams = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;
-  const currentUser = searchParams.get("user") || undefined;
   const urlSearchParams = new URLSearchParams();
   urlSearchParams.set("page", page.toString());
-  if (currentUser) {
-    urlSearchParams.set("user", currentUser);
-  }
+
   const url = `/api/projects/${
     props.projectId
   }/tasks?${urlSearchParams.toString()}`;
 
+  const { index, setIndex, nextImage, prevImage } = useImageTableStore();
+  const { data, error, isLoading } = useSwr<Array<Task>>(url, fetcher);
+
   function handleKeyDown(e: KeyboardEvent) {
-    console.log(e.key);
-    if (e.key === "ArrowRight") {
-      next();
-    } else if (e.key === "ArrowLeft") {
-      prev();
+    console.log(`Handling keydown ${e.key} in ImageTable`);
+    if (e.key === "ArrowDown") {
+      console.log("Next image");
+      nextImage();
+    } else if (e.key === "ArrowUp") {
+      console.log("Previous image");
+      prevImage();
     }
   }
-
-  const { index, next, prev } = useImageTableStore();
-  const { data, error, isLoading } = useSwr(url, fetcher);
 
   useEffect(() => {
     document.addEventListener("keydown", handleKeyDown);
@@ -91,7 +86,7 @@ export function ImageTable(props: {
     };
   });
 
-  if (isLoading) {
+  if (!data || isLoading) {
     return (
       <div className="flex justify-center m-8">
         <p className="text-gray-500 text-2xl">Loading images...</p>
@@ -107,14 +102,18 @@ export function ImageTable(props: {
     );
   }
 
+  if (index >= data.length) {
+    setIndex(data.length - 1);
+  }
+
   console.log(`The current index is ${index}`);
   console.log(`The current task is ${JSON.stringify(data[index])}`);
 
   return (
     <>
-      <UserDropdown users={props.users} />
+      {/* <UserDropdown users={props.users} /> */}
       <div className="flex gap-8">
-        <div className="w-[300px]">
+        <div className="w-[300px] h-svh overflow-y-scroll">
           <Table>
             <TableHeader>
               <TableRow>
@@ -123,28 +122,26 @@ export function ImageTable(props: {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((task: any) => (
-                <TableRow key={task.tasks.id}>
+              {data.map((task: Task, i: number) => (
+                <TableRow key={task.id} onClick={() => setIndex(i)}>
                   <TableCell className="font-medium">
                     <Image
-                      src={task.tasks.imageUrl}
-                      alt={task.tasks.name}
+                      src={task.imageUrl}
+                      alt={task.name}
                       height={50}
                       width={50}
                     />
                   </TableCell>
-                  <TableCell>{task.tasks.name}</TableCell>
+                  <TableCell>{task.name}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
 
-        <TaskTool
-          projectId={props.projectId}
-          task={data[index].tasks}
-          labels={props.projectLabels}
-          labelValues={props.taskLabelValues}
+        <LabelTask
+          task={data[index]}
+          projectLabels={props.projectLabels}
           className="flex-1"
         />
       </div>

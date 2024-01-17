@@ -1,7 +1,7 @@
 import { getRouteSession } from "@/app/lib/utils/session";
 import { db } from "@/db";
-import { projectLabels, taskLabels } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
+import { projectLabels, taskLabels, tasks } from "@/db/schema";
+import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -17,7 +17,7 @@ export async function POST(
   const { taskId, labelId } = params;
   const data = await request.json();
 
-  const res = await db
+  await db
     .insert(taskLabels)
     .values({
       taskId,
@@ -33,6 +33,11 @@ export async function POST(
       },
     });
 
+  await db
+    .update(tasks)
+    .set({ updatedAt: sql`now()` })
+    .where(eq(tasks.id, taskId));
+
   return NextResponse.json({ inserted: true });
 }
 
@@ -47,7 +52,7 @@ export async function DELETE(
 
   const { taskId, labelId } = params;
 
-  const rowsDeleted = await db
+  await db
     .delete(taskLabels)
     .where(
       and(
@@ -56,6 +61,11 @@ export async function DELETE(
         eq(taskLabels.labeledBy, session.user.id)
       )
     );
+
+  await db
+    .update(tasks)
+    .set({ updatedAt: sql`now()` })
+    .where(eq(tasks.id, taskId));
 
   return NextResponse.json({ deleted: true });
 }

@@ -15,6 +15,13 @@
       "when": 1703213393621,
       "tag": "0001_mean_goliath",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1705507897622,
+      "tag": "0002_salty_true_believers",
+      "breakpoints": true
     }
   ]
 }
