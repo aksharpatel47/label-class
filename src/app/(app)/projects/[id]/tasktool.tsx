@@ -21,7 +21,11 @@ type Actions = {
   setInitialLabels(taskLabels: TaskLabels): void;
   setLoadingInitialLabels(loading: boolean): void;
   cycleLabelValue(currentTaskId: string, labelId: string): void;
-  setLabelValue(labelId: string, value: string | undefined): void;
+  setLabelValue(
+    currentaskId: string,
+    labelId: string,
+    value: string | undefined
+  ): void;
 };
 
 const useLabelTaskStore = create<State & Actions>()(
@@ -65,9 +69,24 @@ const useLabelTaskStore = create<State & Actions>()(
           .then(console.log);
       });
     },
-    setLabelValue(labelId: string, value: string | undefined) {
+    setLabelValue(
+      currentTaskId: string,
+      labelId: string,
+      value: string | undefined
+    ) {
       set((state) => {
         state.taskLabels[labelId] = value;
+
+        const method = "POST";
+        fetch(`/api/tasks/${currentTaskId}/labels/${labelId}`, {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ value }),
+        })
+          .then((res) => res.json())
+          .then(console.log);
       });
     },
   }))
@@ -153,7 +172,7 @@ export function LabelTask({
                 variant="outline"
                 type="single"
                 value={taskLabels[l.id]}
-                onValueChange={(v) => setLabelValue(l.id, v)}
+                onValueChange={(v) => setLabelValue(task.id, l.id, v)}
                 disabled={loadingInitialLabels}
               >
                 {taskLabelValues.slice(1).map((pl) => (
