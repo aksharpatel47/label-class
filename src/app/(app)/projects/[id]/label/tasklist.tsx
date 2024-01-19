@@ -1,6 +1,7 @@
 import { ProjectLabel, Task } from "@/db/schema";
 import { useEffect, useState } from "react";
 import { LabelTask } from "../tasktool";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 interface ITaskList {
   tasks: Task[];
@@ -10,8 +11,19 @@ interface ITaskList {
 }
 export function TaskList(props: ITaskList) {
   const [index, setIndex] = useState(props.startIndex);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   async function handleArrowClick(e: KeyboardEvent) {
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      const after = searchParams.get("after");
+      if (after !== (props.tasks[index].createdAt as any)) {
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.set("after", props.tasks[index].createdAt as any);
+        router.replace(`${pathname}?${newSearchParams.toString()}`);
+      }
+    }
     if (e.key === "ArrowLeft") {
       setIndex(Math.max(0, index - 1));
     } else if (e.key === "ArrowRight") {
@@ -35,9 +47,6 @@ export function TaskList(props: ITaskList) {
     );
   }
 
-  console.log(`index: ${index}, tasks.length: ${props.tasks.length}`);
-  console.log(props.tasks[index]);
-
   if (index === props.tasks.length && props.startIndex === props.tasks.length) {
     return (
       <div className="p-2">
@@ -45,7 +54,7 @@ export function TaskList(props: ITaskList) {
         filters and click on apply to see more images.
       </div>
     );
-  } else if (index === props.tasks.length) {
+  } else if (index >= props.tasks.length) {
     props.fetchMoreTasks();
     return <div className="p-2">Loading more images. Please wait...</div>;
   }
@@ -53,8 +62,9 @@ export function TaskList(props: ITaskList) {
   return (
     <div>
       <div className="p-2">
-        Use the arrow keys to navigate between images. Once you reach the end,
-        click on apply again to get a new set of images
+        Use the arrow keys to navigate between images. Currently on {index + 1}{" "}
+        of {props.tasks.length}. Current task bookmark:{" "}
+        {props.tasks[index].createdAt as any}
       </div>
       <LabelTask
         task={props.tasks[index]}

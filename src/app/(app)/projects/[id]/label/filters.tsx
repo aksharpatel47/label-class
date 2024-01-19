@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -34,6 +35,11 @@ export function LabelFilters(props: ILabelFiltersProps) {
     [key: string]: string | undefined;
   }) {
     const urlSearchParams = new URLSearchParams(searchParams);
+
+    if (!!urlSearchParams.get("after")) {
+      urlSearchParams.delete("after");
+    }
+
     for (const [key, value] of Object.entries(newValues)) {
       if (!value) {
         urlSearchParams.delete(key);

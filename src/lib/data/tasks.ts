@@ -1,13 +1,12 @@
 import { db } from "@/db";
-import { Task, taskLabels, tasks } from "@/db/schema";
+import { taskLabels, tasks } from "@/db/schema";
 import {
   SQL,
   and,
   asc,
   eq,
-  gt,
+  gte,
   inArray,
-  isNotNull,
   isNull,
   lt,
   or,
@@ -71,7 +70,7 @@ export async function fetchTasksForLabeling(
   }
 
   if (after) {
-    filters.push(gt(tasks.createdAt, new Date(after)));
+    filters.push(gte(tasks.createdAt, new Date(after)));
   }
 
   const userFilter = or(
