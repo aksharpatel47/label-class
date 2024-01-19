@@ -1,6 +1,18 @@
 import { db } from "@/db";
 import { Task, taskLabels, tasks } from "@/db/schema";
-import { and, eq, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
+import {
+  SQL,
+  and,
+  asc,
+  eq,
+  gt,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  or,
+  sql,
+} from "drizzle-orm";
 import { unstable_noStore } from "next/cache";
 
 export function addTaskInProject(projectId: string, name: string, url: string) {
@@ -45,41 +57,59 @@ export function fetchNumberOfTasksInProject(
 }
 
 export async function fetchTasksForLabeling(
-  userId: string,
+  currentUserId: string,
   projectId: string,
+  after?: string | null,
+  labeledBy?: string | null,
   labelId?: string | null,
   labelValue?: string | null
 ) {
+  const filters: Array<SQL<unknown> | undefined> = [];
+  filters.push(eq(tasks.projectId, projectId));
+  if (labeledBy && labeledBy !== "Unlabeled") {
+    filters.push(eq(taskLabels.labeledBy, labeledBy));
+  }
+
+  if (after) {
+    filters.push(gt(tasks.createdAt, new Date(after)));
+  }
+
   const userFilter = or(
-    eq(tasks.assignedTo, userId),
+    eq(tasks.assignedTo, currentUserId),
     isNull(tasks.assignedTo),
     lt(tasks.assignedOn, sql`now() - interval '15 minutes'`)
   );
 
-  const labelValueFilter = !labelId
-    ? userFilter
-    : !labelValue || labelValue === "Unlabeled"
-      ? and(sql`count(${taskLabels.id}) = 0`, userFilter)
-      : and(
-          eq(taskLabels.labelId, labelId),
-          eq(taskLabels.value, labelValue as any),
-          userFilter
-        );
+  filters.push(userFilter);
+
+  if (labelId && labelValue) {
+    if (labelValue === "Unlabeled") {
+      filters.push(isNull(taskLabels.labelId));
+    } else {
+      filters.push(
+        eq(taskLabels.labelId, labelId),
+        eq(taskLabels.value, labelValue as any)
+      );
+    }
+  }
 
   const assignedTasksSQL = db
     .select({
       id: tasks.id,
       imageUrl: tasks.imageUrl,
+      createdAt: tasks.createdAt,
     })
     .from(tasks)
     .leftJoin(taskLabels, eq(taskLabels.taskId, tasks.id))
-    .groupBy(tasks.id, taskLabels.labelId, taskLabels.value)
-    .having(and(eq(tasks.projectId, projectId), labelValueFilter))
+    .orderBy(asc(tasks.createdAt))
+    .groupBy(
+      tasks.id,
+      taskLabels.labelId,
+      taskLabels.value,
+      taskLabels.labeledBy
+    )
+    .having(and(...filters))
     .limit(50);
-
-  const gSQL = assignedTasksSQL.toSQL();
-
-  console.log(gSQL);
 
   const assignedTasks = await assignedTasksSQL;
   if (!assignedTasks.length) {
@@ -89,7 +119,7 @@ export async function fetchTasksForLabeling(
   await db
     .update(tasks)
     .set({
-      assignedTo: userId,
+      assignedTo: currentUserId,
       assignedOn: sql`now()`,
     })
     .where(

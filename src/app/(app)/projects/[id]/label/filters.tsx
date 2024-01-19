@@ -30,14 +30,17 @@ export function LabelFilters(props: ILabelFiltersProps) {
   const trainedModel = searchParams.get("trainedmodel") || "";
   const inferenceValue = searchParams.get("inferencevalue") || "";
 
-  function handleSelectChange(key: string, value: string | undefined) {
+  function handleSelectChange(newValues: {
+    [key: string]: string | undefined;
+  }) {
     const urlSearchParams = new URLSearchParams(searchParams);
-    if (!value) {
-      urlSearchParams.delete(key);
-      router.replace(`${pathName}?${urlSearchParams.toString()}`);
-      return;
+    for (const [key, value] of Object.entries(newValues)) {
+      if (!value) {
+        urlSearchParams.delete(key);
+        continue;
+      }
+      urlSearchParams.set(key, value);
     }
-    urlSearchParams.set(key, value);
     router.replace(`${pathName}?${urlSearchParams.toString()}`);
   }
 
@@ -57,7 +60,7 @@ export function LabelFilters(props: ILabelFiltersProps) {
     <div className="flex">
       <Select
         value={projectLabel}
-        onValueChange={(newValue) => handleSelectChange("label", newValue)}
+        onValueChange={(newValue) => handleSelectChange({ label: newValue })}
       >
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Select Project Label" />
@@ -72,13 +75,19 @@ export function LabelFilters(props: ILabelFiltersProps) {
       </Select>
       <Button
         variant="ghost"
-        onClick={() => handleSelectChange("label", undefined)}
+        onClick={() => handleSelectChange({ label: undefined })}
       >
         <XCircle />
       </Button>
       <Select
         value={projectLabelValue}
-        onValueChange={(newValue) => handleSelectChange("labelvalue", newValue)}
+        onValueChange={(newValue) => {
+          const newValues: any = { labelvalue: newValue };
+          if (newValue === "Unlabeled") {
+            newValues.user = undefined;
+          }
+          handleSelectChange(newValues);
+        }}
       >
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Select Project Label Value" />
@@ -93,11 +102,15 @@ export function LabelFilters(props: ILabelFiltersProps) {
       </Select>
       <Button
         variant="ghost"
-        onClick={() => handleSelectChange("labelvalue", undefined)}
+        onClick={() => handleSelectChange({ labelvalue: undefined })}
       >
         <XCircle />
       </Button>
-      {/* <Select>
+      <Select
+        value={user}
+        disabled={projectLabelValue === "Unlabeled"}
+        onValueChange={(newValue) => handleSelectChange({ user: newValue })}
+      >
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Select User" />
         </SelectTrigger>
@@ -108,11 +121,17 @@ export function LabelFilters(props: ILabelFiltersProps) {
             </SelectItem>
           ))}
         </SelectContent>
-      </Select> */}
+      </Select>
+      <Button
+        variant="ghost"
+        onClick={() => handleSelectChange({ user: undefined })}
+      >
+        <XCircle />
+      </Button>
       <Select
         value={trainedModel}
         onValueChange={(newValue) =>
-          handleSelectChange("trainedmodel", newValue)
+          handleSelectChange({ trainedmodel: newValue })
         }
       >
         <SelectTrigger className="w-[180px]">
@@ -131,14 +150,14 @@ export function LabelFilters(props: ILabelFiltersProps) {
       </Select>
       <Button
         variant="ghost"
-        onClick={() => handleSelectChange("trainedmodel", undefined)}
+        onClick={() => handleSelectChange({ trainedmodel: undefined })}
       >
         <XCircle />
       </Button>
       <Select
         value={inferenceValue}
         onValueChange={(newValue) =>
-          handleSelectChange("inferencevalue", newValue)
+          handleSelectChange({ inferencevalue: newValue })
         }
       >
         <SelectTrigger className="w-[180px]">
@@ -154,7 +173,7 @@ export function LabelFilters(props: ILabelFiltersProps) {
       </Select>
       <Button
         variant="ghost"
-        onClick={() => handleSelectChange("inferencevalue", undefined)}
+        onClick={() => handleSelectChange({ inferencevalue: undefined })}
       >
         <XCircle />
       </Button>

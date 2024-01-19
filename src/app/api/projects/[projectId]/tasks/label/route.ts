@@ -1,5 +1,5 @@
 import { getRouteSession } from "@/app/lib/utils/session";
-import { fetchTasksForLabeling, fetchTasksInProject } from "@/lib/data/tasks";
+import { fetchTasksForLabeling } from "@/lib/data/tasks";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -15,12 +15,16 @@ export async function GET(
   const { projectId } = params;
 
   const { searchParams } = request.nextUrl;
+  const after = searchParams.get("after");
   const labelId = searchParams.get("label");
   const labelValue = searchParams.get("labelvalue");
+  const user = searchParams.get("user");
 
   const tasks = await fetchTasksForLabeling(
     session.user.id,
     projectId,
+    after,
+    user,
     labelId,
     labelValue
   );

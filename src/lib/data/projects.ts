@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { projects } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { projects, tasks } from "@/db/schema";
+import { eq, sql } from "drizzle-orm";
 import { unstable_noStore } from "next/cache";
 
 export async function fetchProjects() {
@@ -13,6 +13,18 @@ export async function fetchProjects() {
       },
     },
   });
+}
+
+export async function fetchProjectsTaskCounts() {
+  unstable_noStore();
+  return db
+    .select({
+      projectId: projects.id,
+      count: sql`count(tasks.id)::integer`,
+    })
+    .from(projects)
+    .leftJoin(tasks, eq(tasks.projectId, projects.id))
+    .groupBy(projects.id);
 }
 
 export async function fetchProjectById(id: string) {
