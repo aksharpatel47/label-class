@@ -40,8 +40,13 @@ export function Tool(props: IToolProps) {
 
     let newTasks = await res.json();
 
-    if (newTasks.length > 0 && newTasks[0].id === tasks[tasks.length - 1].id) {
-      newTasks = newTasks.slice(1);
+    if (newTasks.length > 0) {
+      // find the index of the first task that is already present in the tasks array
+      const firstIndex = tasks.findIndex((task) => {
+        return task.id === newTasks[0].id;
+      });
+      const tasksToRemove = tasks.length - firstIndex;
+      newTasks = newTasks.slice(tasksToRemove);
     }
 
     const previousTaskLength = tasks.length;
