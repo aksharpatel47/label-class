@@ -5,6 +5,7 @@ import {
   and,
   asc,
   eq,
+  gt,
   gte,
   inArray,
   isNull,
@@ -70,7 +71,7 @@ export async function fetchTasksForLabeling(
   }
 
   if (after) {
-    filters.push(gte(tasks.createdAt, new Date(after)));
+    filters.push(sql`${tasks.createdAt} > ${after}`);
   }
 
   const userFilter = or(
