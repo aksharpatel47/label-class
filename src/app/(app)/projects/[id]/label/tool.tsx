@@ -45,8 +45,10 @@ export function Tool(props: IToolProps) {
       const firstIndex = tasks.findIndex((task) => {
         return task.id === newTasks[0].id;
       });
-      const tasksToRemove = tasks.length - firstIndex;
-      newTasks = newTasks.slice(tasksToRemove);
+      if (firstIndex !== -1) {
+        const tasksToRemove = tasks.length - firstIndex;
+        newTasks = newTasks.slice(tasksToRemove);
+      }
     }
 
     const previousTaskLength = tasks.length;
