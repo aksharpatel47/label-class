@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { taskLabels, tasks } from "@/db/schema";
+import { taskInferences, taskLabels, tasks, trainedModels } from "@/db/schema";
 import {
   SQL,
   and,
@@ -10,6 +10,7 @@ import {
   inArray,
   isNull,
   lt,
+  lte,
   or,
   sql,
 } from "drizzle-orm";
@@ -62,7 +63,9 @@ export async function fetchTasksForLabeling(
   after?: string | null,
   labeledBy?: string | null,
   labelId?: string | null,
-  labelValue?: string | null
+  labelValue?: string | null,
+  trainedModel?: string | null,
+  inferenceValue?: string | null
 ) {
   const filters: Array<SQL<unknown> | undefined> = [];
   filters.push(eq(tasks.projectId, projectId));
@@ -93,6 +96,28 @@ export async function fetchTasksForLabeling(
     }
   }
 
+  if (trainedModel && inferenceValue) {
+    const trainedModelId = Number(trainedModel);
+    const inferenceValueRange = inferenceValue
+      .split("-")
+      .map(Number)
+      .filter((n) => !isNaN(n));
+
+    if (
+      inferenceValueRange.length === 2 &&
+      inferenceValueRange[0] < inferenceValueRange[1] &&
+      trainedModelId > 0
+    ) {
+      filters.push(
+        and(
+          eq(taskInferences.modelId, trainedModelId),
+          gte(taskInferences.inference, inferenceValueRange[0]),
+          lte(taskInferences.inference, inferenceValueRange[1])
+        )
+      );
+    }
+  }
+
   const assignedTasksSQL = db
     .select({
       id: tasks.id,
@@ -101,14 +126,16 @@ export async function fetchTasksForLabeling(
     })
     .from(tasks)
     .leftJoin(taskLabels, eq(taskLabels.taskId, tasks.id))
+    .leftJoin(taskInferences, eq(taskInferences.taskId, tasks.id))
     .orderBy(asc(tasks.createdAt))
+    .where(and(...filters))
     .groupBy(
       tasks.id,
       taskLabels.labelId,
       taskLabels.value,
-      taskLabels.labeledBy
+      taskLabels.labeledBy,
+      taskInferences.modelId
     )
-    .having(and(...filters))
     .limit(50);
 
   const assignedTasks = await assignedTasksSQL;
@@ -130,4 +157,21 @@ export async function fetchTasksForLabeling(
     );
 
   return assignedTasks;
+}
+
+export async function addInferenceForTask(
+  projectId: string,
+  taskName: string,
+  trainedModelId: number,
+  inference: number
+) {
+  const insertSQL = sql`
+  insert into ${taskInferences}
+  (task_id, model_id, inference)
+  select id, ${trainedModelId}, ${inference}
+  from ${tasks}
+  where name=${taskName} and project_id=${projectId}
+  on conflict (task_id, model_id) do update
+  set inference=${inference}, updated_at=now()`;
+  await db.execute(insertSQL);
 }

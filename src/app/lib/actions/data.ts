@@ -3,10 +3,11 @@
 import { db } from "@/db";
 import { projectLabels } from "@/db/schema";
 import { addLabelToTask } from "@/lib/data/labels";
-import { addTaskInProject } from "@/lib/data/tasks";
+import { addInferenceForTask, addTaskInProject } from "@/lib/data/tasks";
 import { fetchUserById } from "@/lib/data/users";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { getPageSession } from "../utils/session";
 
 interface IAnnotation {
   label: string;
@@ -98,4 +99,45 @@ export async function importData(
     console.error(error);
     return "File is not valid JSON";
   }
+}
+
+export async function importInference(
+  projectId: string,
+  prevState: string | undefined,
+  formData: FormData
+) {
+  const session = await getPageSession();
+  if (!session) {
+    return "Not logged in.";
+  }
+
+  const trainedModelId = Number(formData.get("trainedModel") as string);
+  const file = formData.get("file") as File;
+
+  if (!file) {
+    return "No file uploaded";
+  }
+  // Check if the name of the file ends with a .csv
+  if (!file.name.endsWith(".csv")) {
+    return "File is not a CSV file.";
+  }
+
+  const fileContents = await file.text();
+
+  const rows = fileContents.split("\n").slice(1);
+
+  for (const row of rows) {
+    const rowValues = row.split(",");
+    const imageName = rowValues[0];
+    const inference = rowValues[rowValues.length - 1];
+    const inferenceValue = Math.ceil(Number(inference) * 100);
+    await addInferenceForTask(
+      projectId,
+      imageName,
+      trainedModelId,
+      inferenceValue
+    );
+  }
+
+  return "Done";
 }

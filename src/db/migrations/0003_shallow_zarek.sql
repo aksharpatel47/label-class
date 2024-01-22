@@ -1,0 +1,2 @@
+ALTER TABLE "task_inferences" ADD COLUMN "updated_at" timestamp with time zone DEFAULT now() NOT NULL;--> statement-breakpoint
+ALTER TABLE "task_inferences" ADD CONSTRAINT "task_inferences_task_id_model_id_unique" UNIQUE("task_id","model_id");

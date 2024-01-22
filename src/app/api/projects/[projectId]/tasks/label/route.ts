@@ -19,6 +19,8 @@ export async function GET(
   const labelId = searchParams.get("label");
   const labelValue = searchParams.get("labelvalue");
   const user = searchParams.get("user");
+  const trainedModel = searchParams.get("trainedmodel");
+  const inferenceValue = searchParams.get("inferencevalue");
 
   const tasks = await fetchTasksForLabeling(
     session.user.id,
@@ -26,7 +28,9 @@ export async function GET(
     after,
     user,
     labelId,
-    labelValue
+    labelValue,
+    trainedModel,
+    inferenceValue
   );
 
   return NextResponse.json(tasks);

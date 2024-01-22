@@ -200,19 +200,28 @@ export const trainedModels = pgTable("trained_models", {
 
 export type TrainedModels = typeof trainedModels.$inferSelect;
 
-export const taskInferences = pgTable("task_inferences", {
-  id: serial("id").primaryKey().notNull(),
-  taskId: uuid("task_id")
-    .notNull()
-    .references(() => tasks.id),
-  modelId: serial("model_id")
-    .notNull()
-    .references(() => trainedModels.id),
-  inference: integer("inference").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const taskInferences = pgTable(
+  "task_inferences",
+  {
+    id: serial("id").primaryKey().notNull(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id),
+    modelId: serial("model_id")
+      .notNull()
+      .references(() => trainedModels.id),
+    inference: integer("inference").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    task_model_unq: unique().on(t.taskId, t.modelId),
+  })
+);
 
 export type TaskInferences = typeof taskInferences.$inferSelect;
 
