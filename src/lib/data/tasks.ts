@@ -14,6 +14,7 @@ import {
   or,
   sql,
 } from "drizzle-orm";
+import { PgSelectQueryBuilder, QueryBuilder } from "drizzle-orm/pg-core";
 import { unstable_noStore } from "next/cache";
 
 export function addTaskInProject(projectId: string, name: string, url: string) {
@@ -67,10 +68,32 @@ export async function fetchTasksForLabeling(
   trainedModel?: string | null,
   inferenceValue?: string | null
 ) {
-  const filters: Array<SQL<unknown> | undefined> = [];
+  let sl = db
+    .select({
+      id: tasks.id,
+      imageUrl: tasks.imageUrl,
+      createdAt: tasks.createdAt,
+    })
+    .from(tasks)
+    .$dynamic();
+
+  const filters: Array<SQL | undefined> = [];
   filters.push(eq(tasks.projectId, projectId));
-  if (labeledBy && labeledBy !== "Unlabeled") {
-    filters.push(eq(taskLabels.labeledBy, labeledBy));
+  if (labelId && labelValue) {
+    sl = sl.leftJoin(taskLabels, eq(tasks.id, taskLabels.taskId)).$dynamic();
+
+    if (labelValue === "Unlabeled") {
+      filters.push(isNull(taskLabels.labelId));
+    } else {
+      if (labeledBy) {
+        filters.push(eq(taskLabels.labeledBy, labeledBy));
+      }
+
+      filters.push(
+        eq(taskLabels.labelId, labelId),
+        eq(taskLabels.value, labelValue as any)
+      );
+    }
   }
 
   if (after) {
@@ -78,23 +101,15 @@ export async function fetchTasksForLabeling(
   }
 
   const userFilter = or(
-    eq(tasks.assignedTo, currentUserId),
+    and(
+      eq(tasks.assignedTo, currentUserId),
+      gte(tasks.assignedOn, sql`now() - interval '15 minutes'`)
+    ),
     isNull(tasks.assignedTo),
     lt(tasks.assignedOn, sql`now() - interval '15 minutes'`)
   );
 
   filters.push(userFilter);
-
-  if (labelId && labelValue) {
-    if (labelValue === "Unlabeled") {
-      filters.push(isNull(taskLabels.labelId));
-    } else {
-      filters.push(
-        eq(taskLabels.labelId, labelId),
-        eq(taskLabels.value, labelValue as any)
-      );
-    }
-  }
 
   if (trainedModel && inferenceValue) {
     const trainedModelId = Number(trainedModel);
@@ -108,6 +123,9 @@ export async function fetchTasksForLabeling(
       inferenceValueRange[0] < inferenceValueRange[1] &&
       trainedModelId > 0
     ) {
+      sl = sl
+        .leftJoin(taskInferences, eq(tasks.id, taskInferences.taskId))
+        .$dynamic();
       filters.push(
         and(
           eq(taskInferences.modelId, trainedModelId),
@@ -118,29 +136,13 @@ export async function fetchTasksForLabeling(
     }
   }
 
-  const assignedTasksSQL = db
-    .select({
-      id: tasks.id,
-      imageUrl: tasks.imageUrl,
-      createdAt: tasks.createdAt,
-    })
-    .from(tasks)
-    .leftJoin(taskLabels, eq(taskLabels.taskId, tasks.id))
-    .leftJoin(taskInferences, eq(taskInferences.taskId, tasks.id))
-    .orderBy(asc(tasks.createdAt))
+  const results: any = await sl
     .where(and(...filters))
-    .groupBy(
-      tasks.id,
-      taskLabels.labelId,
-      taskLabels.value,
-      taskLabels.labeledBy,
-      taskInferences.modelId
-    )
+    .orderBy(asc(tasks.createdAt))
     .limit(50);
 
-  const assignedTasks = await assignedTasksSQL;
-  if (!assignedTasks.length) {
-    return assignedTasks;
+  if (!results.length) {
+    return results;
   }
 
   await db
@@ -152,11 +154,11 @@ export async function fetchTasksForLabeling(
     .where(
       inArray(
         tasks.id,
-        assignedTasks.map((t) => t.id)
+        results.map((t: any) => t.id)
       )
     );
 
-  return assignedTasks;
+  return results;
 }
 
 export async function addInferenceForTask(

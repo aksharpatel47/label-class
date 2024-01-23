@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/select";
 import { AuthUser, ProjectLabel, TrainedModels } from "@/db/schema";
 import { XCircle } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 interface ILabelFiltersProps {
   users: AuthUser[];
@@ -18,54 +17,25 @@ interface ILabelFiltersProps {
   projectLabels: ProjectLabel[];
   labelValues: string[];
   onApplyClick: () => void;
+  currentValues: {
+    label: string;
+    labelvalue: string;
+    user: string;
+    trainedmodel: string;
+    inferencevalue: string;
+  };
+  inferenceValues: string[];
+  onSelectChange(newValues: { [key: string]: string | undefined }): void;
 }
 
 export function LabelFilters(props: ILabelFiltersProps) {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathName = usePathname();
-  const projectLabel = searchParams.get("label") || "";
-  const projectLabelValue = searchParams.get("labelvalue") || "";
-  const user = searchParams.get("user") || "";
-  const trainedModel = searchParams.get("trainedmodel") || "";
-  const inferenceValue = searchParams.get("inferencevalue") || "";
+  const { onSelectChange } = props;
 
-  function handleSelectChange(newValues: {
-    [key: string]: string | undefined;
-  }) {
-    const urlSearchParams = new URLSearchParams(searchParams);
-
-    if (!!urlSearchParams.get("after")) {
-      urlSearchParams.delete("after");
-    }
-
-    for (const [key, value] of Object.entries(newValues)) {
-      if (!value) {
-        urlSearchParams.delete(key);
-        continue;
-      }
-      urlSearchParams.set(key, value);
-    }
-    router.replace(`${pathName}?${urlSearchParams.toString()}`);
-  }
-
-  const inferenceValues = [
-    "0-10",
-    "11-20",
-    "21-30",
-    "31-40",
-    "41-50",
-    "51-60",
-    "61-70",
-    "71-80",
-    "81-90",
-    "91-100",
-  ];
   return (
     <div className="flex">
       <Select
-        value={projectLabel}
-        onValueChange={(newValue) => handleSelectChange({ label: newValue })}
+        value={props.currentValues.label}
+        onValueChange={(newValue) => onSelectChange({ label: newValue })}
       >
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Select Project Label" />
@@ -80,18 +50,18 @@ export function LabelFilters(props: ILabelFiltersProps) {
       </Select>
       <Button
         variant="ghost"
-        onClick={() => handleSelectChange({ label: undefined })}
+        onClick={() => onSelectChange({ label: undefined })}
       >
         <XCircle />
       </Button>
       <Select
-        value={projectLabelValue}
+        value={props.currentValues.labelvalue}
         onValueChange={(newValue) => {
           const newValues: any = { labelvalue: newValue };
           if (newValue === "Unlabeled") {
             newValues.user = undefined;
           }
-          handleSelectChange(newValues);
+          onSelectChange(newValues);
         }}
       >
         <SelectTrigger className="w-[180px]">
@@ -107,14 +77,14 @@ export function LabelFilters(props: ILabelFiltersProps) {
       </Select>
       <Button
         variant="ghost"
-        onClick={() => handleSelectChange({ labelvalue: undefined })}
+        onClick={() => onSelectChange({ labelvalue: undefined })}
       >
         <XCircle />
       </Button>
       <Select
-        value={user}
-        disabled={projectLabelValue === "Unlabeled"}
-        onValueChange={(newValue) => handleSelectChange({ user: newValue })}
+        value={props.currentValues.user}
+        disabled={props.currentValues.labelvalue === "Unlabeled"}
+        onValueChange={(newValue) => onSelectChange({ user: newValue })}
       >
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Select User" />
@@ -129,15 +99,13 @@ export function LabelFilters(props: ILabelFiltersProps) {
       </Select>
       <Button
         variant="ghost"
-        onClick={() => handleSelectChange({ user: undefined })}
+        onClick={() => onSelectChange({ user: undefined })}
       >
         <XCircle />
       </Button>
       <Select
-        value={trainedModel}
-        onValueChange={(newValue) =>
-          handleSelectChange({ trainedmodel: newValue })
-        }
+        value={props.currentValues.trainedmodel}
+        onValueChange={(newValue) => onSelectChange({ trainedmodel: newValue })}
       >
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Select Trained Model" />
@@ -155,21 +123,21 @@ export function LabelFilters(props: ILabelFiltersProps) {
       </Select>
       <Button
         variant="ghost"
-        onClick={() => handleSelectChange({ trainedmodel: undefined })}
+        onClick={() => onSelectChange({ trainedmodel: undefined })}
       >
         <XCircle />
       </Button>
       <Select
-        value={inferenceValue}
+        value={props.currentValues.inferencevalue}
         onValueChange={(newValue) =>
-          handleSelectChange({ inferencevalue: newValue })
+          onSelectChange({ inferencevalue: newValue })
         }
       >
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Select Inference Value" />
         </SelectTrigger>
         <SelectContent>
-          {inferenceValues.map((inferenceValue) => (
+          {props.inferenceValues.map((inferenceValue) => (
             <SelectItem key={inferenceValue} value={inferenceValue}>
               {inferenceValue}
             </SelectItem>
@@ -178,7 +146,7 @@ export function LabelFilters(props: ILabelFiltersProps) {
       </Select>
       <Button
         variant="ghost"
-        onClick={() => handleSelectChange({ inferencevalue: undefined })}
+        onClick={() => onSelectChange({ inferencevalue: undefined })}
       >
         <XCircle />
       </Button>
