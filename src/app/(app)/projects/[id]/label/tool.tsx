@@ -4,9 +4,7 @@ import { AuthUser, ProjectLabel, Task, TrainedModels } from "@/db/schema";
 import { LabelFilters } from "./filters";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
-import { TaskList } from "./tasklist";
 import { LabelTask } from "../tasktool";
-import { set } from "zod";
 
 interface IToolProps {
   projectId: string;
