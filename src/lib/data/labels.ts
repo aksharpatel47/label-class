@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { projectLabels, taskLabels } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
+import { projectLabels, taskLabels, taskLabelsRelations } from "@/db/schema";
+import { and, eq, sql } from "drizzle-orm";
 import { unstable_noStore } from "next/cache";
 
 export async function addLabelToTask(
@@ -8,7 +8,7 @@ export async function addLabelToTask(
   labelMap: Record<string, string>,
   labelName: string,
   labelValue: string,
-  userId: string
+  userId: string,
 ) {
   unstable_noStore();
 
@@ -29,4 +29,25 @@ export async function fetchProjectLabels(projectId: string) {
     where: eq(projectLabels.projectId, projectId),
     orderBy: (p, { asc }) => [asc(p.sequence)],
   });
+}
+
+/**
+ * Fetches the label statistics for a given project
+ * @param projectId
+ */
+export async function fetchTaskLabelStatistics(projectId: string) {
+  unstable_noStore();
+
+  return db
+    .select({
+      labelId: taskLabels.labelId,
+      labelName: projectLabels.labelName,
+      labelValue: taskLabels.value,
+      count: sql<number>`count
+                (${taskLabels.id})`,
+    })
+    .from(taskLabels)
+    .innerJoin(projectLabels, eq(taskLabels.labelId, projectLabels.id))
+    .where(and(eq(projectLabels.projectId, projectId)))
+    .groupBy(taskLabels.labelId, taskLabels.value, projectLabels.labelName);
 }
