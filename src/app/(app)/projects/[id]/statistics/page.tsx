@@ -3,6 +3,10 @@ import { fetchTaskLabelStatistics } from "@/lib/data/labels";
 export default async function Page({ params }: { params: { id: string } }) {
   const labelStatistics = await fetchTaskLabelStatistics(params.id);
 
+  if (labelStatistics.length === 0) {
+    return <div>No labels yet.</div>;
+  }
+
   const users: Set<string> = new Set();
   const labels: Set<string> = new Set();
   const labelValues: Set<string> = new Set();
@@ -50,10 +54,6 @@ export default async function Page({ params }: { params: { id: string } }) {
     userTotals[labelStatistic.user] += labelStatistic.count;
   }
 
-  if (labelStatistics.length === 0) {
-    return <div>No labels yet.</div>;
-  }
-
   return (
     <div>
       <div className="flex flex-col w-full gap-4">
@@ -83,7 +83,7 @@ export default async function Page({ params }: { params: { id: string } }) {
                       key={`${user}-${label}-${labelValue}`}
                       className="flex-1"
                     >
-                      {statistics[user][label][labelValue]}
+                      {statistics[user]?.[label]?.[labelValue] ?? 0}
                     </div>
                   ))}
                 </div>
