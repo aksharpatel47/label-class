@@ -74,7 +74,7 @@ export default async function Page({ params }: { params: { id: string } }) {
         </div>
         {Array.from(users).map((user) => (
           <div key={user} className="flex gap-8">
-            <div className="flex-1">{users}</div>
+            <div className="flex-1">{user}</div>
             {Array.from(labels).map((label) => {
               return (
                 <div key={`${user}-${label}`} className="flex gap-2 flex-1">
