@@ -1,5 +1,10 @@
 import { db } from "@/db";
-import { projectLabels, taskLabels, taskLabelsRelations } from "@/db/schema";
+import {
+  authUser,
+  projectLabels,
+  taskLabels,
+  taskLabelsRelations,
+} from "@/db/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { unstable_noStore } from "next/cache";
 
@@ -42,12 +47,18 @@ export async function fetchTaskLabelStatistics(projectId: string) {
     .select({
       labelId: taskLabels.labelId,
       labelName: projectLabels.labelName,
+      user: authUser.name,
       labelValue: taskLabels.value,
-      count: sql<number>`count
-                (${taskLabels.id})`,
+      count: sql<number>`count(*)::int`,
     })
     .from(taskLabels)
     .innerJoin(projectLabels, eq(taskLabels.labelId, projectLabels.id))
+    .innerJoin(authUser, eq(taskLabels.labeledBy, authUser.id))
     .where(and(eq(projectLabels.projectId, projectId)))
-    .groupBy(taskLabels.labelId, taskLabels.value, projectLabels.labelName);
+    .groupBy(
+      taskLabels.labelId,
+      taskLabels.value,
+      projectLabels.labelName,
+      authUser.id,
+    );
 }
