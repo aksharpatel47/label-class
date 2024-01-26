@@ -47,7 +47,7 @@ const useImageTableStore = create<State & Actions>()(
         state.index = Math.max(0, state.index - 1);
       });
     },
-  }))
+  })),
 );
 
 export function ImageTable(props: {
@@ -113,25 +113,16 @@ export function ImageTable(props: {
     <>
       {/* <UserDropdown users={props.users} /> */}
       <div className="flex gap-8">
-        <div className="w-[300px] h-svh overflow-y-scroll">
+        <div className="w-[300px]">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Image</TableHead>
                 <TableHead>File Name</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.map((task: Task, i: number) => (
                 <TableRow key={task.id} onClick={() => setIndex(i)}>
-                  <TableCell className="font-medium">
-                    <Image
-                      src={task.imageUrl}
-                      alt={task.name}
-                      height={50}
-                      width={50}
-                    />
-                  </TableCell>
                   <TableCell>{task.name}</TableCell>
                 </TableRow>
               ))}
