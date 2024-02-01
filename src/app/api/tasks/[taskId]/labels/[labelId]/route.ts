@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { taskId: string; labelId: string } }
+  { params }: { params: { taskId: string; labelId: string } },
 ) {
   const session = await getRouteSession(request.method);
   if (!session) {
@@ -26,10 +26,12 @@ export async function POST(
       value: data.value,
     })
     .onConflictDoUpdate({
-      target: [taskLabels.taskId, taskLabels.labelId, taskLabels.labeledBy],
+      target: [taskLabels.taskId, taskLabels.labelId],
       set: {
         labelId,
         value: data.value,
+        labelUpdatedBy: session.user.id,
+        updatedAt: sql`now()`,
       },
     });
 
@@ -43,7 +45,7 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { taskId: string; labelId: string } }
+  { params }: { params: { taskId: string; labelId: string } },
 ) {
   const session = await getRouteSession(request.method);
   if (!session) {
@@ -58,8 +60,8 @@ export async function DELETE(
       and(
         eq(taskLabels.taskId, taskId),
         eq(taskLabels.labelId, labelId),
-        eq(taskLabels.labeledBy, session.user.id)
-      )
+        eq(taskLabels.labeledBy, session.user.id),
+      ),
     );
 
   await db

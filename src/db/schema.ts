@@ -95,7 +95,7 @@ export const projectLabels = pgTable(
   },
   (t) => ({
     proj_label_unq: unique().on(t.projectId, t.labelName),
-  })
+  }),
 );
 
 export type ProjectLabel = typeof projectLabels.$inferSelect;
@@ -107,7 +107,7 @@ export const projectLabelsRelations = relations(
       fields: [projectLabels.projectId],
       references: [projects.id],
     }),
-  })
+  }),
 );
 
 export const tasks = pgTable(
@@ -127,7 +127,7 @@ export const tasks = pgTable(
   },
   (t) => ({
     img_proj_unq: unique().on(t.imageUrl, t.projectId),
-  })
+  }),
 );
 
 export type Task = typeof tasks.$inferSelect;
@@ -166,14 +166,15 @@ export const taskLabels = pgTable(
     labeledBy: text("labeled_by")
       .references(() => authUser.id)
       .notNull(),
+    labelUpdatedBy: text("label_updated_by").references(() => authUser.id),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }),
   },
   (t) => ({
-    task_label_user_unq: unique().on(t.taskId, t.labelId, t.labeledBy),
-  })
+    task_label_unq: unique().on(t.taskId, t.labelId),
+  }),
 );
 
 export type TaskLabel = typeof taskLabels.$inferSelect;
@@ -189,6 +190,10 @@ export const taskLabelsRelations = relations(taskLabels, ({ one, many }) => ({
   }),
   labeledBy: one(authUser, {
     fields: [taskLabels.labeledBy],
+    references: [authUser.id],
+  }),
+  labelUpdatedBy: one(authUser, {
+    fields: [taskLabels.labelUpdatedBy],
     references: [authUser.id],
   }),
 }));
@@ -220,7 +225,7 @@ export const taskInferences = pgTable(
   },
   (t) => ({
     task_model_unq: unique().on(t.taskId, t.modelId),
-  })
+  }),
 );
 
 export type TaskInferences = typeof taskInferences.$inferSelect;

@@ -29,6 +29,13 @@
       "when": 1705905773383,
       "tag": "0003_shallow_zarek",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1706822007051,
+      "tag": "0004_mighty_bloodaxe",
+      "breakpoints": true
     }
   ]
 }

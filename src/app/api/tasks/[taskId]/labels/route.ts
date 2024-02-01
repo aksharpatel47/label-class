@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { taskId: string } }
+  { params }: { params: { taskId: string } },
 ) {
   const session = await getRouteSession(req.method);
 
@@ -15,10 +15,7 @@ export async function GET(
   }
 
   const results = await db.query.taskLabels.findMany({
-    where: and(
-      eq(taskLabels.taskId, params.taskId),
-      eq(taskLabels.labeledBy, session.user.id)
-    ),
+    where: and(eq(taskLabels.taskId, params.taskId)),
     with: {
       label: true,
     },
