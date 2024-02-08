@@ -49,7 +49,7 @@ export async function selectionAction(
                  inner join public.tasks t on tl.task_id = t.id
                  inner join public.task_inferences ti on ti.task_id = t.id
                  inner join public.trained_models tm on tm.id = ti.model_id
-        where tm.id = 1
+        where tm.id = ${inferenceModelId}
           and ti.inference >= 75
           and tl.label_id = ${labelId}
           and tl.label_value = 'Absent';
@@ -61,7 +61,7 @@ export async function selectionAction(
                  inner join public.tasks t on tl.task_id = t.id
                  inner join public.task_inferences ti on ti.task_id = t.id
                  inner join public.trained_models tm on tm.id = ti.model_id
-        where tm.id = 1
+        where tm.id = ${inferenceModelId}
           and ti.inference >= 50
           and ti.inference < 75
           and tl.label_id = ${labelId}
@@ -74,7 +74,7 @@ export async function selectionAction(
                  inner join public.tasks t on tl.task_id = t.id
                  inner join public.task_inferences ti on ti.task_id = t.id
                  inner join public.trained_models tm on tm.id = ti.model_id
-        where tm.id = 1
+        where tm.id = ${inferenceModelId}
           and ti.inference >= 25
           and ti.inference < 50
           and tl.label_id = ${labelId}
@@ -87,7 +87,7 @@ export async function selectionAction(
                  inner join public.tasks t on tl.task_id = t.id
                  inner join public.task_inferences ti on ti.task_id = t.id
                  inner join public.trained_models tm on tm.id = ti.model_id
-        where tm.id = 1
+        where tm.id = ${inferenceModelId}
           and ti.inference < 25
           and tl.label_id = ${labelId}
           and tl.label_value = 'Present';
@@ -99,7 +99,7 @@ export async function selectionAction(
                  inner join public.tasks t on tl.task_id = t.id
                  inner join public.task_inferences ti on ti.task_id = t.id
                  inner join public.trained_models tm on tm.id = ti.model_id
-        where tm.id = 1
+        where tm.id = ${inferenceModelId}
           and ti.inference >= 75
           and tl.label_id = ${labelId}
           and tl.label_value = 'Present';
@@ -111,7 +111,7 @@ export async function selectionAction(
                  inner join public.tasks t on tl.task_id = t.id
                  inner join public.task_inferences ti on ti.task_id = t.id
                  inner join public.trained_models tm on tm.id = ti.model_id
-        where tm.id = 1
+        where tm.id = ${inferenceModelId}
           and ti.inference >= 50
           and ti.inference < 75
           and tl.label_id = ${labelId}
@@ -124,7 +124,7 @@ export async function selectionAction(
                  inner join public.tasks t on tl.task_id = t.id
                  inner join public.task_inferences ti on ti.task_id = t.id
                  inner join public.trained_models tm on tm.id = ti.model_id
-        where tm.id = 1
+        where tm.id = ${inferenceModelId}
           and ti.inference >= 25
           and ti.inference < 50
           and tl.label_id = ${labelId}
@@ -137,7 +137,7 @@ export async function selectionAction(
                      inner join public.tasks t on tl.task_id = t.id
                      inner join public.task_inferences ti on ti.task_id = t.id
                      inner join public.trained_models tm on tm.id = ti.model_id
-            where tm.id = 1
+            where tm.id = ${inferenceModelId}
             and ti.inference < 25
             and tl.label_id = ${labelId}
             and tl.label_value = 'Absent';
