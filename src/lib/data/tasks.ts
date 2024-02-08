@@ -5,7 +5,6 @@ import {
   and,
   asc,
   eq,
-  gt,
   gte,
   inArray,
   isNull,
@@ -14,7 +13,6 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import { PgSelectQueryBuilder, QueryBuilder } from "drizzle-orm/pg-core";
 import { unstable_noStore } from "next/cache";
 
 export function addTaskInProject(projectId: string, name: string, url: string) {
@@ -47,7 +45,7 @@ export async function fetchTasksInProject(projectId: string, page: number) {
 }
 
 export function fetchNumberOfTasksInProject(
-  projectId: string
+  projectId: string,
 ): Promise<number> {
   return db
     .select({
@@ -66,7 +64,7 @@ export async function fetchTasksForLabeling(
   labelId?: string | null,
   labelValue?: string | null,
   trainedModel?: string | null,
-  inferenceValue?: string | null
+  inferenceValue?: string | null,
 ) {
   let sl = db
     .select({
@@ -91,7 +89,7 @@ export async function fetchTasksForLabeling(
 
       filters.push(
         eq(taskLabels.labelId, labelId),
-        eq(taskLabels.value, labelValue as any)
+        eq(taskLabels.value, labelValue as any),
       );
     }
   }
@@ -103,10 +101,10 @@ export async function fetchTasksForLabeling(
   const userFilter = or(
     and(
       eq(tasks.assignedTo, currentUserId),
-      gte(tasks.assignedOn, sql`now() - interval '15 minutes'`)
+      gte(tasks.assignedOn, sql`now() - interval '15 minutes'`),
     ),
     isNull(tasks.assignedTo),
-    lt(tasks.assignedOn, sql`now() - interval '15 minutes'`)
+    lt(tasks.assignedOn, sql`now() - interval '15 minutes'`),
   );
 
   filters.push(userFilter);
@@ -130,8 +128,8 @@ export async function fetchTasksForLabeling(
         and(
           eq(taskInferences.modelId, trainedModelId),
           gte(taskInferences.inference, inferenceValueRange[0]),
-          lte(taskInferences.inference, inferenceValueRange[1])
-        )
+          lte(taskInferences.inference, inferenceValueRange[1]),
+        ),
       );
     }
   }
@@ -154,8 +152,8 @@ export async function fetchTasksForLabeling(
     .where(
       inArray(
         tasks.id,
-        results.map((t: any) => t.id)
-      )
+        results.map((t: any) => t.id),
+      ),
     );
 
   return results;
@@ -165,7 +163,7 @@ export async function addInferenceForTask(
   projectId: string,
   taskName: string,
   trainedModelId: number,
-  inference: number
+  inference: number,
 ) {
   const insertSQL = sql`
   insert into ${taskInferences}

@@ -60,7 +60,7 @@ export default async function Page({ params }: { params: { id: string } }) {
   return (
     <>
       {Array.from(labels).map((label) => (
-        <>
+        <div key={label}>
           <H3 key={label}>{label}</H3>
           <Table>
             <TableHeader>
@@ -101,7 +101,7 @@ export default async function Page({ params }: { params: { id: string } }) {
               </TableRow>
             </TableFooter>
           </Table>
-        </>
+        </div>
       ))}
     </>
   );
