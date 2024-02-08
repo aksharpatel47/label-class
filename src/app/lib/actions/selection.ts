@@ -52,7 +52,8 @@ export async function selectionAction(
         where tm.id = ${inferenceModelId}
           and ti.inference >= 75
           and tl.label_id = ${labelId}
-          and tl.label_value = 'Absent';
+          and tl.label_value = 'Absent'
+          and t.project_id = ${projectId};
     `.then((res) => res[0].count);
 
   const falsePositiveCountLT75 = await sql<{ count: number }[]>`
@@ -65,8 +66,10 @@ export async function selectionAction(
           and ti.inference >= 50
           and ti.inference < 75
           and tl.label_id = ${labelId}
-          and tl.label_value = 'Absent';
-    `.then((res) => res[0].count);
+          and tl.label_value = 'Absent'
+          and t.project_id = ${projectId};
+
+  `.then((res) => res[0].count);
 
   const falseNegativeCountGT25 = await sql<{ count: number }[]>`
         select count(*)::int
@@ -78,8 +81,10 @@ export async function selectionAction(
           and ti.inference >= 25
           and ti.inference < 50
           and tl.label_id = ${labelId}
-          and tl.label_value = 'Present';
-    `.then((res) => res[0].count);
+          and tl.label_value = 'Present'
+          and t.project_id = ${projectId};
+
+  `.then((res) => res[0].count);
 
   const falseNegativeCountLT25 = await sql<{ count: number }[]>`
         select count(*)::int
@@ -90,8 +95,10 @@ export async function selectionAction(
         where tm.id = ${inferenceModelId}
           and ti.inference < 25
           and tl.label_id = ${labelId}
-          and tl.label_value = 'Present';
-    `.then((res) => res[0].count);
+          and tl.label_value = 'Present'
+          and t.project_id = ${projectId};
+
+  `.then((res) => res[0].count);
 
   const truePositiveCountGT75 = await sql<{ count: number }[]>`
         select count(*)::int
@@ -102,8 +109,10 @@ export async function selectionAction(
         where tm.id = ${inferenceModelId}
           and ti.inference >= 75
           and tl.label_id = ${labelId}
-          and tl.label_value = 'Present';
-    `.then((res) => res[0].count);
+          and tl.label_value = 'Present'
+          and t.project_id = ${projectId};
+
+  `.then((res) => res[0].count);
 
   const truePositiveCountLT75 = await sql<{ count: number }[]>`
         select count(*)::int
@@ -115,8 +124,10 @@ export async function selectionAction(
           and ti.inference >= 50
           and ti.inference < 75
           and tl.label_id = ${labelId}
-          and tl.label_value = 'Present';
-    `.then((res) => res[0].count);
+          and tl.label_value = 'Present'
+          and t.project_id = ${projectId};
+
+  `.then((res) => res[0].count);
 
   const trueNegativeCountGT25 = await sql<{ count: number }[]>`
         select count(*)::int
@@ -132,16 +143,18 @@ export async function selectionAction(
     `.then((res) => res[0].count);
 
   const trueNegativeCountLT25 = await sql<{ count: number }[]>`
-            select count(*)::int
-            from task_labels as tl
-                     inner join public.tasks t on tl.task_id = t.id
-                     inner join public.task_inferences ti on ti.task_id = t.id
-                     inner join public.trained_models tm on tm.id = ti.model_id
-            where tm.id = ${inferenceModelId}
-            and ti.inference < 25
-            and tl.label_id = ${labelId}
-            and tl.label_value = 'Absent';
-        `.then((res) => res[0].count);
+      select count(*)::int
+      from task_labels as tl
+               inner join public.tasks t on tl.task_id = t.id
+               inner join public.task_inferences ti on ti.task_id = t.id
+               inner join public.trained_models tm on tm.id = ti.model_id
+      where tm.id = ${inferenceModelId}
+        and ti.inference < 25
+        and tl.label_id = ${labelId}
+        and tl.label_value = 'Absent'
+        and t.project_id = ${projectId};
+
+  `.then((res) => res[0].count);
 
   const eachLabelCount = numImages / 2;
 
