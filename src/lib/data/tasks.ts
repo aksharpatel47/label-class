@@ -14,6 +14,7 @@ import {
   sql,
 } from "drizzle-orm";
 import { unstable_noStore } from "next/cache";
+import { PgTransaction } from "drizzle-orm/pg-core";
 
 export function addTaskInProject(projectId: string, name: string, url: string) {
   return db
@@ -163,8 +164,11 @@ export async function fetchTasksForLabeling(
  *
  * @param projectId
  */
-export function addInferencesForTasks(projectId: string) {
-  return db.execute(sql`
+export function addInferencesForTasks(
+  tx: PgTransaction<any, any, any>,
+  projectId: string,
+) {
+  return tx.execute(sql`
   insert into task_inferences
     (task_id, model_id, inference)
     select t.id, tmp.model_id, tmp.inference

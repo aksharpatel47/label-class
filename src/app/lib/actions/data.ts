@@ -54,7 +54,10 @@ export async function importData(
     for (let i = 0; i < batches; i++) {
       const start = i * batchSize;
       const end = start + batchSize;
-      await db.insert(tasks).values(tasksToInsert.slice(start, end));
+      await db
+        .insert(tasks)
+        .values(tasksToInsert.slice(start, end))
+        .onConflictDoNothing();
     }
 
     revalidatePath(`/api/projects/${projectId}/tasks`);
@@ -105,25 +108,25 @@ export async function importInference(
     };
   });
 
-  // Insert the inferences into the temp_task_inferences table
-  const batchSize = 1000;
-  const batches = Math.ceil(tempInferences.length / batchSize);
+  await db.transaction(async (tx) => {
+    const batchSize = 1000;
+    const batches = Math.ceil(tempInferences.length / batchSize);
 
-  for (let i = 0; i < batches; i++) {
-    const start = i * batchSize;
-    const end = start + batchSize;
-    await db
-      .insert(tempTaskInferences)
-      .values(tempInferences.slice(start, end));
-  }
+    // Insert the inferences into the temp_task_inferences table
+    for (let i = 0; i < batches; i++) {
+      const start = i * batchSize;
+      const end = start + batchSize;
+      await tx
+        .insert(tempTaskInferences)
+        .values(tempInferences.slice(start, end));
+    }
 
-  // Insert the inferences into the task_inferences table
-  await addInferencesForTasks(projectId);
+    // Insert the inferences into the task_inferences table
+    await addInferencesForTasks(tx, projectId);
 
-  // Remove the inferences from the temp_task_inferences table
-  await db
-    .delete(tempTaskInferences)
-    .where(eq(tempTaskInferences.projectId, projectId));
+    // Remove the inferences from the temp_task_inferences table
+    await tx.delete(tempTaskInferences);
+  });
 
   revalidatePath(`/api/projects/${projectId}/tasks`);
 
