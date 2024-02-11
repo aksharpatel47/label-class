@@ -131,6 +131,7 @@ export const tasks = pgTable(
 );
 
 export type Task = typeof tasks.$inferSelect;
+export type TaskInsert = typeof tasks.$inferInsert;
 
 export const tasksRelations = relations(tasks, ({ one, many }) => ({
   project: one(projects, {
@@ -240,3 +241,16 @@ export const taskInferencesRelations = relations(taskInferences, ({ one }) => ({
     references: [trainedModels.id],
   }),
 }));
+
+export const tempTaskInferences = pgTable("temp_task_inferences", {
+  taskName: varchar("task_name", { length: 255 }).notNull(),
+  modelId: integer("model_id")
+    .notNull()
+    .references(() => trainedModels.id),
+  inference: integer("inference").notNull(),
+  projectId: uuid("project_id")
+    .notNull()
+    .references(() => projects.id),
+});
+
+export type TempTaskInferences = typeof tempTaskInferences.$inferSelect;

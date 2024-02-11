@@ -2,6 +2,7 @@
 
 import { importInference } from "@/app/lib/actions/data";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { H2 } from "@/components/ui/typography";
 import { TrainedModels } from "@/db/schema";
-import { useFormState } from "react-dom";
+import { useFormState, useFormStatus } from "react-dom";
 
 interface ILabelImportFormProps {
   projectId: string;
@@ -23,13 +24,33 @@ export function ImportInferenceForm(props: ILabelImportFormProps) {
   const [state, dispatch] = useFormState(importInferenceForProject, undefined);
   return (
     <form action={dispatch} className="flex flex-col gap-4 w-[300px]">
-      <H2>Import Inferences</H2>
-      <Select name="trainedModel" required>
+      <Card className="w-[350px]">
+        <CardHeader>
+          <CardTitle>Import Inferences</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <InferenceFormComponents trainedModels={props.trainedModels} />
+        </CardContent>
+      </Card>
+      {state && <span id="fileMessage">{state}</span>}
+    </form>
+  );
+}
+
+function InferenceFormComponents({
+  trainedModels,
+}: {
+  trainedModels: TrainedModels[];
+}) {
+  const { pending } = useFormStatus();
+  return (
+    <div className="flex flex-col gap-4">
+      <Select name="trainedModel" required disabled={pending}>
         <SelectTrigger>
           <SelectValue placeholder="Select Trained Model" />
         </SelectTrigger>
         <SelectContent>
-          {props.trainedModels.map((trainedModel) => (
+          {trainedModels.map((trainedModel) => (
             <SelectItem
               key={trainedModel.id}
               value={trainedModel.id.toString()}
@@ -39,9 +60,10 @@ export function ImportInferenceForm(props: ILabelImportFormProps) {
           ))}
         </SelectContent>
       </Select>
-      <Input type="file" id="file" name="file" required />
-      <Button type="submit">Import</Button>
-      {state && <span id="fileMessage">{state}</span>}
-    </form>
+      <Input type="file" id="file" name="file" required disabled={pending} />
+      <Button type="submit" disabled={pending}>
+        Import
+      </Button>
+    </div>
   );
 }

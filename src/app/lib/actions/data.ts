@@ -1,42 +1,26 @@
 "use server";
 
 import { db } from "@/db";
-import { projectLabels } from "@/db/schema";
+import {
+  projectLabels,
+  Task,
+  TaskInsert,
+  tasks,
+  tempTaskInferences,
+  TempTaskInferences,
+} from "@/db/schema";
 import { addLabelToTask } from "@/lib/data/labels";
-import { addInferenceForTask, addTaskInProject } from "@/lib/data/tasks";
+import { addInferencesForTasks, addTaskInProject } from "@/lib/data/tasks";
 import { fetchUserById } from "@/lib/data/users";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getPageSession } from "../utils/session";
 
-interface IAnnotation {
-  label: string;
-  labeledBy: string | undefined;
-}
-
-interface IImageData {
-  url: string;
-  annotations: IAnnotation[];
-}
-
-interface ILabelStudJsonData {
-  annotations: {
-    result: {
-      value: {
-        choices: string[];
-      };
-    }[];
-  }[];
-  data: {
-    image: string;
-  };
-}
-
 export async function importData(
   projectId: string,
   userId: string,
   prevState: string | undefined,
-  formData: FormData
+  formData: FormData,
 ) {
   const file = formData.get("file") as File;
   if (!file) {
@@ -50,46 +34,27 @@ export async function importData(
       return "No data in file";
     }
 
-    const user = await fetchUserById(userId);
-    const labelMap = await db.query.projectLabels
-      .findMany({
-        where: eq(projectLabels.projectId, projectId),
-      })
-      .then((labels) =>
-        labels.reduce(
-          (acc, label) => {
-            acc[label.labelName] = label.id;
-            return acc;
-          },
-          {} as Record<string, string>
-        )
-      );
-
     const dataKeys = Object.keys(data);
-    for (let i = 0; i < dataKeys.length; i++) {
-      const key = dataKeys[i];
+    const tasksToInsert: TaskInsert[] = [];
+    for (const key of dataKeys) {
       const item = data[key];
       const imageUrl = new URL(key);
       const fileName = imageUrl.pathname.split("/").pop();
-      const task = await addTaskInProject(projectId, fileName!, key);
-      const taskId = task[0].insertedId;
 
-      if (item === null) {
-        continue;
-      }
+      tasksToInsert.push({
+        name: fileName!,
+        imageUrl: key,
+        projectId,
+      });
+    }
 
-      const itemKeys = Object.keys(item);
+    const batchSize = 1000;
+    const batches = Math.ceil(tasksToInsert.length / batchSize);
 
-      for (let j = 0; j < itemKeys.length; j++) {
-        const itemKey = itemKeys[j];
-        const annotation = item[itemKey];
-
-        if (annotation === null) {
-          continue;
-        }
-
-        await addLabelToTask(taskId, labelMap, itemKey, annotation, user!.id);
-      }
+    for (let i = 0; i < batches; i++) {
+      const start = i * batchSize;
+      const end = start + batchSize;
+      await db.insert(tasks).values(tasksToInsert.slice(start, end));
     }
 
     revalidatePath(`/api/projects/${projectId}/tasks`);
@@ -104,9 +69,10 @@ export async function importData(
 export async function importInference(
   projectId: string,
   prevState: string | undefined,
-  formData: FormData
+  formData: FormData,
 ) {
   const session = await getPageSession();
+
   if (!session) {
     return "Not logged in.";
   }
@@ -126,18 +92,40 @@ export async function importInference(
 
   const rows = fileContents.split("\n").slice(1);
 
-  for (const row of rows) {
+  const tempInferences: TempTaskInferences[] = rows.map((row) => {
     const rowValues = row.split(",");
     const imageName = rowValues[0];
     const inference = rowValues[rowValues.length - 1];
     const inferenceValue = Math.ceil(Number(inference) * 100);
-    await addInferenceForTask(
-      projectId,
-      imageName,
-      trainedModelId,
-      inferenceValue
-    );
+    return {
+      modelId: trainedModelId,
+      inference: inferenceValue,
+      projectId: projectId,
+      taskName: imageName,
+    };
+  });
+
+  // Insert the inferences into the temp_task_inferences table
+  const batchSize = 1000;
+  const batches = Math.ceil(tempInferences.length / batchSize);
+
+  for (let i = 0; i < batches; i++) {
+    const start = i * batchSize;
+    const end = start + batchSize;
+    await db
+      .insert(tempTaskInferences)
+      .values(tempInferences.slice(start, end));
   }
+
+  // Insert the inferences into the task_inferences table
+  await addInferencesForTasks(projectId);
+
+  // Remove the inferences from the temp_task_inferences table
+  await db
+    .delete(tempTaskInferences)
+    .where(eq(tempTaskInferences.projectId, projectId));
+
+  revalidatePath(`/api/projects/${projectId}/tasks`);
 
   return "Done";
 }

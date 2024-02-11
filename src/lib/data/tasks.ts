@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { taskInferences, taskLabels, tasks, trainedModels } from "@/db/schema";
+import { taskInferences, taskLabels, tasks } from "@/db/schema";
 import {
   SQL,
   and,
@@ -159,19 +159,19 @@ export async function fetchTasksForLabeling(
   return results;
 }
 
-export async function addInferenceForTask(
-  projectId: string,
-  taskName: string,
-  trainedModelId: number,
-  inference: number,
-) {
-  const insertSQL = sql`
-  insert into ${taskInferences}
-  (task_id, model_id, inference)
-  select id, ${trainedModelId}, ${inference}
-  from ${tasks}
-  where name=${taskName} and project_id=${projectId}
-  on conflict (task_id, model_id) do update
-  set inference=${inference}, updated_at=now()`;
-  await db.execute(insertSQL);
+/**
+ *
+ * @param projectId
+ */
+export function addInferencesForTasks(projectId: string) {
+  return db.execute(sql`
+  insert into task_inferences
+    (task_id, model_id, inference)
+    select t.id, tmp.model_id, tmp.inference
+    from tasks t
+    inner join temp_task_inferences tmp on t.name = tmp.task_name and t.project_id = tmp.project_id
+    where t.project_id = ${projectId}
+    on conflict (task_id, model_id) do update
+    set inference = excluded.inference, updated_at = now();
+  `);
 }

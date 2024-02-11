@@ -8,13 +8,12 @@ export default async function Page({ params }: { params: { id: string } }) {
   const session = await getPageSession();
   const trainedModels = await fetchTrainedModels();
   return (
-    <>
-      <H2>Import Files</H2>
+    <div className="flex gap-4">
       <ImageImportForm userId={session!.user.id} projectId={params.id} />
       <ImportInferenceForm
         trainedModels={trainedModels}
         projectId={params.id}
       />
-    </>
+    </div>
   );
 }
