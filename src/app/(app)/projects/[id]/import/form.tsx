@@ -39,9 +39,9 @@ function ImageImportFormComponents({ state }: { state: string | undefined }) {
         aria-describedby="fileMessage"
         disabled={pending}
       />
-      {state && <span id="fileMessage">{state}</span>}
       <Button type="submit" disabled={pending}>
         Upload
+        {pending && "ing..."}
       </Button>
     </div>
   );

@@ -69,6 +69,8 @@ export const projects = pgTable("projects", {
     .references(() => authUser.id),
 });
 
+export type Project = typeof projects.$inferSelect;
+
 export const projectsRelations = relations(projects, ({ one, many }) => ({
   creator: one(authUser, {
     fields: [projects.createdBy],
@@ -126,7 +128,7 @@ export const tasks = pgTable(
     assignedOn: timestamp("assigned_on", { withTimezone: true }),
   },
   (t) => ({
-    img_proj_unq: unique().on(t.imageUrl, t.projectId),
+    name_project_unq: unique().on(t.name, t.projectId),
   }),
 );
 
@@ -243,7 +245,7 @@ export const taskInferencesRelations = relations(taskInferences, ({ one }) => ({
 }));
 
 export const tempTaskInferences = pgTable("temp_task_inferences", {
-  taskName: varchar("task_name", { length: 255 }).notNull(),
+  taskName: varchar("task_name", { length: 255 }).notNull().unique(),
   modelId: integer("model_id")
     .notNull()
     .references(() => trainedModels.id),

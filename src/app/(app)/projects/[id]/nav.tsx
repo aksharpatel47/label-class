@@ -1,8 +1,14 @@
 "use client";
 
-import { CustomLink } from "@/components/ui/link";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
+import Link from "next/link";
 
 export function ProjectNav({ id }: { id: string }) {
   const pathName = usePathname();
@@ -12,18 +18,24 @@ export function ProjectNav({ id }: { id: string }) {
     { href: `/projects/${id}/label`, label: "Label" },
     { href: `/projects/${id}/statistics`, label: "Statistics" },
     { href: `/projects/${id}/selection`, label: "Selection" },
-    { href: `/projects/${id}/settings`, label: "Settings" },
+    // { href: `/projects/${id}/settings`, label: "Settings" },
   ];
   return (
-    <div className="flex gap-4">
-      {links.map(({ href, label }) => (
-        <CustomLink
-          key={href}
-          href={href}
-          text={label}
-          isActive={pathName === href}
-        />
-      ))}
-    </div>
+    <NavigationMenu>
+      <NavigationMenuList>
+        {links.map(({ href, label }) => (
+          <NavigationMenuItem key={href}>
+            <Link href={href} legacyBehavior passHref>
+              <NavigationMenuLink
+                className={navigationMenuTriggerStyle()}
+                active={pathName === href}
+              >
+                {label}
+              </NavigationMenuLink>
+            </Link>
+          </NavigationMenuItem>
+        ))}
+      </NavigationMenuList>
+    </NavigationMenu>
   );
 }

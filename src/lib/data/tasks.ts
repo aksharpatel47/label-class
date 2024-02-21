@@ -162,7 +162,8 @@ export async function fetchTasksForLabeling(
 
 /**
  *
- * @param projectId
+ * @param tx - The transaction to use
+ * @param projectId - The project id to add inferences for
  */
 export function addInferencesForTasks(
   tx: PgTransaction<any, any, any>,
@@ -173,7 +174,7 @@ export function addInferencesForTasks(
     (task_id, model_id, inference)
     select t.id, tmp.model_id, tmp.inference
     from tasks t
-    inner join temp_task_inferences tmp on t.name = tmp.task_name and t.project_id = tmp.project_id
+    inner join temp_task_inferences tmp on t.name = tmp.task_name
     where t.project_id = ${projectId}
     on conflict (task_id, model_id) do update
     set inference = excluded.inference, updated_at = now();

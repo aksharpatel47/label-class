@@ -2,16 +2,12 @@
 
 import { db } from "@/db";
 import {
-  projectLabels,
-  Task,
   TaskInsert,
   tasks,
   tempTaskInferences,
   TempTaskInferences,
 } from "@/db/schema";
-import { addLabelToTask } from "@/lib/data/labels";
-import { addInferencesForTasks, addTaskInProject } from "@/lib/data/tasks";
-import { fetchUserById } from "@/lib/data/users";
+import { addInferencesForTasks } from "@/lib/data/tasks";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getPageSession } from "../utils/session";
@@ -108,9 +104,25 @@ export async function importInference(
     };
   });
 
+  console.log(
+    `Inserting ${tempInferences.length} inferences into the temp_task_inferences table.`,
+  );
+
   await db.transaction(async (tx) => {
     const batchSize = 1000;
     const batches = Math.ceil(tempInferences.length / batchSize);
+
+    console.log(
+      `Clearing temp_task_inferences table for project ${projectId}.`,
+    );
+
+    await tx
+      .delete(tempTaskInferences)
+      .where(eq(tempTaskInferences.projectId, projectId));
+
+    console.log(
+      `Inserting ${batches} batches of inferences with each batch of size 1000.`,
+    );
 
     // Insert the inferences into the temp_task_inferences table
     for (let i = 0; i < batches; i++) {
@@ -119,13 +131,28 @@ export async function importInference(
       await tx
         .insert(tempTaskInferences)
         .values(tempInferences.slice(start, end));
+
+      console.log(`Inserted batch ${i + 1} of ${batches}`);
     }
 
+    console.log(
+      `Inserted inferences from the temp_task_inferences table to the tasks table.`,
+    );
     // Insert the inferences into the task_inferences table
     await addInferencesForTasks(tx, projectId);
 
+    console.log(
+      `Inserted inferences into the task_inferences table for project ${projectId} from the temp_task_inferences table.`,
+    );
+
     // Remove the inferences from the temp_task_inferences table
-    await tx.delete(tempTaskInferences);
+    await tx
+      .delete(tempTaskInferences)
+      .where(eq(tempTaskInferences.projectId, projectId));
+
+    console.log(
+      `Deleted inferences from the temp_task_inferences table for project ${projectId}.`,
+    );
   });
 
   revalidatePath(`/api/projects/${projectId}/tasks`);

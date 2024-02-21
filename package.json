@@ -10,7 +10,8 @@
     "test:ci": "echo \"Will be implemented soon\"",
     "studio": "drizzle-kit studio",
     "migrate:create": "drizzle-kit generate:pg",
-    "migrate:apply": "tsx src/db/migrate.ts"
+    "migrate:apply": "tsx src/db/migrate.ts",
+    "migrate:drop": "drizzle-kit drop"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",

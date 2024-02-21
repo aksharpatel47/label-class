@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import clsx from "clsx";
-import { CustomLink } from "../../components/ui/link";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
 
 const links = [
   {
@@ -20,19 +25,25 @@ const links = [
   },
 ];
 export default function NavLinks() {
-  const pathName = usePathname();
+  const pathname = usePathname();
   return (
-    <>
-      {links.map((link) => {
-        return (
-          <CustomLink
-            key={link.name}
-            href={link.href}
-            isActive={pathName.startsWith(link.href)}
-            text={link.name}
-          ></CustomLink>
-        );
-      })}
-    </>
+    <NavigationMenu>
+      <NavigationMenuList>
+        {links.map((link) => {
+          return (
+            <NavigationMenuItem key={link.name}>
+              <Link href={link.href} legacyBehavior passHref>
+                <NavigationMenuLink
+                  className={navigationMenuTriggerStyle()}
+                  active={pathname.startsWith(link.href)}
+                >
+                  {link.name}
+                </NavigationMenuLink>
+              </Link>
+            </NavigationMenuItem>
+          );
+        })}{" "}
+      </NavigationMenuList>
+    </NavigationMenu>
   );
 }
