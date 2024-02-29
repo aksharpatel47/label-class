@@ -24,7 +24,7 @@ type Actions = {
   setLabelValue(
     currentaskId: string,
     labelId: string,
-    value: string | undefined
+    value: string | undefined,
   ): void;
 };
 
@@ -50,7 +50,7 @@ const useLabelTaskStore = create<State & Actions>()(
         const currentLabelIndex = taskLabelValues.indexOf(currentLabelValue);
         const newLabelIndex = (currentLabelIndex + 1) % taskLabelValues.length;
         console.log(
-          `Updating label ${labelId} to ${newLabelIndex} (${taskLabelValues[newLabelIndex]})`
+          `Updating label ${labelId} to ${newLabelIndex} (${taskLabelValues[newLabelIndex]})`,
         );
         const newLabelValue = taskLabelValues[newLabelIndex];
         state.taskLabels[labelId] = newLabelValue;
@@ -72,7 +72,7 @@ const useLabelTaskStore = create<State & Actions>()(
     setLabelValue(
       currentTaskId: string,
       labelId: string,
-      value: string | undefined
+      value: string | undefined,
     ) {
       set((state) => {
         state.taskLabels[labelId] = value;
@@ -89,7 +89,7 @@ const useLabelTaskStore = create<State & Actions>()(
           .then(console.log);
       });
     },
-  }))
+  })),
 );
 
 export function LabelTask({
@@ -106,7 +106,7 @@ export function LabelTask({
       ...acc,
       [`${i + 1}`]: d.id,
     }),
-    {}
+    {},
   );
 
   const {
@@ -159,6 +159,7 @@ export function LabelTask({
             height={640}
             className="flex-1"
           />
+          <div>{task.imageUrl}</div>
         </div>
 
         <div className="flex flex-col flex-1 pl-8 gap-4">
