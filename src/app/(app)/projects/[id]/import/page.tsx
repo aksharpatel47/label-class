@@ -1,4 +1,3 @@
-import { H2 } from "@/components/ui/typography";
 import { ImageImportForm } from "./form";
 import { getPageSession } from "@/app/lib/utils/session";
 import { ImportInferenceForm } from "./import.inference.form";

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFormState, useFormStatus } from "react-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ProjectLabel, projectLabels } from "@/db/schema";
+import { ProjectLabel } from "@/db/schema";
 import {
   Select,
   SelectContent,

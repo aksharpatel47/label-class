@@ -104,15 +104,12 @@ export const projectLabels = pgTable(
 
 export type ProjectLabel = typeof projectLabels.$inferSelect;
 
-export const projectLabelsRelations = relations(
-  projectLabels,
-  ({ one, many }) => ({
-    project: one(projects, {
-      fields: [projectLabels.projectId],
-      references: [projects.id],
-    }),
+export const projectLabelsRelations = relations(projectLabels, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectLabels.projectId],
+    references: [projects.id],
   }),
-);
+}));
 
 export const tasks = pgTable(
   "tasks",
@@ -184,7 +181,7 @@ export const taskLabels = pgTable(
 
 export type TaskLabel = typeof taskLabels.$inferSelect;
 
-export const taskLabelsRelations = relations(taskLabels, ({ one, many }) => ({
+export const taskLabelsRelations = relations(taskLabels, ({ one }) => ({
   task: one(tasks, {
     fields: [taskLabels.taskId],
     references: [tasks.id],

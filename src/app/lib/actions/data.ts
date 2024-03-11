@@ -6,7 +6,6 @@ import { addInferencesForTasks, addLabelsForTasks } from "@/lib/data/tasks";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getPageSession } from "../utils/session";
-import { redirect } from "next/navigation";
 
 export async function importData(
   projectId: string,
