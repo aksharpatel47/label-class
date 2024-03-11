@@ -174,9 +174,26 @@ export function addInferencesForTasks(
     (task_id, model_id, inference)
     select t.id, tmp.model_id, tmp.inference
     from tasks t
-    inner join temp_task_inferences tmp on t.name = tmp.task_name
-    where t.project_id = ${projectId}
+    inner join temp_tasks tmp on t.name = tmp.task_name
+    where t.project_id = ${projectId} and tmp.model_id is not null and tmp.inference is not null
     on conflict (task_id, model_id) do update
     set inference = excluded.inference, updated_at = now();
   `);
+}
+
+export function addLabelsForTasks(
+  tx: PgTransaction<any, any, any>,
+  projectId: string,
+  labeledBy: string,
+) {
+  return tx.execute(sql`
+    insert into task_labels
+        (task_id, label_id, label_value, labeled_by)
+        select t.id, tmp.label_id, tmp.label_value, ${labeledBy}
+        from tasks t
+        inner join temp_tasks tmp on t.name = tmp.task_name
+        where t.project_id = ${projectId} and tmp.label_id is not null and tmp.label_value is not null
+        on conflict (task_id, label_id) do update
+        set label_value = excluded.label_value, updated_at = now(), label_updated_by = ${labeledBy};
+    `);
 }

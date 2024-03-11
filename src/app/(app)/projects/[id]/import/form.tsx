@@ -5,8 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFormState, useFormStatus } from "react-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProjectLabel, projectLabels } from "@/db/schema";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
-export function ImageImportForm(props: { userId: string; projectId: string }) {
+export function ImageImportForm(props: {
+  userId: string;
+  projectId: string;
+  projectLabels: ProjectLabel[];
+}) {
   const importDataWithUser = importData.bind(
     null,
     props.projectId,
@@ -20,14 +33,23 @@ export function ImageImportForm(props: { userId: string; projectId: string }) {
           <CardTitle>Import Images</CardTitle>
         </CardHeader>
         <CardContent>
-          <ImageImportFormComponents state={state} />
+          <ImageImportFormComponents
+            state={state}
+            projectLabels={props.projectLabels}
+          />
         </CardContent>
       </Card>
     </form>
   );
 }
 
-function ImageImportFormComponents({ state }: { state: string | undefined }) {
+function ImageImportFormComponents({
+  state,
+  projectLabels,
+}: {
+  state: string | undefined;
+  projectLabels: ProjectLabel[];
+}) {
   const { pending } = useFormStatus();
   return (
     <div className="flex flex-col gap-4">
@@ -39,6 +61,21 @@ function ImageImportFormComponents({ state }: { state: string | undefined }) {
         aria-describedby="fileMessage"
         disabled={pending}
       />
+      <Label htmlFor="label">Project Label</Label>
+      <Select name="label" defaultValue={"None"} required disabled={pending}>
+        <SelectTrigger>
+          <SelectValue placeholder="Select Label" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={"None"}>None</SelectItem>
+          {projectLabels.map((label) => (
+            <SelectItem key={label.id} value={label.id}>
+              {label.labelName}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
       <Button type="submit" disabled={pending}>
         Upload
         {pending && "ing..."}

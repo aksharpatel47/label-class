@@ -1,16 +1,12 @@
 "use server";
 
 import { db } from "@/db";
-import {
-  TaskInsert,
-  tasks,
-  tempTaskInferences,
-  TempTaskInferences,
-} from "@/db/schema";
-import { addInferencesForTasks } from "@/lib/data/tasks";
+import { TaskInsert, tasks, TempTaskInsert, tempTasks } from "@/db/schema";
+import { addInferencesForTasks, addLabelsForTasks } from "@/lib/data/tasks";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getPageSession } from "../utils/session";
+import { redirect } from "next/navigation";
 
 export async function importData(
   projectId: string,
@@ -22,47 +18,69 @@ export async function importData(
   if (!file) {
     return "No file uploaded";
   }
+  const label = formData.get("label") as string;
 
   const fileContents = await file.text();
-  try {
-    const data = JSON.parse(fileContents);
-    if (!data) {
-      return "No data in file";
-    }
+  const rows = fileContents.split("\n").slice(1);
+  const firstRow = rows[0].split(",");
 
-    const dataKeys = Object.keys(data);
-    const tasksToInsert: TaskInsert[] = [];
-    for (const key of dataKeys) {
-      const item = data[key];
-      const imageUrl = new URL(key);
-      const fileName = imageUrl.pathname.split("/").pop();
+  if (firstRow.length < 2) {
+    return "CSV file is missing required columns.";
+  }
+  if (label && label !== "None" && firstRow.length < 3) {
+    return "Label column is missing from the CSV file.";
+  }
 
-      tasksToInsert.push({
-        name: fileName!,
-        imageUrl: key,
+  const tasksToInsert: TaskInsert[] = rows
+    .map((row) => {
+      const rowValues = row.split(",");
+      const imageName = rowValues[0];
+      const imageUrl = rowValues[1];
+      return {
+        name: imageName,
+        imageUrl,
         projectId,
-      });
-    }
+      };
+    })
+    .filter((task) => task.name && task.imageUrl);
 
-    const batchSize = 1000;
+  const batchSize = 1000;
+  await db.transaction(async (tx) => {
     const batches = Math.ceil(tasksToInsert.length / batchSize);
-
     for (let i = 0; i < batches; i++) {
       const start = i * batchSize;
       const end = start + batchSize;
-      await db
+      await tx
         .insert(tasks)
         .values(tasksToInsert.slice(start, end))
         .onConflictDoNothing();
     }
 
-    revalidatePath(`/api/projects/${projectId}/tasks`);
+    if (label && label !== "None") {
+      const tempTaskRows: TempTaskInsert[] = rows.map((row) => {
+        const rowValues = row.split(",");
+        const imageName = rowValues[0];
+        const labelValue: any = rowValues[2];
+        return {
+          taskName: imageName,
+          labelValue,
+          projectId,
+          labelId: label,
+        };
+      });
 
-    return "Done";
-  } catch (error) {
-    console.error(error);
-    return "File is not valid JSON";
-  }
+      const batches = Math.ceil(tempTaskRows.length / batchSize);
+      for (let i = 0; i < batches; i++) {
+        const start = i * batchSize;
+        const end = start + batchSize;
+        await tx.insert(tempTasks).values(tempTaskRows.slice(start, end));
+      }
+
+      await addLabelsForTasks(tx, projectId, userId);
+
+      await tx.delete(tempTasks).where(eq(tempTasks.projectId, projectId));
+    }
+  });
 }
 
 export async function importInference(
@@ -91,7 +109,7 @@ export async function importInference(
 
   const rows = fileContents.split("\n").slice(1);
 
-  const tempInferences: TempTaskInferences[] = rows.map((row) => {
+  const tempInferences: TempTaskInsert[] = rows.map((row) => {
     const rowValues = row.split(",");
     const imageName = rowValues[0];
     const inference = rowValues[rowValues.length - 1];
@@ -116,9 +134,7 @@ export async function importInference(
       `Clearing temp_task_inferences table for project ${projectId}.`,
     );
 
-    await tx
-      .delete(tempTaskInferences)
-      .where(eq(tempTaskInferences.projectId, projectId));
+    await tx.delete(tempTasks).where(eq(tempTasks.projectId, projectId));
 
     console.log(
       `Inserting ${batches} batches of inferences with each batch of size 1000.`,
@@ -128,9 +144,7 @@ export async function importInference(
     for (let i = 0; i < batches; i++) {
       const start = i * batchSize;
       const end = start + batchSize;
-      await tx
-        .insert(tempTaskInferences)
-        .values(tempInferences.slice(start, end));
+      await tx.insert(tempTasks).values(tempInferences.slice(start, end));
 
       console.log(`Inserted batch ${i + 1} of ${batches}`);
     }
@@ -146,9 +160,7 @@ export async function importInference(
     );
 
     // Remove the inferences from the temp_task_inferences table
-    await tx
-      .delete(tempTaskInferences)
-      .where(eq(tempTaskInferences.projectId, projectId));
+    await tx.delete(tempTasks).where(eq(tempTasks.projectId, projectId));
 
     console.log(
       `Deleted inferences from the temp_task_inferences table for project ${projectId}.`,
