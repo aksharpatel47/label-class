@@ -64,6 +64,20 @@
       "when": 1710140314575,
       "tag": "0008_steep_ulik",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1710530102226,
+      "tag": "0009_soft_ego",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1710530199557,
+      "tag": "0010_amusing_silverclaw",
+      "breakpoints": true
     }
   ]
 }

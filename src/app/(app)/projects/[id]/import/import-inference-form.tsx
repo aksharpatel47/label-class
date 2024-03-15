@@ -23,7 +23,7 @@ export function ImportInferenceForm(props: ILabelImportFormProps) {
   const importInferenceForProject = importInference.bind(null, props.projectId);
   const [state, dispatch] = useFormState(importInferenceForProject, undefined);
   return (
-    <form action={dispatch} className="flex flex-col gap-4 w-[300px]">
+    <form action={dispatch} className="flex flex-col gap-4 w-[350px]">
       <Card className="w-[350px]">
         <CardHeader>
           <CardTitle>Import Inferences</CardTitle>

@@ -2,7 +2,11 @@
 
 import { db } from "@/db";
 import { TaskInsert, tasks, TempTaskInsert, tempTasks } from "@/db/schema";
-import { addInferencesForTasks, addLabelsForTasks } from "@/lib/data/tasks";
+import {
+  addDatasetForTasks,
+  addInferencesForTasks,
+  addLabelsForTasks,
+} from "@/lib/data/tasks";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getPageSession } from "../utils/session";
@@ -169,4 +173,58 @@ export async function importInference(
   revalidatePath(`/api/projects/${projectId}/tasks`);
 
   return "Done";
+}
+
+export async function importDataset(
+  projectId: string,
+  state: string | undefined,
+  formData: FormData,
+) {
+  const session = await getPageSession();
+  if (!session) {
+    return "Not logged in.";
+  }
+
+  const file = formData.get("file") as File;
+  const labelId = formData.get("label") as string;
+
+  if (!file) {
+    return "No file uploaded";
+  }
+
+  if (!labelId) {
+    return "No label selected";
+  }
+
+  const fileContents = await file.text();
+
+  const rows = fileContents.split("\n").slice(1);
+
+  const tempTasksInserts: TempTaskInsert[] = rows
+    .map((row) => {
+      const rowValues = row.split(",");
+      const taskName = rowValues[0];
+      const dataset: any = rowValues[rowValues.length - 1];
+      return {
+        taskName,
+        labelId,
+        dataset,
+      };
+    })
+    .filter((task) => task.taskName && task.dataset);
+
+  await db.transaction(async (tx) => {
+    const batchSize = 1000;
+    const batches = Math.ceil(tempTasksInserts.length / batchSize);
+
+    for (let i = 0; i < batches; i++) {
+      const start = i * batchSize;
+      const end = start + batchSize;
+      await tx.insert(tempTasks).values(tempTasksInserts.slice(start, end));
+    }
+
+    await addDatasetForTasks(tx, projectId, labelId);
+
+    await tx.delete(tempTasks).where(eq(tempTasks.projectId, projectId));
+  });
 }

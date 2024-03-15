@@ -24,6 +24,7 @@ interface ILabelFiltersProps {
     user: string;
     trainedmodel: string;
     inferencevalue: string;
+    dataset: string;
   };
   inferenceValues: string[];
 
@@ -182,6 +183,22 @@ export function LabelFilters(props: ILabelFiltersProps) {
             <XCircle />
           </Button>
         </div>
+      </div>
+      <div>
+        <Label>Dataset</Label>
+        <Select
+          value={props.currentValues.dataset}
+          onValueChange={(newValue) => onSelectChange({ dataset: newValue })}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select Dataset" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="train">Train</SelectItem>
+            <SelectItem value="validation">Validation</SelectItem>
+            <SelectItem value="test">Test</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div className="flex items-center">
         <Button onClick={props.onApplyClick}>Apply</Button>

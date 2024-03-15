@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: { projectId: string } },
 ) {
   const session = await getRouteSession(request.method);
 
@@ -21,6 +21,7 @@ export async function GET(
   const user = searchParams.get("user");
   const trainedModel = searchParams.get("trainedmodel");
   const inferenceValue = searchParams.get("inferencevalue");
+  const dataset = searchParams.get("dataset");
 
   const tasks = await fetchTasksForLabeling(
     session.user.id,
@@ -30,7 +31,8 @@ export async function GET(
     labelId,
     labelValue,
     trainedModel,
-    inferenceValue
+    inferenceValue,
+    dataset,
   );
 
   return NextResponse.json(tasks);

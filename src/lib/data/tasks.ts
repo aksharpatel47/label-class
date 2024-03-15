@@ -1,5 +1,10 @@
 import { db } from "@/db";
-import { taskInferences, taskLabels, tasks } from "@/db/schema";
+import {
+  projectTaskSelections,
+  taskInferences,
+  taskLabels,
+  tasks,
+} from "@/db/schema";
 import {
   SQL,
   and,
@@ -66,6 +71,7 @@ export async function fetchTasksForLabeling(
   labelValue?: string | null,
   trainedModel?: string | null,
   inferenceValue?: string | null,
+  dataset?: string | null,
 ) {
   let sl = db
     .select({
@@ -93,6 +99,9 @@ export async function fetchTasksForLabeling(
         eq(taskLabels.value, labelValue as any),
       );
     }
+  } else if (labelId) {
+    sl = sl.leftJoin(taskLabels, eq(tasks.id, taskLabels.taskId)).$dynamic();
+    filters.push(eq(taskLabels.labelId, labelId));
   }
 
   if (after) {
@@ -133,6 +142,17 @@ export async function fetchTasksForLabeling(
         ),
       );
     }
+  }
+
+  if (dataset) {
+    sl = sl
+      .leftJoin(
+        projectTaskSelections,
+        eq(tasks.id, projectTaskSelections.taskId),
+      )
+      .$dynamic();
+
+    filters.push(eq(projectTaskSelections.dataset, dataset as any));
   }
 
   const results: any = await sl
@@ -196,4 +216,21 @@ export function addLabelsForTasks(
         on conflict (task_id, label_id) do update
         set label_value = excluded.label_value, updated_at = now(), label_updated_by = ${labeledBy};
     `);
+}
+
+export function addDatasetForTasks(
+  tx: PgTransaction<any, any, any>,
+  projectId: string,
+  labelId: string,
+) {
+  return tx.execute(sql`
+        insert into project_task_selections
+            (task_id, label_id, dataset)
+            select t.id, ${labelId}, tmp.dataset
+            from tasks t
+            inner join temp_tasks tmp on t.name = tmp.task_name
+            where t.project_id = ${projectId} and tmp.dataset is not null
+            on conflict (task_id, label_id) do update
+            set dataset = excluded.dataset;
+        `);
 }

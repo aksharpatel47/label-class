@@ -247,9 +247,7 @@ export const tempTasks = pgTable("temp_tasks", {
   taskName: varchar("task_name", { length: 255 }).notNull().unique(),
   modelId: integer("model_id").references(() => trainedModels.id),
   inference: integer("inference"),
-  projectId: uuid("project_id")
-    .notNull()
-    .references(() => projects.id),
+  projectId: uuid("project_id").references(() => projects.id),
   dataset: datasetEnum("dataset"),
   labelId: uuid("label_id").references(() => projectLabels.id),
   labelValue: taskLabelValue("label_value"),
@@ -262,9 +260,6 @@ export const projectTaskSelections = pgTable(
   "project_task_selections",
   {
     id: serial("id").primaryKey().notNull(),
-    projectId: uuid("project_id")
-      .notNull()
-      .references(() => projects.id),
     taskId: uuid("task_id")
       .notNull()
       .references(() => tasks.id),
@@ -274,7 +269,7 @@ export const projectTaskSelections = pgTable(
     dataset: datasetEnum("dataset").notNull(),
   },
   (t) => ({
-    project_task_label_unq: unique().on(t.projectId, t.taskId, t.labelId),
+    task_label_unq: unique().on(t.taskId, t.labelId),
   }),
 );
 
@@ -283,10 +278,6 @@ export type ProjectTaskSelections = typeof projectTaskSelections.$inferSelect;
 export const projectTaskSelectionsRelations = relations(
   projectTaskSelections,
   ({ one }) => ({
-    project: one(projects, {
-      fields: [projectTaskSelections.projectId],
-      references: [projects.id],
-    }),
     task: one(tasks, {
       fields: [projectTaskSelections.taskId],
       references: [tasks.id],
