@@ -1,13 +1,19 @@
 "use server";
 
 import { db } from "@/db";
-import { TaskInsert, tasks, TempTaskInsert, tempTasks } from "@/db/schema";
+import {
+  projectTaskSelections,
+  TaskInsert,
+  tasks,
+  TempTaskInsert,
+  tempTasks,
+} from "@/db/schema";
 import {
   addDatasetForTasks,
   addInferencesForTasks,
   addLabelsForTasks,
 } from "@/lib/data/tasks";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getPageSession } from "../utils/session";
 
@@ -228,4 +234,30 @@ export async function importDataset(
 
     await tx.delete(tempTasks).where(eq(tempTasks.projectId, projectId));
   });
+}
+
+export async function clearDataset(
+  projectId: string,
+  state: string | undefined,
+  formData: FormData,
+) {
+  const session = await getPageSession();
+  if (!session) {
+    return "Not logged in.";
+  }
+
+  const labelId = formData.get("label") as string;
+
+  if (!labelId) {
+    return "No label selected";
+  }
+
+  await db.execute(
+    sql`delete from project_task_selections
+    where task_id in (select id from tasks where project_id = ${projectId})
+    and label_id = ${labelId};
+  `,
+  );
+
+  return "Done";
 }

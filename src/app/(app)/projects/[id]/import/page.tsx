@@ -4,6 +4,7 @@ import { ImportInferenceForm } from "./import-inference-form";
 import { fetchTrainedModels } from "@/lib/data/inferences";
 import { fetchProjectLabels } from "@/lib/data/labels";
 import { ImportDatasetForm } from "@/app/(app)/projects/[id]/import/import-dataset-form";
+import { ClearDatasetForm } from "@/app/(app)/projects/[id]/import/clear-dataset-form";
 
 export default async function Page({ params }: { params: { id: string } }) {
   const session = await getPageSession();
@@ -21,6 +22,7 @@ export default async function Page({ params }: { params: { id: string } }) {
         projectId={params.id}
       />
       <ImportDatasetForm projectId={params.id} projectLabels={projectLabels} />
+      <ClearDatasetForm projectId={params.id} projectLabels={projectLabels} />
     </div>
   );
 }
