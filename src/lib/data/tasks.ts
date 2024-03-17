@@ -144,7 +144,7 @@ export async function fetchTasksForLabeling(
     }
   }
 
-  if (dataset) {
+  if (dataset && labelId) {
     sl = sl
       .leftJoin(
         projectTaskSelections,
@@ -152,7 +152,12 @@ export async function fetchTasksForLabeling(
       )
       .$dynamic();
 
-    filters.push(eq(projectTaskSelections.dataset, dataset as any));
+    filters.push(
+      and(
+        eq(projectTaskSelections.dataset, dataset as any),
+        eq(projectTaskSelections.labelId, labelId),
+      ),
+    );
   }
 
   const results: any = await sl
