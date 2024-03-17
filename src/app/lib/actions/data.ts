@@ -209,6 +209,7 @@ export async function importDataset(
         taskName,
         labelId,
         dataset,
+        projectId,
       };
     })
     .filter((task) => task.taskName && task.dataset);
