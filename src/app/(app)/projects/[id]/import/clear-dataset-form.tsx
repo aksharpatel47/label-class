@@ -2,7 +2,7 @@
 
 import { ProjectLabel } from "@/db/schema";
 import { clearDataset } from "@/app/lib/actions/data";
-import { useFormState } from "react-dom";
+import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 interface IClearDatasetFormProps {
   projectId: string;
@@ -46,9 +47,10 @@ export function ClearDatasetFormComponents({
   state: string | undefined;
   projectLabels: ProjectLabel[];
 }) {
+  const { pending } = useFormStatus();
   return (
     <div className="flex flex-col gap-4">
-      <Select name="label" required disabled={state === "pending"}>
+      <Select name="label" required disabled={pending}>
         <SelectTrigger>
           <SelectValue placeholder={"Select a label"} />
         </SelectTrigger>
@@ -62,10 +64,11 @@ export function ClearDatasetFormComponents({
       </Select>
       <Button
         type="submit"
-        disabled={state === "pending"}
+        disabled={pending}
         className="bg-red-500 hover:bg-red-600 text-white"
       >
         Clear Dataset
+        {pending && <Loader2 className="h-4 w-4 animate-spin" />}
       </Button>
     </div>
   );
