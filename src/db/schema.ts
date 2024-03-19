@@ -15,7 +15,7 @@ import {
 
 export const authUserRoleEnum = pgEnum("auth_user_role", ["ADMIN", "USER"]);
 export type AuthUserRole = typeof authUserRoleEnum.enumValues;
-export const datasetEnum = pgEnum("dataset", ["train", "validation", "test"]);
+export const datasetEnum = pgEnum("dataset", ["train", "valid", "test"]);
 export type Dataset = typeof datasetEnum.enumValues;
 
 export const authUser = pgTable("auth_user", {

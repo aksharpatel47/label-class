@@ -2,8 +2,10 @@ import { db } from "@/db";
 import {
   authUser,
   projectLabels,
+  projectTaskSelections,
   taskLabels,
   taskLabelsRelations,
+  tasks,
 } from "@/db/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { unstable_noStore } from "next/cache";
@@ -60,5 +62,40 @@ export async function fetchTaskLabelStatistics(projectId: string) {
       taskLabels.value,
       projectLabels.labelName,
       authUser.id,
+    );
+}
+
+/**
+ * Fetches the dataset statistics for a given project for all the project labels
+ * @param projectId
+ */
+export async function fetchDatasetStatistics(projectId: string) {
+  unstable_noStore();
+
+  return db
+    .select({
+      dataset: projectTaskSelections.dataset,
+      labelName: projectLabels.labelName,
+      labelValue: taskLabels.value,
+      count: sql<number>`count(project_task_selections.task_id)::int`,
+    })
+    .from(projectTaskSelections)
+    .innerJoin(tasks, eq(projectTaskSelections.taskId, tasks.id))
+    .innerJoin(
+      taskLabels,
+      and(
+        eq(tasks.id, taskLabels.taskId),
+        eq(taskLabels.labelId, projectTaskSelections.labelId),
+      ),
+    )
+    .innerJoin(
+      projectLabels,
+      eq(projectTaskSelections.labelId, projectLabels.id),
+    )
+    .where(and(eq(tasks.projectId, projectId)))
+    .groupBy(
+      projectTaskSelections.dataset,
+      projectLabels.labelName,
+      taskLabels.value,
     );
 }
