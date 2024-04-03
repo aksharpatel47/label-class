@@ -194,6 +194,7 @@ export function LabelFilters(props: ILabelFiltersProps) {
             <SelectValue placeholder="Select Dataset" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="any">Any</SelectItem>
             <SelectItem value="train">Train</SelectItem>
             <SelectItem value="valid">Validation</SelectItem>
             <SelectItem value="test">Test</SelectItem>

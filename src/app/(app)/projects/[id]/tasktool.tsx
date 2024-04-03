@@ -94,10 +94,12 @@ const useLabelTaskStore = create<State & Actions>()(
 
 export function LabelTask({
   task,
+  nextTask,
   projectLabels,
   className,
 }: {
   task: Task;
+  nextTask?: Task;
   projectLabels: ProjectLabel[];
   className?: string;
 }) {
@@ -184,6 +186,15 @@ export function LabelTask({
               </ToggleGroup>
             </div>
           ))}
+          <div>Next Image...</div>
+          {nextTask && (
+            <Image
+              src={nextTask.imageUrl}
+              alt={nextTask.id}
+              width={100}
+              height={100}
+            />
+          )}
         </div>
       </div>
     </div>

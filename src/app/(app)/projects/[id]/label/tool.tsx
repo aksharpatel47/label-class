@@ -174,7 +174,11 @@ export function Tool(props: IToolProps) {
           {index + 1} of {tasks.length}. Current task bookmark:{" "}
           {tasks[index].createdAt as any}
         </div>
-        <LabelTask task={tasks[index]} projectLabels={props.projectLabels} />
+        <LabelTask
+          task={tasks[index]}
+          nextTask={index < tasks.length - 1 ? tasks[index + 1] : undefined}
+          projectLabels={props.projectLabels}
+        />
       </div>
     );
   }
