@@ -186,14 +186,16 @@ export function LabelTask({
               </ToggleGroup>
             </div>
           ))}
-          <div>Next Image...</div>
           {nextTask && (
-            <Image
-              src={nextTask.imageUrl}
-              alt={nextTask.id}
-              width={100}
-              height={100}
-            />
+            <>
+              <div>Next Image...</div>
+              <Image
+                src={nextTask.imageUrl}
+                alt={nextTask.id}
+                width={100}
+                height={100}
+              />
+            </>
           )}
         </div>
       </div>
