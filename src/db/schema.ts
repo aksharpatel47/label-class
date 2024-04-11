@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
   bigint,
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -128,6 +129,8 @@ export const tasks = pgTable(
   },
   (t) => ({
     name_project_unq: unique().on(t.name, t.projectId),
+    project_index: index().on(t.projectId),
+    name_index: index().on(t.name),
   }),
 );
 
@@ -243,15 +246,21 @@ export const taskInferencesRelations = relations(taskInferences, ({ one }) => ({
   }),
 }));
 
-export const tempTasks = pgTable("temp_tasks", {
-  taskName: varchar("task_name", { length: 255 }).notNull().unique(),
-  modelId: integer("model_id").references(() => trainedModels.id),
-  inference: integer("inference"),
-  projectId: uuid("project_id").references(() => projects.id),
-  dataset: datasetEnum("dataset"),
-  labelId: uuid("label_id").references(() => projectLabels.id),
-  labelValue: taskLabelValue("label_value"),
-});
+export const tempTasks = pgTable(
+  "temp_tasks",
+  {
+    taskName: varchar("task_name", { length: 255 }).notNull().unique(),
+    modelId: integer("model_id").references(() => trainedModels.id),
+    inference: integer("inference"),
+    projectId: uuid("project_id").references(() => projects.id),
+    dataset: datasetEnum("dataset"),
+    labelId: uuid("label_id").references(() => projectLabels.id),
+    labelValue: taskLabelValue("label_value"),
+  },
+  (t) => ({
+    task_name_index: index().on(t.taskName),
+  }),
+);
 
 export type TempTask = typeof tempTasks.$inferSelect;
 export type TempTaskInsert = typeof tempTasks.$inferInsert;
