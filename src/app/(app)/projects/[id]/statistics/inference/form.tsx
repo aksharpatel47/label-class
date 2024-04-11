@@ -24,7 +24,9 @@ export function InferenceStatisticsForm(props: IInferenceForm) {
         </SelectTrigger>
         <SelectContent>
           {props.trainedModels.map((t) => (
-            <SelectItem value={t.id.toString()}>{t.name}</SelectItem>
+            <SelectItem key={t.id} value={t.id.toString()}>
+              {t.name}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
@@ -34,7 +36,9 @@ export function InferenceStatisticsForm(props: IInferenceForm) {
         </SelectTrigger>
         <SelectContent>
           {props.projectLabels.map((l) => (
-            <SelectItem value={l.id}>{l.labelName}</SelectItem>
+            <SelectItem key={l.id} value={l.id}>
+              {l.labelName}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>

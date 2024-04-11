@@ -2,13 +2,6 @@ import * as context from "next/headers";
 import { auth } from "@/lucia";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
 
 export default async function StatisticsLayout({
   children,
