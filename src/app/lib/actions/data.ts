@@ -1,21 +1,17 @@
 "use server";
 
-import { db } from "@/db";
-import {
-  projectTaskSelections,
-  TaskInsert,
-  tasks,
-  TempTaskInsert,
-  tempTasks,
-} from "@/db/schema";
+import { db, sql as dbSQL } from "@/db";
+import { tempTasks } from "@/db/schema";
 import {
   addDatasetForTasks,
   addInferencesForTasks,
   addLabelsForTasks,
 } from "@/lib/data/tasks";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getPageSession } from "../utils/session";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 
 export async function importData(
   projectId: string,
@@ -40,7 +36,7 @@ export async function importData(
     return "Label column is missing from the CSV file.";
   }
 
-  const tasksToInsert: TaskInsert[] = rows
+  const tasksToInsert: string[] = rows
     .map((row) => {
       const rowValues = row.split(",");
       const imageName = rowValues[0];
@@ -51,42 +47,35 @@ export async function importData(
         projectId,
       };
     })
-    .filter((task) => task.name && task.imageUrl);
+    .filter((task) => task.name && task.imageUrl)
+    .map((task) => `${task.name}\t${task.imageUrl}\t${projectId}\n`);
 
   const batchSize = 1000;
   await db.transaction(async (tx) => {
-    const batches = Math.ceil(tasksToInsert.length / batchSize);
-    for (let i = 0; i < batches; i++) {
-      const start = i * batchSize;
-      const end = start + batchSize;
-      await tx
-        .insert(tasks)
-        .values(tasksToInsert.slice(start, end))
-        .onConflictDoNothing();
-    }
+    // language=PostgreSQL
+    const query =
+      await dbSQL`copy tasks (name, image_url, project_id) from stdin`.writable();
+    await pipeline(Readable.from(tasksToInsert), query);
 
     if (label && label !== "None") {
-      const tempTaskRows: TempTaskInsert[] = rows.map((row) => {
+      const tempTaskRows: string[] = rows.map((row) => {
         const rowValues = row.split(",");
         const imageName = rowValues[0];
         const labelValue: any = rowValues[2];
-        return {
-          taskName: imageName,
-          labelValue,
-          projectId,
-          labelId: label,
-        };
+        return `${imageName}\t${labelValue}\t${projectId}\t${label}\n`;
       });
 
-      const batches = Math.ceil(tempTaskRows.length / batchSize);
-      for (let i = 0; i < batches; i++) {
-        const start = i * batchSize;
-        const end = start + batchSize;
-        await tx.insert(tempTasks).values(tempTaskRows.slice(start, end));
-      }
+      const tempTaskReadable = Readable.from(tempTaskRows);
 
+      console.log(
+        `Inserting ${tempTaskRows.length} tasks into the temp_tasks table.`,
+      );
+
+      // language=PostgreSQL
+      const tempQuery =
+        await dbSQL`copy temp_tasks (task_name, label_value, project_id, label_id) from stdin`.writable();
+      await pipeline(tempTaskReadable, tempQuery);
       await addLabelsForTasks(tx, projectId, userId);
-
       await tx.delete(tempTasks).where(eq(tempTasks.projectId, projectId));
     }
   });
@@ -118,45 +107,24 @@ export async function importInference(
 
   const rows = fileContents.split("\n").slice(1);
 
-  const tempInferences: TempTaskInsert[] = rows.map((row) => {
+  const tempInferenceRows: string[] = rows.map((row) => {
     const rowValues = row.split(",");
     const imageName = rowValues[0];
     const inference = rowValues[rowValues.length - 1];
     const inferenceValue = Math.ceil(Number(inference) * 100);
-    return {
-      modelId: trainedModelId,
-      inference: inferenceValue,
-      projectId: projectId,
-      taskName: imageName,
-    };
+    return `${imageName}\t${inferenceValue}\t${trainedModelId}\t${projectId}\n`;
   });
+  const tempInferences = Readable.from(tempInferenceRows);
 
   console.log(
-    `Inserting ${tempInferences.length} inferences into the temp_task_inferences table.`,
+    `Inserting ${tempInferenceRows.length} inferences into the temp_task_inferences table.`,
   );
 
   await db.transaction(async (tx) => {
-    const batchSize = 1000;
-    const batches = Math.ceil(tempInferences.length / batchSize);
-
-    console.log(
-      `Clearing temp_task_inferences table for project ${projectId}.`,
-    );
-
-    await tx.delete(tempTasks).where(eq(tempTasks.projectId, projectId));
-
-    console.log(
-      `Inserting ${batches} batches of inferences with each batch of size 1000.`,
-    );
-
-    // Insert the inferences into the temp_task_inferences table
-    for (let i = 0; i < batches; i++) {
-      const start = i * batchSize;
-      const end = start + batchSize;
-      await tx.insert(tempTasks).values(tempInferences.slice(start, end));
-
-      console.log(`Inserted batch ${i + 1} of ${batches}`);
-    }
+    // language=PostgreSQL
+    const query =
+      await dbSQL`copy temp_tasks (task_name, inference, model_id, project_id) from stdin`.writable();
+    await pipeline(tempInferences, query);
 
     console.log(
       `Inserted inferences from the temp_task_inferences table to the tasks table.`,
@@ -206,7 +174,7 @@ export async function importDataset(
 
   const rows = fileContents.split("\n").slice(1);
 
-  const tempTasksInserts: TempTaskInsert[] = rows
+  const tempTasksInserts: string[] = rows
     .map((row) => {
       const rowValues = row.split(",");
       const taskName = rowValues[0];
@@ -218,17 +186,17 @@ export async function importDataset(
         projectId,
       };
     })
-    .filter((task) => task.taskName && task.dataset);
+    .filter((task) => task.taskName && task.dataset)
+    .map(
+      (task) =>
+        `${task.taskName}\t${task.labelId}\t${task.dataset}\t${projectId}\n`,
+    );
 
   await db.transaction(async (tx) => {
-    const batchSize = 1000;
-    const batches = Math.ceil(tempTasksInserts.length / batchSize);
-
-    for (let i = 0; i < batches; i++) {
-      const start = i * batchSize;
-      const end = start + batchSize;
-      await tx.insert(tempTasks).values(tempTasksInserts.slice(start, end));
-    }
+    // language=PostgreSQL
+    const query =
+      await dbSQL`copy temp_tasks (task_name, label_id, dataset, project_id) from stdin`.writable();
+    await pipeline(Readable.from(tempTasksInserts), query);
 
     await addDatasetForTasks(tx, projectId, labelId);
 
@@ -253,10 +221,11 @@ export async function clearDataset(
   }
 
   await db.execute(
-    sql`delete from project_task_selections
-    where task_id in (select id from tasks where project_id = ${projectId})
-    and label_id = ${labelId};
-  `,
+    sql`delete
+            from project_task_selections
+            where task_id in (select id from tasks where project_id = ${projectId})
+              and label_id = ${labelId};
+        `,
   );
 
   return "Done";

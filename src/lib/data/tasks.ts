@@ -194,6 +194,7 @@ export function addInferencesForTasks(
   tx: PgTransaction<any, any, any>,
   projectId: string,
 ) {
+  //language=PostgreSQL
   return tx.execute(sql`
   insert into task_inferences
     (task_id, model_id, inference)
@@ -211,6 +212,7 @@ export function addLabelsForTasks(
   projectId: string,
   labeledBy: string,
 ) {
+  //language=PostgreSQL
   return tx.execute(sql`
     insert into task_labels
         (task_id, label_id, label_value, labeled_by)
@@ -228,6 +230,7 @@ export function addDatasetForTasks(
   projectId: string,
   labelId: string,
 ) {
+  //language=PostgreSQL
   return tx.execute(sql`
         insert into project_task_selections
             (task_id, label_id, dataset)
