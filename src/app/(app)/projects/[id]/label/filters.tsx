@@ -8,13 +8,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AuthUser, ProjectLabel, TrainedModels } from "@/db/schema";
+import { AuthUser, ProjectLabel, TrainedModel } from "@/db/schema";
 import { XCircle } from "lucide-react";
 import { Label } from "@/components/ui/label";
 
 interface ILabelFiltersProps {
   users: AuthUser[];
-  trainedModels: TrainedModels[];
+  trainedModels: TrainedModel[];
   projectLabels: ProjectLabel[];
   labelValues: string[];
   onApplyClick: () => void;

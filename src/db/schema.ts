@@ -208,7 +208,7 @@ export const trainedModels = pgTable("trained_models", {
   name: varchar("name", { length: 255 }).notNull(),
 });
 
-export type TrainedModels = typeof trainedModels.$inferSelect;
+export type TrainedModel = typeof trainedModels.$inferSelect;
 
 export const taskInferences = pgTable(
   "task_inferences",

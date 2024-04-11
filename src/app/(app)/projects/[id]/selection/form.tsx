@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ProjectLabel, TrainedModels } from "@/db/schema";
+import { ProjectLabel, TrainedModel } from "@/db/schema";
 import { selectionAction } from "@/app/lib/actions/selection";
 import { useFormState } from "react-dom";
 import { H3 } from "@/components/ui/typography";
@@ -17,7 +17,7 @@ import { H3 } from "@/components/ui/typography";
 interface ISelectionFormProps {
   projectId: string;
   projectLabels: ProjectLabel[];
-  trainedModels: TrainedModels[];
+  trainedModels: TrainedModel[];
 }
 
 export function SelectionForm({

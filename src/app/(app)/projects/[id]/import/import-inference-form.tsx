@@ -11,13 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { TrainedModels } from "@/db/schema";
+import { TrainedModel } from "@/db/schema";
 import { useFormState, useFormStatus } from "react-dom";
 import { CheckCircle2, Loader2 } from "lucide-react";
 
 interface ILabelImportFormProps {
   projectId: string;
-  trainedModels: TrainedModels[];
+  trainedModels: TrainedModel[];
 }
 export function ImportInferenceForm(props: ILabelImportFormProps) {
   const importInferenceForProject = importInference.bind(null, props.projectId);
@@ -43,7 +43,7 @@ function InferenceFormComponents({
   trainedModels,
   state,
 }: {
-  trainedModels: TrainedModels[];
+  trainedModels: TrainedModel[];
   state?: string;
 }) {
   const { pending } = useFormStatus();
