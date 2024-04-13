@@ -19,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { unstable_noStore } from "next/cache";
 
 export default async function Page({
   params,
@@ -27,6 +28,8 @@ export default async function Page({
   params: { id: string };
   searchParams?: { trainedModelId?: string; label?: string; dataset?: Dataset };
 }) {
+  unstable_noStore();
+
   const trainedModels = await fetchTrainedModels();
   const projectLabels = await fetchProjectLabels(params.id);
 
@@ -49,6 +52,7 @@ export default async function Page({
         and(
           eq(tasks.projectId, params.id),
           eq(projectTaskSelections.dataset, searchParams.dataset as any),
+          eq(projectTaskSelections.labelId, searchParams.label),
           eq(taskLabels.labelId, searchParams.label),
         ),
       );
@@ -135,9 +139,7 @@ export default async function Page({
     <>
       <InferenceStatisticsForm
         trainedModels={trainedModels}
-        selectedModelId={searchParams?.trainedModelId}
         projectLabels={projectLabels}
-        label={searchParams?.label}
       />
       {statsNode}
     </>

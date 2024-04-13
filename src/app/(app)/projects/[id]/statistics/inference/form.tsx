@@ -1,3 +1,5 @@
+"use client";
+
 import { ProjectLabel, TrainedModel } from "@/db/schema";
 import {
   Select,
@@ -7,18 +9,47 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 interface IInferenceForm {
   trainedModels: TrainedModel[];
-  selectedModelId?: string;
-  label?: string;
   projectLabels: ProjectLabel[];
-  dataset?: string;
 }
+
 export function InferenceStatisticsForm(props: IInferenceForm) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathName = usePathname();
+  const currentValues = {
+    label: searchParams.get("label") || "",
+    trainedModelId: searchParams.get("trainedModelId") || "",
+    dataset: searchParams.get("dataset") || "",
+  };
+
+  function handleSelectChange(newValues: {
+    [key: string]: string | undefined;
+  }) {
+    const urlSearchParams = new URLSearchParams(searchParams);
+    for (const key in newValues) {
+      const value = newValues[key];
+      if (value) {
+        urlSearchParams.set(key, value);
+      }
+    }
+
+    router.push(`${pathName}?${urlSearchParams.toString()}`);
+  }
+
   return (
     <form method="get" className="flex gap-4">
-      <Select name="trainedModelId">
+      <Select
+        name="trainedModelId"
+        value={currentValues.trainedModelId}
+        onValueChange={(newVal) =>
+          handleSelectChange({ trainedModelId: newVal })
+        }
+        required
+      >
         <SelectTrigger className="w-[400px]">
           <SelectValue placeholder="Select Trained Model" />
         </SelectTrigger>
@@ -30,7 +61,12 @@ export function InferenceStatisticsForm(props: IInferenceForm) {
           ))}
         </SelectContent>
       </Select>
-      <Select name="label">
+      <Select
+        name="label"
+        value={currentValues.label}
+        onValueChange={(newVal) => handleSelectChange({ label: newVal })}
+        required
+      >
         <SelectTrigger className="w-[400px]">
           <SelectValue placeholder="Select Project Label" />
         </SelectTrigger>
@@ -42,7 +78,11 @@ export function InferenceStatisticsForm(props: IInferenceForm) {
           ))}
         </SelectContent>
       </Select>
-      <Select name="dataset">
+      <Select
+        name="dataset"
+        value={currentValues.dataset}
+        onValueChange={(newVal) => handleSelectChange({ dataset: newVal })}
+      >
         <SelectTrigger className="w-[400px]">
           <SelectValue placeholder="Select Dataset" />
         </SelectTrigger>
@@ -52,7 +92,7 @@ export function InferenceStatisticsForm(props: IInferenceForm) {
           <SelectItem value="test">Test</SelectItem>
         </SelectContent>
       </Select>
-      <Button type="submit">Submit</Button>
+      {/*<Button type="submit">Submit</Button>*/}
     </form>
   );
 }
