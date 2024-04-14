@@ -1,8 +1,5 @@
-import {
-  fetchDatasetStatistics,
-  fetchTaskLabelStatistics,
-} from "@/lib/data/labels";
-import { H2, H3, H4 } from "@/components/ui/typography";
+import { fetchTaskLabelStatistics } from "@/lib/data/labels";
+import { H3, H4 } from "@/components/ui/typography";
 import {
   Table,
   TableBody,
@@ -12,13 +9,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { datasetEnum } from "@/db/schema";
+import { taskLabelValue } from "@/db/schema";
 import { Separator } from "@/components/ui/separator";
 
 export default async function Page({ params }: { params: { id: string } }) {
   const labelStatistics = await fetchTaskLabelStatistics(params.id);
-
-  const datasetLabelValues = ["Present", "Absent"];
 
   if (labelStatistics.length === 0) {
     return <div>No labels yet.</div>;
@@ -26,7 +21,7 @@ export default async function Page({ params }: { params: { id: string } }) {
 
   const users: Set<string> = new Set();
   const labels: Set<string> = new Set();
-  const labelValues: Set<string> = new Set();
+
   const statistics: any = {};
 
   const labelValuesAnnotationCount: any = {};
@@ -36,7 +31,6 @@ export default async function Page({ params }: { params: { id: string } }) {
     const { user, labelValue, labelName, count } = labelStatistic;
     users.add(user);
     labels.add(labelName);
-    labelValues.add(labelValue);
 
     const labelKey = `${labelName}-${labelValue}`;
     if (!labelValuesAnnotationCount[labelKey]) {
@@ -76,7 +70,7 @@ export default async function Page({ params }: { params: { id: string } }) {
             <TableHeader>
               <TableRow>
                 <TableHead>Labeled By</TableHead>
-                {Array.from(labelValues).map((labelValue) => (
+                {Array.from(taskLabelValue.enumValues).map((labelValue) => (
                   <TableHead key={`${label}-${labelValue}`}>
                     {labelValue}
                   </TableHead>
@@ -88,7 +82,7 @@ export default async function Page({ params }: { params: { id: string } }) {
               {Array.from(users).map((user) => (
                 <TableRow key={`${label}-${user}`}>
                   <TableCell>{user}</TableCell>
-                  {Array.from(labelValues).map((labelValue) => (
+                  {Array.from(taskLabelValue.enumValues).map((labelValue) => (
                     <TableCell key={`${label}-${user}-${labelValue}`}>
                       {statistics[label]?.[user]?.[labelValue] ?? 0}
                     </TableCell>
@@ -102,7 +96,7 @@ export default async function Page({ params }: { params: { id: string } }) {
             <TableFooter>
               <TableRow>
                 <TableCell>Total</TableCell>
-                {Array.from(labelValues).map((labelValue) => (
+                {Array.from(taskLabelValue.enumValues).map((labelValue) => (
                   <TableCell key={`${label}-${labelValue}`}>
                     {labelValuesAnnotationCount[`${label}-${labelValue}`]}
                   </TableCell>
