@@ -282,6 +282,8 @@ export const projectTaskSelections = pgTable(
   }),
 );
 
+export type ProjectTaskSelectionInsert =
+  typeof projectTaskSelections.$inferInsert;
 export type ProjectTaskSelections = typeof projectTaskSelections.$inferSelect;
 
 export const projectTaskSelectionsRelations = relations(

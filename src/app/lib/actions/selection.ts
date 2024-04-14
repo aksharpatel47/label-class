@@ -1,29 +1,146 @@
 "use server";
 
 import { z } from "zod";
-import { sql } from "@/db";
+import { db, sql } from "@/db";
+import { ImageInferenceTypes } from "@/app/lib/models/image";
+import {
+  ProjectTaskSelectionInsert,
+  projectTaskSelections,
+  Task,
+} from "@/db/schema";
+import { revalidatePath } from "next/cache";
 
 const selectionSchema = z.object({
   numImages: z.coerce.number(),
   labelId: z.string(),
   inferenceModelId: z.coerce.number(),
+  imageInferenceType: z.enum(ImageInferenceTypes),
 });
 
 interface IState {
-  counts?: {
-    totalImagesNeeded: number;
-    falsePositiveCountGT75: number;
-    falsePositiveCountLT75: number;
-    falseNegativeCountGT25: number;
-    falseNegativeCountLT25: number;
-    truePositiveCountGT75: number;
-    truePositiveCountLT75: number;
-    trueNegativeCountGT25: number;
-    trueNegativeCountLT25: number;
-    neededPresentLabelCount: number;
-    neededAbsentLabelCount: number;
+  taskData?: {
+    totalAvailableImages: number;
+    tasks: Task[];
+    labelId: string;
   };
   error?: string;
+}
+
+/**
+ * @param array
+ * @returns
+ */
+function shuffle<T>(array: T[]): T[] {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+/**
+ * @param array
+ * @param count
+ * @returns
+ */
+function selectAndShuffle<T>(array: T[], count: number): T[] {
+  return shuffle(array).slice(0, count);
+}
+
+async function fetchTasksForTruePositiveImages(
+  projectId: string,
+  inferenceModelId: number,
+  labelId: string,
+  numImages: number,
+): Promise<Task[]> {
+  // language=PostgreSQL
+  return sql<Task[]>`
+    select t.id, t.image_url as "imageUrl"
+    from tasks t
+           inner join task_inferences ti on t.id = ti.task_id
+           inner join task_labels tl on t.id = tl.task_id
+           left join project_task_selections pts on t.id = pts.task_id
+    where ti.model_id = ${inferenceModelId}
+      and tl.label_id = ${labelId}
+      and tl.label_value = 'Present'
+      and t.project_id = ${projectId}
+      and ti.inference >= 50
+      and pts.dataset is null
+    order by ti.inference desc
+    limit ${numImages};
+  `;
+}
+
+async function fetchTasksForFalsePositiveImages(
+  projectId: string,
+  inferenceModelId: number,
+  labelId: string,
+  numImages: number,
+): Promise<Task[]> {
+  // language=PostgreSQL
+  return sql<Task[]>`
+      select t.id, t.image_url as "imageUrl"
+      from tasks t
+               inner join task_inferences ti on t.id = ti.task_id
+               inner join task_labels tl on t.id = tl.task_id
+               left join project_task_selections pts on t.id = pts.task_id
+      where ti.model_id = ${inferenceModelId}
+        and tl.label_id = ${labelId}
+        and tl.label_value = 'Absent'
+        and t.project_id = ${projectId}
+        and ti.inference >= 50
+        and pts.dataset is null
+      order by ti.inference desc
+      limit ${numImages};
+  `;
+}
+
+async function fetchTasksForFalseNegativeImages(
+  projectId: string,
+  inferenceModelId: number,
+  labelId: string,
+  numImages: number,
+): Promise<Task[]> {
+  // language=PostgreSQL
+  return sql<Task[]>`
+      select t.id, t.image_url as "imageUrl"
+      from tasks t
+               inner join task_inferences ti on t.id = ti.task_id
+               inner join task_labels tl on t.id = tl.task_id
+               left join project_task_selections pts on t.id = pts.task_id
+      where ti.model_id = ${inferenceModelId}
+        and tl.label_id = ${labelId}
+        and tl.label_value = 'Present'
+        and t.project_id = ${projectId}
+        and ti.inference < 50
+        and pts.dataset is null
+      order by ti.inference desc
+      limit ${numImages};
+  `;
+}
+
+async function fetchTasksForTrueNegativeImages(
+  projectId: string,
+  inferenceModelId: number,
+  labelId: string,
+  numImages: number,
+): Promise<Task[]> {
+  // language=PostgreSQL
+  return sql<Task[]>`
+      select t.id, t.image_url as "imageUrl"
+      from tasks t
+               inner join task_inferences ti on t.id = ti.task_id
+               inner join task_labels tl on t.id = tl.task_id
+               left join project_task_selections pts on t.id = pts.task_id
+      where ti.model_id = ${inferenceModelId}
+        and tl.label_id = ${labelId}
+        and tl.label_value = 'Absent'
+        and t.project_id = ${projectId}
+        and ti.inference < 50
+        and pts.dataset is null
+      order by ti.inference desc
+      limit ${numImages};
+  `;
 }
 
 export async function selectionAction(
@@ -42,157 +159,103 @@ export async function selectionAction(
     `numImages: ${numImages}, labelId: ${labelId}, inferenceModelId: ${inferenceModelId}`,
   );
 
-  // first get the number of images where the label does not match the inference model
-  const falsePositiveCountGT75 = await sql<{ count: number }[]>`
-        select count(*)::int
-        from task_labels as tl
-                 inner join public.tasks t on tl.task_id = t.id
-                 inner join public.task_inferences ti on ti.task_id = t.id
-                 inner join public.trained_models tm on tm.id = ti.model_id
-        where tm.id = ${inferenceModelId}
-          and ti.inference >= 75
-          and tl.label_id = ${labelId}
-          and tl.label_value = 'Absent'
-          and t.project_id = ${projectId};
-    `.then((res) => res[0].count);
+  let tasks: Task[] = [];
 
-  const falsePositiveCountLT75 = await sql<{ count: number }[]>`
-        select count(*)::int
-        from task_labels as tl
-                 inner join public.tasks t on tl.task_id = t.id
-                 inner join public.task_inferences ti on ti.task_id = t.id
-                 inner join public.trained_models tm on tm.id = ti.model_id
-        where tm.id = ${inferenceModelId}
-          and ti.inference >= 50
-          and ti.inference < 75
-          and tl.label_id = ${labelId}
-          and tl.label_value = 'Absent'
-          and t.project_id = ${projectId};
+  const { imageInferenceType } = result.data;
 
-  `.then((res) => res[0].count);
+  if (imageInferenceType === "True Positive") {
+    tasks = await fetchTasksForTruePositiveImages(
+      projectId,
+      inferenceModelId,
+      labelId,
+      numImages,
+    );
+  } else if (imageInferenceType === "False Positive") {
+    tasks = await fetchTasksForFalsePositiveImages(
+      projectId,
+      inferenceModelId,
+      labelId,
+      numImages,
+    );
+  } else if (imageInferenceType === "False Negative") {
+    tasks = await fetchTasksForFalseNegativeImages(
+      projectId,
+      inferenceModelId,
+      labelId,
+      numImages,
+    );
+  } else if (imageInferenceType === "True Negative") {
+    tasks = await fetchTasksForTrueNegativeImages(
+      projectId,
+      inferenceModelId,
+      labelId,
+      numImages,
+    );
+  }
 
-  const falseNegativeCountGT25 = await sql<{ count: number }[]>`
-        select count(*)::int
-        from task_labels as tl
-                 inner join public.tasks t on tl.task_id = t.id
-                 inner join public.task_inferences ti on ti.task_id = t.id
-                 inner join public.trained_models tm on tm.id = ti.model_id
-        where tm.id = ${inferenceModelId}
-          and ti.inference >= 25
-          and ti.inference < 50
-          and tl.label_id = ${labelId}
-          and tl.label_value = 'Present'
-          and t.project_id = ${projectId};
+  const totalAvailableImages = tasks.length;
+  const selectedTasks = selectAndShuffle(tasks, numImages);
 
-  `.then((res) => res[0].count);
+  return { taskData: { totalAvailableImages, tasks: selectedTasks, labelId } };
+}
 
-  const falseNegativeCountLT25 = await sql<{ count: number }[]>`
-        select count(*)::int
-        from task_labels as tl
-                 inner join public.tasks t on tl.task_id = t.id
-                 inner join public.task_inferences ti on ti.task_id = t.id
-                 inner join public.trained_models tm on tm.id = ti.model_id
-        where tm.id = ${inferenceModelId}
-          and ti.inference < 25
-          and tl.label_id = ${labelId}
-          and tl.label_value = 'Present'
-          and t.project_id = ${projectId};
+/**
+ * @param {string[]} dataset
+ * @returns {{train: string[], valid: string[], test: string[]}}
+ */
+function splitDataset(dataset: string[]) {
+  dataset = shuffle(dataset);
+  const datasetLength = dataset.length;
+  const validTestImageCount = Math.ceil(datasetLength * 0.15);
+  const trainImageCount = datasetLength - validTestImageCount * 2;
 
-  `.then((res) => res[0].count);
-
-  const truePositiveCountGT75 = await sql<{ count: number }[]>`
-        select count(*)::int
-        from task_labels as tl
-                 inner join public.tasks t on tl.task_id = t.id
-                 inner join public.task_inferences ti on ti.task_id = t.id
-                 inner join public.trained_models tm on tm.id = ti.model_id
-        where tm.id = ${inferenceModelId}
-          and ti.inference >= 75
-          and tl.label_id = ${labelId}
-          and tl.label_value = 'Present'
-          and t.project_id = ${projectId};
-
-  `.then((res) => res[0].count);
-
-  const truePositiveCountLT75 = await sql<{ count: number }[]>`
-        select count(*)::int
-        from task_labels as tl
-                 inner join public.tasks t on tl.task_id = t.id
-                 inner join public.task_inferences ti on ti.task_id = t.id
-                 inner join public.trained_models tm on tm.id = ti.model_id
-        where tm.id = ${inferenceModelId}
-          and ti.inference >= 50
-          and ti.inference < 75
-          and tl.label_id = ${labelId}
-          and tl.label_value = 'Present'
-          and t.project_id = ${projectId};
-
-  `.then((res) => res[0].count);
-
-  const trueNegativeCountGT25 = await sql<{ count: number }[]>`
-        select count(*)::int
-        from task_labels as tl
-                 inner join public.tasks t on tl.task_id = t.id
-                 inner join public.task_inferences ti on ti.task_id = t.id
-                 inner join public.trained_models tm on tm.id = ti.model_id
-        where tm.id = ${inferenceModelId}
-          and ti.inference >= 25
-          and ti.inference < 50
-          and tl.label_id = ${labelId}
-          and tl.label_value = 'Absent';
-    `.then((res) => res[0].count);
-
-  const trueNegativeCountLT25 = await sql<{ count: number }[]>`
-      select count(*)::int
-      from task_labels as tl
-               inner join public.tasks t on tl.task_id = t.id
-               inner join public.task_inferences ti on ti.task_id = t.id
-               inner join public.trained_models tm on tm.id = ti.model_id
-      where tm.id = ${inferenceModelId}
-        and ti.inference < 25
-        and tl.label_id = ${labelId}
-        and tl.label_value = 'Absent'
-        and t.project_id = ${projectId};
-
-  `.then((res) => res[0].count);
-
-  const eachLabelCount = numImages / 2;
-
-  let selectedPresentLabelCount =
-    falseNegativeCountGT25 +
-    falseNegativeCountLT25 +
-    truePositiveCountGT75 +
-    truePositiveCountLT75;
-
-  let neededPresentLabelCount = Math.max(
-    eachLabelCount - selectedPresentLabelCount,
-    0,
+  const trainImages = dataset.slice(0, trainImageCount);
+  const validImages = dataset.slice(
+    trainImageCount,
+    trainImageCount + validTestImageCount,
   );
-
-  const selectedAbsentLabelCount =
-    falsePositiveCountGT75 +
-    falsePositiveCountLT75 +
-    trueNegativeCountGT25 +
-    trueNegativeCountLT25;
-
-  let neededAbsentLabelCount = Math.max(
-    eachLabelCount - selectedAbsentLabelCount,
-    0,
-  );
+  const testImages = dataset.slice(trainImageCount + validTestImageCount);
 
   return {
-    counts: {
-      totalImagesNeeded: numImages,
-      falsePositiveCountGT75,
-      falsePositiveCountLT75,
-      falseNegativeCountGT25,
-      falseNegativeCountLT25,
-      truePositiveCountGT75,
-      truePositiveCountLT75,
-      trueNegativeCountGT25,
-      trueNegativeCountLT25,
-      neededPresentLabelCount,
-      neededAbsentLabelCount,
-    },
+    train: trainImages,
+    valid: validImages,
+    test: testImages,
   };
+}
+
+interface IAddImagesState {
+  error?: string;
+  done?: boolean;
+}
+
+export async function addImagesToDataset(
+  tasks: Task[],
+  labelId: string,
+  prevState: IAddImagesState | undefined,
+  formData: FormData,
+): Promise<IAddImagesState> {
+  const taskIds = tasks.map((image) => image.id);
+  const datasets: any = splitDataset(taskIds);
+
+  let projectTaskSelectionInserts: ProjectTaskSelectionInsert[] = [];
+
+  for (const dataset in datasets) {
+    for (const taskId of datasets[dataset]) {
+      projectTaskSelectionInserts.push({
+        taskId,
+        labelId,
+        dataset: dataset as any,
+      });
+    }
+  }
+
+  try {
+    await db.insert(projectTaskSelections).values(projectTaskSelectionInserts);
+  } catch (e) {
+    return { error: "Failed to add images to dataset" };
+  }
+
+  revalidatePath("/projects/[id]/selection", "page");
+
+  return { done: true };
 }

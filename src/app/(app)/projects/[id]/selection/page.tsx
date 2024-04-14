@@ -1,6 +1,7 @@
 import { SelectionForm } from "@/app/(app)/projects/[id]/selection/form";
 import { fetchTrainedModels } from "@/lib/data/inferences";
 import { fetchProjectLabels } from "@/lib/data/labels";
+import { ImageInferenceTypes } from "@/app/lib/models/image";
 
 export default async function Page({ params }: { params: { id: string } }) {
   const inferenceModels = await fetchTrainedModels();
@@ -8,13 +9,14 @@ export default async function Page({ params }: { params: { id: string } }) {
   return (
     <div className="flex flex-col gap-2">
       <div>
-        Use this page to figure out the distribution of images and how many
-        images are still left to label.
+        Use this page to add images to your dataset based on the inference
+        output of trained model.
       </div>
       <SelectionForm
         trainedModels={inferenceModels}
         projectLabels={projectLabels}
         projectId={params.id}
+        imageInferenceTypes={ImageInferenceTypes}
       />
     </div>
   );
