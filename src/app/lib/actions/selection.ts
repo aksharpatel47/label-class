@@ -7,8 +7,11 @@ import {
   ProjectTaskSelectionInsert,
   projectTaskSelections,
   Task,
+  taskLabels,
+  tasks,
 } from "@/db/schema";
 import { revalidatePath } from "next/cache";
+import { and, eq, inArray } from "drizzle-orm";
 
 const selectionSchema = z.object({
   numImages: z.coerce.number(),
@@ -22,6 +25,7 @@ interface IState {
     totalAvailableImages: number;
     tasks: Task[];
     labelId: string;
+    imageInferenceType: (typeof ImageInferenceTypes)[number];
   };
   error?: string;
 }
@@ -196,7 +200,14 @@ export async function selectionAction(
   const totalAvailableImages = tasks.length;
   const selectedTasks = selectAndShuffle(tasks, numImages);
 
-  return { taskData: { totalAvailableImages, tasks: selectedTasks, labelId } };
+  return {
+    taskData: {
+      totalAvailableImages,
+      tasks: selectedTasks,
+      labelId,
+      imageInferenceType,
+    },
+  };
 }
 
 /**
@@ -229,13 +240,37 @@ interface IAddImagesState {
 }
 
 export async function addImagesToDataset(
-  tasks: Task[],
+  selectedTasks: Task[],
   labelId: string,
+  imageInferenceType: (typeof ImageInferenceTypes)[number],
   prevState: IAddImagesState | undefined,
   formData: FormData,
 ): Promise<IAddImagesState> {
-  const taskIds = tasks.map((image) => image.id);
-  const datasets: any = splitDataset(taskIds);
+  const taskIds = selectedTasks.map((image) => image.id);
+
+  const labelValue =
+    imageInferenceType === "True Positive" ||
+    imageInferenceType === "False Negative"
+      ? "Present"
+      : "Absent";
+
+  const filteredTasks = await db
+    .select({
+      id: tasks.id,
+    })
+    .from(tasks)
+    .innerJoin(taskLabels, eq(tasks.id, taskLabels.taskId))
+    .where(
+      and(
+        eq(taskLabels.labelId, labelId),
+        eq(taskLabels.value, labelValue),
+        inArray(tasks.id, taskIds),
+      ),
+    );
+
+  const filteredTaskIds = filteredTasks.map((task) => task.id);
+
+  const datasets: any = splitDataset(filteredTaskIds);
 
   let projectTaskSelectionInserts: ProjectTaskSelectionInsert[] = [];
 
