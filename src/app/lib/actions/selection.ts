@@ -12,6 +12,7 @@ import {
 } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { and, eq, inArray } from "drizzle-orm";
+import { redirect, RedirectType } from "next/navigation";
 
 const selectionSchema = z.object({
   numImages: z.coerce.number(),
@@ -243,6 +244,7 @@ export async function addImagesToDataset(
   selectedTasks: Task[],
   labelId: string,
   imageInferenceType: (typeof ImageInferenceTypes)[number],
+  projectId: string,
   prevState: IAddImagesState | undefined,
   formData: FormData,
 ): Promise<IAddImagesState> {
@@ -290,7 +292,6 @@ export async function addImagesToDataset(
     return { error: "Failed to add images to dataset" };
   }
 
-  revalidatePath("/projects/[id]/selection", "page");
-
-  return { done: true };
+  revalidatePath(`/projects/${projectId}/selection`, "page");
+  redirect(`/projects/${projectId}`);
 }

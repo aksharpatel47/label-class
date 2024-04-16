@@ -43,6 +43,7 @@ export function SelectionForm({
       state.taskData.tasks,
       state.taskData.labelId,
       state.taskData.imageInferenceType,
+      projectId,
     );
   }
 
