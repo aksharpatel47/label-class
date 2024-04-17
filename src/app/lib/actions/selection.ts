@@ -293,5 +293,5 @@ export async function addImagesToDataset(
   }
 
   revalidatePath(`/projects/${projectId}/selection`, "page");
-  redirect(`/projects/${projectId}`);
+  redirect(`/projects/${projectId}/statistics/dataset`, RedirectType.push);
 }
