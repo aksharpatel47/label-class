@@ -80,7 +80,7 @@ export function Tool(props: IToolProps) {
     setLoadingTasks(true);
     const newSearchParams = new URLSearchParams(searchParams);
     if (tasks !== null && tasks.length > 0) {
-      newSearchParams.set("after", tasks[tasks.length - 1].createdAt as any);
+      newSearchParams.set("after", tasks[tasks.length - 1].id as any);
     }
 
     const res = await fetch(
@@ -124,7 +124,7 @@ export function Tool(props: IToolProps) {
       const after = searchParams.get("after");
       if (index < tasks.length && after !== (tasks[index].createdAt as any)) {
         const newSearchParams = new URLSearchParams(searchParams);
-        newSearchParams.set("after", tasks[index].createdAt as any);
+        newSearchParams.set("after", tasks[index].id.toString() as any);
         router.replace(`${pathName}?${newSearchParams.toString()}`);
       }
     }

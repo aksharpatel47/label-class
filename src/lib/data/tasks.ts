@@ -17,6 +17,7 @@ import {
   lte,
   or,
   sql,
+  ne,
 } from "drizzle-orm";
 import { unstable_noStore } from "next/cache";
 import { PgTransaction } from "drizzle-orm/pg-core";
@@ -105,7 +106,7 @@ export async function fetchTasksForLabeling(
   }
 
   if (after) {
-    filters.push(sql`${tasks.createdAt} > ${after}`);
+    filters.push(sql`${tasks.id} > ${after}`);
   }
 
   const userFilter = or(
@@ -113,8 +114,11 @@ export async function fetchTasksForLabeling(
       eq(tasks.assignedTo, currentUserId),
       gte(tasks.assignedOn, sql`now() - interval '15 minutes'`),
     ),
+    and(
+      ne(tasks.assignedTo, currentUserId),
+      lt(tasks.assignedOn, sql`now() - interval '15 minutes'`),
+    ),
     isNull(tasks.assignedTo),
-    lt(tasks.assignedOn, sql`now() - interval '15 minutes'`),
   );
 
   filters.push(userFilter);
@@ -162,7 +166,7 @@ export async function fetchTasksForLabeling(
 
   const results: any = await sl
     .where(and(...filters))
-    .orderBy(asc(tasks.createdAt))
+    .orderBy(asc(tasks.id))
     .limit(50);
 
   if (!results.length) {
@@ -196,15 +200,18 @@ export function addInferencesForTasks(
 ) {
   //language=PostgreSQL
   return tx.execute(sql`
-  insert into task_inferences
-    (task_id, model_id, inference)
-    select t.id, tmp.model_id, tmp.inference
-    from tasks t
-    inner join temp_tasks tmp on t.name = tmp.task_name
-    where t.project_id = ${projectId} and tmp.model_id is not null and tmp.inference is not null
-    on conflict (task_id, model_id) do update
-    set inference = excluded.inference, updated_at = now();
-  `);
+        insert into task_inferences
+            (task_id, model_id, inference)
+        select t.id, tmp.model_id, tmp.inference
+        from tasks t
+                 inner join temp_tasks tmp on t.name = tmp.task_name
+        where t.project_id = ${projectId}
+          and tmp.model_id is not null
+          and tmp.inference is not null
+        on conflict (task_id, model_id) do update
+            set inference  = excluded.inference,
+                updated_at = now();
+    `);
 }
 
 export function addLabelsForTasks(
@@ -214,14 +221,18 @@ export function addLabelsForTasks(
 ) {
   //language=PostgreSQL
   return tx.execute(sql`
-    insert into task_labels
-        (task_id, label_id, label_value, labeled_by)
+        insert into task_labels
+            (task_id, label_id, label_value, labeled_by)
         select t.id, tmp.label_id, tmp.label_value, ${labeledBy}
         from tasks t
-        inner join temp_tasks tmp on t.name = tmp.task_name
-        where t.project_id = ${projectId} and tmp.label_id is not null and tmp.label_value is not null
+                 inner join temp_tasks tmp on t.name = tmp.task_name
+        where t.project_id = ${projectId}
+          and tmp.label_id is not null
+          and tmp.label_value is not null
         on conflict (task_id, label_id) do update
-        set label_value = excluded.label_value, updated_at = now(), label_updated_by = ${labeledBy};
+            set label_value      = excluded.label_value,
+                updated_at       = now(),
+                label_updated_by = ${labeledBy};
     `);
 }
 
@@ -234,11 +245,12 @@ export function addDatasetForTasks(
   return tx.execute(sql`
         insert into project_task_selections
             (task_id, label_id, dataset)
-            select t.id, ${labelId}, tmp.dataset
-            from tasks t
-            inner join temp_tasks tmp on t.name = tmp.task_name
-            where t.project_id = ${projectId} and tmp.dataset is not null
-            on conflict (task_id, label_id) do update
+        select t.id, ${labelId}, tmp.dataset
+        from tasks t
+                 inner join temp_tasks tmp on t.name = tmp.task_name
+        where t.project_id = ${projectId}
+          and tmp.dataset is not null
+        on conflict (task_id, label_id) do update
             set dataset = excluded.dataset;
-        `);
+    `);
 }

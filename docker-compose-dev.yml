@@ -3,7 +3,7 @@ services:
   label-class-db:
     image: postgres:16.1-alpine3.19
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - label-class-db-data:/var/lib/postgresql/data
       - ./backup:/backup
     environment:
       - POSTGRES_USER=postgres
@@ -12,4 +12,4 @@ services:
     ports:
       - "55432:5432"
 volumes:
-  db-data:
+  label-class-db-data:
