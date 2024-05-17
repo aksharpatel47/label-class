@@ -109,20 +109,6 @@ export async function fetchTasksForLabeling(
     filters.push(sql`${tasks.id} > ${after}`);
   }
 
-  const userFilter = or(
-    and(
-      eq(tasks.assignedTo, currentUserId),
-      gte(tasks.assignedOn, sql`now() - interval '15 minutes'`),
-    ),
-    and(
-      ne(tasks.assignedTo, currentUserId),
-      lt(tasks.assignedOn, sql`now() - interval '15 minutes'`),
-    ),
-    isNull(tasks.assignedTo),
-  );
-
-  filters.push(userFilter);
-
   if (trainedModel && inferenceValue) {
     const trainedModelId = Number(trainedModel);
     const inferenceValueRange = inferenceValue
