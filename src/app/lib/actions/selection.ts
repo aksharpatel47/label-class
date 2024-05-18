@@ -56,7 +56,6 @@ async function fetchTasksForTruePositiveImages(
   projectId: string,
   inferenceModelId: number,
   labelId: string,
-  numImages: number,
 ): Promise<Task[]> {
   // language=PostgreSQL
   return sql<Task[]>`
@@ -64,15 +63,14 @@ async function fetchTasksForTruePositiveImages(
     from tasks t
            inner join task_inferences ti on t.id = ti.task_id
            inner join task_labels tl on t.id = tl.task_id
-           left join project_task_selections pts on t.id = pts.task_id
+           left join project_task_selections pts on t.id = pts.task_id and pts.label_id = tl.label_id
     where ti.model_id = ${inferenceModelId}
+      and ti.inference >= 50
       and tl.label_id = ${labelId}
       and tl.label_value = 'Present'
       and t.project_id = ${projectId}
-      and ti.inference >= 50
       and pts.dataset is null
-    order by ti.inference desc
-    limit ${numImages};
+    order by ti.inference
   `;
 }
 
@@ -80,7 +78,6 @@ async function fetchTasksForFalsePositiveImages(
   projectId: string,
   inferenceModelId: number,
   labelId: string,
-  numImages: number,
 ): Promise<Task[]> {
   // language=PostgreSQL
   return sql<Task[]>`
@@ -88,15 +85,14 @@ async function fetchTasksForFalsePositiveImages(
       from tasks t
                inner join task_inferences ti on t.id = ti.task_id
                inner join task_labels tl on t.id = tl.task_id
-               left join project_task_selections pts on t.id = pts.task_id
+               left join project_task_selections pts on t.id = pts.task_id and pts.label_id = tl.label_id
       where ti.model_id = ${inferenceModelId}
+        and ti.inference >= 50
         and tl.label_id = ${labelId}
         and tl.label_value = 'Absent'
         and t.project_id = ${projectId}
-        and ti.inference >= 50
         and pts.dataset is null
       order by ti.inference desc
-      limit ${numImages};
   `;
 }
 
@@ -104,7 +100,6 @@ async function fetchTasksForFalseNegativeImages(
   projectId: string,
   inferenceModelId: number,
   labelId: string,
-  numImages: number,
 ): Promise<Task[]> {
   // language=PostgreSQL
   return sql<Task[]>`
@@ -112,15 +107,13 @@ async function fetchTasksForFalseNegativeImages(
       from tasks t
                inner join task_inferences ti on t.id = ti.task_id
                inner join task_labels tl on t.id = tl.task_id
-               left join project_task_selections pts on t.id = pts.task_id
+               left join project_task_selections pts on t.id = pts.task_id and pts.label_id = tl.label_id
       where ti.model_id = ${inferenceModelId}
+        and ti.inference < 50
         and tl.label_id = ${labelId}
         and tl.label_value = 'Present'
         and t.project_id = ${projectId}
-        and ti.inference < 50
         and pts.dataset is null
-      order by ti.inference desc
-      limit ${numImages};
   `;
 }
 
@@ -128,7 +121,6 @@ async function fetchTasksForTrueNegativeImages(
   projectId: string,
   inferenceModelId: number,
   labelId: string,
-  numImages: number,
 ): Promise<Task[]> {
   // language=PostgreSQL
   return sql<Task[]>`
@@ -136,15 +128,14 @@ async function fetchTasksForTrueNegativeImages(
       from tasks t
                inner join task_inferences ti on t.id = ti.task_id
                inner join task_labels tl on t.id = tl.task_id
-               left join project_task_selections pts on t.id = pts.task_id
+               left join project_task_selections pts on t.id = pts.task_id and pts.label_id = tl.label_id
       where ti.model_id = ${inferenceModelId}
+        and ti.inference < 50
         and tl.label_id = ${labelId}
         and tl.label_value = 'Absent'
         and t.project_id = ${projectId}
-        and ti.inference < 50
         and pts.dataset is null
       order by ti.inference desc
-      limit ${numImages};
   `;
 }
 
@@ -173,33 +164,29 @@ export async function selectionAction(
       projectId,
       inferenceModelId,
       labelId,
-      numImages,
     );
   } else if (imageInferenceType === "False Positive") {
     tasks = await fetchTasksForFalsePositiveImages(
       projectId,
       inferenceModelId,
       labelId,
-      numImages,
     );
   } else if (imageInferenceType === "False Negative") {
     tasks = await fetchTasksForFalseNegativeImages(
       projectId,
       inferenceModelId,
       labelId,
-      numImages,
     );
   } else if (imageInferenceType === "True Negative") {
     tasks = await fetchTasksForTrueNegativeImages(
       projectId,
       inferenceModelId,
       labelId,
-      numImages,
     );
   }
 
   const totalAvailableImages = tasks.length;
-  const selectedTasks = selectAndShuffle(tasks, numImages);
+  const selectedTasks = tasks.slice(0, numImages);
 
   return {
     taskData: {

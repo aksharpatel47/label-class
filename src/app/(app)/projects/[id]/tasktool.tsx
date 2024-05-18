@@ -97,11 +97,13 @@ export function LabelTask({
   nextTask,
   projectLabels,
   className,
+  disableKeyboardShortcuts,
 }: {
   task: Task;
   nextTask?: Task;
   projectLabels: ProjectLabel[];
   className?: string;
+  disableKeyboardShortcuts?: boolean;
 }) {
   const projectLabelKeys = projectLabels.reduce(
     (acc, d, i) => ({
@@ -143,6 +145,9 @@ export function LabelTask({
   }
 
   useEffect(() => {
+    if (disableKeyboardShortcuts) {
+      return;
+    }
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {

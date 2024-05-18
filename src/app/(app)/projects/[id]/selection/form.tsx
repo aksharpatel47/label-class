@@ -15,7 +15,6 @@ import {
   selectionAction,
 } from "@/app/lib/actions/selection";
 import { useFormState } from "react-dom";
-import { H3 } from "@/components/ui/typography";
 import { ImageInferenceTypes } from "@/app/lib/models/image";
 import { ReviewImages } from "@/app/(app)/projects/[id]/selection/review";
 

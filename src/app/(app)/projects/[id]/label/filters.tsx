@@ -186,22 +186,30 @@ export function LabelFilters(props: ILabelFiltersProps) {
       </div>
       <div>
         <Label>Dataset</Label>
-        <Select
-          value={props.currentValues.dataset}
-          onValueChange={(newValue) => onSelectChange({ dataset: newValue })}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select Dataset" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="any">Any</SelectItem>
-            <SelectItem value="train">Train</SelectItem>
-            <SelectItem value="valid">Validation</SelectItem>
-            <SelectItem value="test">Test</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex">
+          <Select
+            value={props.currentValues.dataset}
+            onValueChange={(newValue) => onSelectChange({ dataset: newValue })}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select Dataset" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="any">Any</SelectItem>
+              <SelectItem value="train">Train</SelectItem>
+              <SelectItem value="valid">Validation</SelectItem>
+              <SelectItem value="test">Test</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="ghost"
+            onClick={() => onSelectChange({ dataset: undefined })}
+          >
+            <XCircle />
+          </Button>
+        </div>
       </div>
-      <div className="flex items-center">
+      <div className="flex items-end">
         <Button onClick={props.onApplyClick}>Apply</Button>
       </div>
     </div>

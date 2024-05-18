@@ -45,6 +45,7 @@ export function ReviewImages({ tasks, projectLabels }: IReviewImagesProps) {
             task={tasks[index]}
             nextTask={index < tasks.length - 1 ? tasks[index + 1] : undefined}
             projectLabels={projectLabels}
+            disableKeyboardShortcuts={true}
           />
         )}
       </div>
