@@ -193,12 +193,12 @@ export function LabelTask({
           ))}
           {nextTask && (
             <>
-              <div>Next Image...</div>
               <Image
                 src={nextTask.imageUrl}
                 alt={nextTask.id}
-                width={100}
-                height={100}
+                width={600}
+                height={600}
+                className="hidden"
               />
             </>
           )}
