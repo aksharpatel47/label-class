@@ -144,6 +144,8 @@ export async function fetchTasksForLabeling(
 
     if (dataset === "any") {
       filters.push(eq(projectTaskSelections.labelId, labelId));
+    } else if (dataset === "none") {
+      filters.push(isNull(projectTaskSelections.labelId));
     } else {
       filters.push(
         and(
