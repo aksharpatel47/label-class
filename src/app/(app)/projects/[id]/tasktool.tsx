@@ -159,13 +159,7 @@ export function LabelTask({
     <div className={className}>
       <div className="flex h-svh">
         <div className="h-full">
-          <Image
-            src={task.imageUrl}
-            alt={task.id}
-            width={640}
-            height={640}
-            className="flex-1"
-          />
+          <img src={task.imageUrl} alt={task.id} className="flex-1 h-[600px]" />
           <div>{task.imageUrl}</div>
         </div>
 
@@ -193,12 +187,11 @@ export function LabelTask({
           ))}
           {nextTask && (
             <>
-              <Image
+              <div>Next Image...</div>
+              <img
                 src={nextTask.imageUrl}
                 alt={nextTask.id}
-                width={600}
-                height={600}
-                className="hidden"
+                className="h-[100px] w-[100px]"
               />
             </>
           )}
