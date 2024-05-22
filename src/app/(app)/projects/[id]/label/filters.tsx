@@ -197,7 +197,7 @@ export function LabelFilters(props: ILabelFiltersProps) {
             <SelectContent>
               <SelectItem value="any">Any</SelectItem>
               <SelectItem value="train">Train</SelectItem>
-              <SelectItem value="valid">Validation</SelectItem>
+              <SelectItem value="valid">Valid</SelectItem>
               <SelectItem value="test">Test</SelectItem>
             </SelectContent>
           </Select>

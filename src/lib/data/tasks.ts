@@ -142,12 +142,16 @@ export async function fetchTasksForLabeling(
       )
       .$dynamic();
 
-    filters.push(
-      and(
-        eq(projectTaskSelections.dataset, dataset as any),
-        eq(projectTaskSelections.labelId, labelId),
-      ),
-    );
+    if (dataset === "any") {
+      filters.push(eq(projectTaskSelections.labelId, labelId));
+    } else {
+      filters.push(
+        and(
+          eq(projectTaskSelections.dataset, dataset as any),
+          eq(projectTaskSelections.labelId, labelId),
+        ),
+      );
+    }
   }
 
   const results: any = await sl
