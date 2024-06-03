@@ -9,7 +9,7 @@ import {
   taskLabels,
   tasks,
 } from "@/db/schema";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, sql } from "drizzle-orm";
 
 export interface IIInferenceTablesProps {
   trainedModelId: number;
@@ -26,6 +26,11 @@ export async function InferenceTables({
     return <div>No projects selected.</div>;
   }
 
+  // check if selectedProjects is an array. If not, convert it to an array
+  if (!Array.isArray(selectedProjects)) {
+    selectedProjects = [selectedProjects];
+  }
+
   const tasksWithInferenceAndLabel = await db
     .select({
       projectId: projects.id,
@@ -39,10 +44,19 @@ export async function InferenceTables({
     .innerJoin(projects, eq(tasks.projectId, projects.id))
     .innerJoin(projectLabels, eq(projects.id, projectLabels.projectId))
     .innerJoin(taskInferences, eq(tasks.id, taskInferences.taskId))
-    .innerJoin(taskLabels, eq(tasks.id, taskLabels.taskId))
+    .innerJoin(
+      taskLabels,
+      and(
+        eq(tasks.id, taskLabels.taskId),
+        eq(taskLabels.labelId, projectLabels.id),
+      ),
+    )
     .innerJoin(
       projectTaskSelections,
-      eq(tasks.id, projectTaskSelections.taskId),
+      and(
+        eq(tasks.id, projectTaskSelections.taskId),
+        eq(projectTaskSelections.labelId, projectLabels.id),
+      ),
     )
     .where(
       and(
