@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { projects, tasks } from "@/db/schema";
+import { projectLabels, projects, tasks } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { unstable_noStore } from "next/cache";
 
@@ -13,6 +13,17 @@ export async function fetchProjects() {
       },
     },
   });
+}
+
+export async function fetchProjectLabelNames() {
+  unstable_noStore();
+  const results = await db
+    .selectDistinct({
+      labelName: projectLabels.labelName,
+    })
+    .from(projectLabels);
+
+  return results.map((r) => r.labelName);
 }
 
 export async function fetchProjectsTaskCounts() {

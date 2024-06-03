@@ -53,6 +53,7 @@ export function SelectionForm({
           type="number"
           placeholder="Number of images to select"
           name="numImages"
+          disabled={state && !!state.taskData}
         />
         <Select name="labelId">
           <SelectTrigger>

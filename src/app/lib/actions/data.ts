@@ -50,7 +50,6 @@ export async function importData(
     .filter((task) => task.name && task.imageUrl)
     .map((task) => `${task.name}\t${task.imageUrl}\t${projectId}\n`);
 
-  const batchSize = 1000;
   await db.transaction(async (tx) => {
     // language=PostgreSQL
     const query =
