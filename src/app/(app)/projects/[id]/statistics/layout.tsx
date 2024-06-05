@@ -34,13 +34,6 @@ export default async function StatisticsLayout({
         >
           <span className="underline cursor-pointer">Dataset Statistics</span>
         </Link>
-        <Link
-          href={`/projects/${id}/statistics/inference`}
-          legacyBehavior
-          passHref
-        >
-          <span className="underline cursor-pointer">Inference Statistics</span>
-        </Link>
       </div>
       {children}
     </>

@@ -5,22 +5,10 @@ import {
   taskLabels,
   tasks,
 } from "@/db/schema";
-import {
-  SQL,
-  and,
-  asc,
-  eq,
-  gte,
-  inArray,
-  isNull,
-  lt,
-  lte,
-  or,
-  sql,
-  ne,
-} from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, lte, SQL, sql } from "drizzle-orm";
 import { unstable_noStore } from "next/cache";
 import { PgTransaction } from "drizzle-orm/pg-core";
+import postgres from "postgres";
 
 export function addTaskInProject(projectId: string, name: string, url: string) {
   return db
@@ -122,7 +110,7 @@ export async function fetchTasksForLabeling(
       trainedModelId > 0
     ) {
       sl = sl
-        .leftJoin(taskInferences, eq(tasks.id, taskInferences.taskId))
+        .leftJoin(taskInferences, eq(tasks.name, taskInferences.imageName))
         .$dynamic();
       filters.push(
         and(
@@ -186,24 +174,9 @@ export async function fetchTasksForLabeling(
  * @param tx - The transaction to use
  * @param projectId - The project id to add inferences for
  */
-export function addInferencesForTasks(
-  tx: PgTransaction<any, any, any>,
-  projectId: string,
-) {
+export function addInferencesForTasks(tx: postgres.TransactionSql) {
   //language=PostgreSQL
-  return tx.execute(sql`
-        insert into task_inferences
-            (task_id, model_id, inference)
-        select t.id, tmp.model_id, tmp.inference
-        from tasks t
-                 inner join temp_tasks tmp on t.name = tmp.task_name
-        where t.project_id = ${projectId}
-          and tmp.model_id is not null
-          and tmp.inference is not null
-        on conflict (task_id, model_id) do update
-            set inference  = excluded.inference,
-                updated_at = now();
-    `);
+  return;
 }
 
 export function addLabelsForTasks(

@@ -214,9 +214,7 @@ export const taskInferences = pgTable(
   "task_inferences",
   {
     id: serial("id").primaryKey().notNull(),
-    taskId: uuid("task_id")
-      .notNull()
-      .references(() => tasks.id),
+    imageName: varchar("image_name", { length: 255 }).notNull(),
     modelId: serial("model_id")
       .notNull()
       .references(() => trainedModels.id),
@@ -229,17 +227,13 @@ export const taskInferences = pgTable(
       .defaultNow(),
   },
   (t) => ({
-    task_model_unq: unique().on(t.taskId, t.modelId),
+    task_model_unq: unique().on(t.imageName, t.modelId),
   }),
 );
 
 export type TaskInferences = typeof taskInferences.$inferSelect;
 
 export const taskInferencesRelations = relations(taskInferences, ({ one }) => ({
-  task: one(tasks, {
-    fields: [taskInferences.taskId],
-    references: [tasks.id],
-  }),
   model: one(trainedModels, {
     fields: [taskInferences.modelId],
     references: [trainedModels.id],

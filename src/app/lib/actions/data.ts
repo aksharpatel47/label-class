@@ -2,13 +2,8 @@
 
 import { db, sql as dbSQL } from "@/db";
 import { tempTasks } from "@/db/schema";
-import {
-  addDatasetForTasks,
-  addInferencesForTasks,
-  addLabelsForTasks,
-} from "@/lib/data/tasks";
+import { addDatasetForTasks, addLabelsForTasks } from "@/lib/data/tasks";
 import { eq, sql } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import { getPageSession } from "../utils/session";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -81,7 +76,7 @@ export async function importData(
 }
 
 export async function importInference(
-  projectId: string,
+  modelId: number,
   prevState: string | undefined,
   formData: FormData,
 ) {
@@ -91,7 +86,6 @@ export async function importInference(
     return "Not logged in.";
   }
 
-  const trainedModelId = Number(formData.get("trainedModel") as string);
   const file = formData.get("file") as File;
 
   if (!file) {
@@ -110,8 +104,8 @@ export async function importInference(
     const rowValues = row.split(",");
     const imageName = rowValues[0];
     const inference = rowValues[rowValues.length - 1];
-    const inferenceValue = Math.ceil(Number(inference) * 100);
-    return `${imageName}\t${inferenceValue}\t${trainedModelId}\t${projectId}\n`;
+    const inferenceValue = (Number(inference) * 10000).toFixed(0);
+    return `${imageName}\t${inferenceValue}\t${modelId}\n`;
   });
   const tempInferences = Readable.from(tempInferenceRows);
 
@@ -119,31 +113,42 @@ export async function importInference(
     `Inserting ${tempInferenceRows.length} inferences into the temp_task_inferences table.`,
   );
 
-  await db.transaction(async (tx) => {
+  await dbSQL.begin(async (tx) => {
+    // clear the temp_tasks table
+    // language=PostgreSQL
+    await tx`truncate temp_tasks`;
     // language=PostgreSQL
     const query =
-      await dbSQL`copy temp_tasks (task_name, inference, model_id, project_id) from stdin`.writable();
+      await tx`copy temp_tasks (task_name, inference, model_id) from stdin`.writable();
     await pipeline(tempInferences, query);
 
     console.log(
       `Inserted inferences from the temp_task_inferences table to the tasks table.`,
     );
     // Insert the inferences into the task_inferences table
-    await addInferencesForTasks(tx, projectId);
+    // language=PostgreSQL
+    await tx`
+            insert into task_inferences
+                (image_name, model_id, inference)
+            select t.task_name, t.model_id, t.inference
+            from temp_tasks t
+            where t.model_id is not null
+              and t.inference is not null
+            on conflict (task_name, model_id) do update
+                set inference  = excluded.inference,
+                    updated_at = now();
+        `;
 
     console.log(
-      `Inserted inferences into the task_inferences table for project ${projectId} from the temp_task_inferences table.`,
+      `Inserted inferences into the task_inferences table for model ${modelId} from the temp_task_inferences table.`,
     );
 
-    // Remove the inferences from the temp_task_inferences table
-    await tx.delete(tempTasks).where(eq(tempTasks.projectId, projectId));
+    await tx`truncate temp_tasks`;
 
     console.log(
-      `Deleted inferences from the temp_task_inferences table for project ${projectId}.`,
+      `Deleted inferences from the temp_task_inferences table for model ${modelId}.`,
     );
   });
-
-  revalidatePath(`/api/projects/${projectId}/tasks`);
 
   return "Done";
 }

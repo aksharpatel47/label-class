@@ -16,11 +16,11 @@ import { useFormState, useFormStatus } from "react-dom";
 import { CheckCircle2, Loader2 } from "lucide-react";
 
 interface ILabelImportFormProps {
-  projectId: string;
+  modelId: number;
   trainedModels: TrainedModel[];
 }
 export function ImportInferenceForm(props: ILabelImportFormProps) {
-  const importInferenceForProject = importInference.bind(null, props.projectId);
+  const importInferenceForProject = importInference.bind(null, props.modelId);
   const [state, dispatch] = useFormState(importInferenceForProject, undefined);
   return (
     <form action={dispatch} className="flex flex-col gap-4 w-[350px]">
@@ -29,41 +29,17 @@ export function ImportInferenceForm(props: ILabelImportFormProps) {
           <CardTitle>Import Inferences</CardTitle>
         </CardHeader>
         <CardContent>
-          <InferenceFormComponents
-            trainedModels={props.trainedModels}
-            state={state}
-          />
+          <InferenceFormComponents state={state} />
         </CardContent>
       </Card>
     </form>
   );
 }
 
-function InferenceFormComponents({
-  trainedModels,
-  state,
-}: {
-  trainedModels: TrainedModel[];
-  state?: string;
-}) {
+function InferenceFormComponents({ state }: { state?: string }) {
   const { pending } = useFormStatus();
   return (
     <div className="flex flex-col gap-4">
-      <Select name="trainedModel" required disabled={pending}>
-        <SelectTrigger>
-          <SelectValue placeholder="Select Trained Model" />
-        </SelectTrigger>
-        <SelectContent>
-          {trainedModels.map((trainedModel) => (
-            <SelectItem
-              key={trainedModel.id}
-              value={trainedModel.id.toString()}
-            >
-              {trainedModel.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
       <Input type="file" id="file" name="file" required disabled={pending} />
       <Button type="submit" disabled={pending}>
         Import

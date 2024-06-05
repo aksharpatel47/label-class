@@ -43,7 +43,13 @@ export async function InferenceTables({
     .from(tasks)
     .innerJoin(projects, eq(tasks.projectId, projects.id))
     .innerJoin(projectLabels, eq(projects.id, projectLabels.projectId))
-    .innerJoin(taskInferences, eq(tasks.id, taskInferences.taskId))
+    .innerJoin(
+      taskInferences,
+      and(
+        eq(tasks.name, taskInferences.imageName),
+        eq(taskInferences.modelId, trainedModelId),
+      ),
+    )
     .innerJoin(
       taskLabels,
       and(

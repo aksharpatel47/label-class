@@ -1,6 +1,5 @@
 import { ImageImportForm } from "./import-image-labels-form";
 import { getPageSession } from "@/app/lib/utils/session";
-import { ImportInferenceForm } from "./import-inference-form";
 import { fetchTrainedModels } from "@/lib/data/inferences";
 import { fetchProjectLabels } from "@/lib/data/labels";
 import { ImportDatasetForm } from "@/app/(app)/projects/[id]/import/import-dataset-form";
@@ -16,10 +15,6 @@ export default async function Page({ params }: { params: { id: string } }) {
         userId={session!.user.id}
         projectId={params.id}
         projectLabels={projectLabels}
-      />
-      <ImportInferenceForm
-        trainedModels={trainedModels}
-        projectId={params.id}
       />
       <ImportDatasetForm projectId={params.id} projectLabels={projectLabels} />
       <ClearDatasetForm projectId={params.id} projectLabels={projectLabels} />
