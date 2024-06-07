@@ -12,17 +12,11 @@ export default async function Page({
   searchParams: { selectedProject: string[]; labelName: string };
 }) {
   const modelId = parseInt(params.id);
-  const model = await fetchTrainedModelById(modelId);
   const projects = await fetchProjects();
   const projectLabelNames = await fetchProjectLabelNames();
 
-  if (!model) {
-    return <div>{`Model doesn't exist.`}</div>;
-  }
-
   return (
     <div>
-      <H1>{model.name}</H1>
       <div className="h-4"></div>
       <div className="flex gap-8">
         <div className="w-[400px]">

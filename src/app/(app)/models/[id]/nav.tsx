@@ -5,6 +5,7 @@ import {
   NavigationMenu,
   NavigationMenuItem,
   NavigationMenuLink,
+  NavigationMenuList,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import Link from "next/link";
@@ -24,8 +25,8 @@ export function ModelNav({ id }: { id: string }) {
   ];
 
   return (
-    <NavigationMenu>
-      <NavigationMenuLink>
+    <NavigationMenu className="mt-4">
+      <NavigationMenuList>
         {links.map(({ href, label }) => (
           <NavigationMenuItem key={href}>
             <Link href={href} legacyBehavior passHref>
@@ -38,7 +39,7 @@ export function ModelNav({ id }: { id: string }) {
             </Link>
           </NavigationMenuItem>
         ))}
-      </NavigationMenuLink>
+      </NavigationMenuList>
     </NavigationMenu>
   );
 }

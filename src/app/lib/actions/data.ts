@@ -134,7 +134,7 @@ export async function importInference(
             from temp_tasks t
             where t.model_id is not null
               and t.inference is not null
-            on conflict (task_name, model_id) do update
+            on conflict (image_name, model_id) do update
                 set inference  = excluded.inference,
                     updated_at = now();
         `;

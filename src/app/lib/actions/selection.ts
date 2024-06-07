@@ -61,11 +61,11 @@ async function fetchTasksForTruePositiveImages(
   return sql<Task[]>`
     select t.id, t.image_url as "imageUrl"
     from tasks t
-           inner join task_inferences ti on t.id = ti.task_id
+           inner join task_inferences ti on t.name = ti.image_name
            inner join task_labels tl on t.id = tl.task_id
            left join project_task_selections pts on t.id = pts.task_id and pts.label_id = tl.label_id
     where ti.model_id = ${inferenceModelId}
-      and ti.inference >= 50
+      and ti.inference >= 5000
       and tl.label_id = ${labelId}
       and tl.label_value = 'Present'
       and t.project_id = ${projectId}
@@ -83,11 +83,11 @@ async function fetchTasksForFalsePositiveImages(
   return sql<Task[]>`
       select t.id, t.image_url as "imageUrl"
       from tasks t
-               inner join task_inferences ti on t.id = ti.task_id
+               inner join task_inferences ti on t.name = ti.image_name
                inner join task_labels tl on t.id = tl.task_id
                left join project_task_selections pts on t.id = pts.task_id and pts.label_id = tl.label_id
       where ti.model_id = ${inferenceModelId}
-        and ti.inference >= 50
+        and ti.inference >= 5000
         and tl.label_id = ${labelId}
         and tl.label_value = 'Absent'
         and t.project_id = ${projectId}
@@ -105,11 +105,11 @@ async function fetchTasksForFalseNegativeImages(
   return sql<Task[]>`
       select t.id, t.image_url as "imageUrl"
       from tasks t
-               inner join task_inferences ti on t.id = ti.task_id
+               inner join task_inferences ti on t.name = ti.image_name
                inner join task_labels tl on t.id = tl.task_id
                left join project_task_selections pts on t.id = pts.task_id and pts.label_id = tl.label_id
       where ti.model_id = ${inferenceModelId}
-        and ti.inference < 50
+        and ti.inference < 5000
         and tl.label_id = ${labelId}
         and tl.label_value = 'Present'
         and t.project_id = ${projectId}
@@ -126,11 +126,11 @@ async function fetchTasksForTrueNegativeImages(
   return sql<Task[]>`
       select t.id, t.image_url as "imageUrl"
       from tasks t
-               inner join task_inferences ti on t.id = ti.task_id
+               inner join task_inferences ti on t.name = ti.image_name
                inner join task_labels tl on t.id = tl.task_id
                left join project_task_selections pts on t.id = pts.task_id and pts.label_id = tl.label_id
       where ti.model_id = ${inferenceModelId}
-        and ti.inference < 50
+        and ti.inference < 5000
         and tl.label_id = ${labelId}
         and tl.label_value = 'Absent'
         and t.project_id = ${projectId}
@@ -198,10 +198,6 @@ export async function selectionAction(
   };
 }
 
-/**
- * @param {string[]} dataset
- * @returns {{train: string[], valid: string[], test: string[]}}
- */
 function splitDataset(dataset: string[]) {
   dataset = shuffle(dataset);
   const datasetLength = dataset.length;

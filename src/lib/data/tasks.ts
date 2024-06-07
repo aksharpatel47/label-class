@@ -115,8 +115,8 @@ export async function fetchTasksForLabeling(
       filters.push(
         and(
           eq(taskInferences.modelId, trainedModelId),
-          gte(taskInferences.inference, inferenceValueRange[0]),
-          lte(taskInferences.inference, inferenceValueRange[1]),
+          gte(taskInferences.inference, inferenceValueRange[0] * 100),
+          lte(taskInferences.inference, inferenceValueRange[1] * 100),
         ),
       );
     }

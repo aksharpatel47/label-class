@@ -37,7 +37,7 @@ export async function InferenceTables({
       projectName: projects.name,
       label: taskLabels.value,
       dataset: projectTaskSelections.dataset,
-      inference: sql`CASE WHEN task_inferences.inference >= 50 THEN 'Present' ELSE 'Absent' END`,
+      inference: sql`CASE WHEN task_inferences.inference >= 5000 THEN 'Present' ELSE 'Absent' END`,
       count: sql`COUNT(*)::integer`,
     })
     .from(tasks)
@@ -77,24 +77,25 @@ export async function InferenceTables({
       projects.name,
       taskLabels.value,
       projectTaskSelections.dataset,
-      sql`CASE WHEN task_inferences.inference >= 50 THEN 'Present' ELSE 'Absent' END`,
+      sql`CASE WHEN task_inferences.inference >= 5000 THEN 'Present' ELSE 'Absent' END`,
     );
 
   let inferenceTableData: any = {};
 
+  ["train", "valid", "test"].forEach((dataset) => {
+    const totalKey = `total-${dataset}`;
+    inferenceTableData[totalKey] = {
+      name: "Total" + " - " + dataset,
+      tp: 0,
+      fn: 0,
+      fp: 0,
+      tn: 0,
+    };
+  });
+
   tasksWithInferenceAndLabel.forEach((t) => {
     const totalKey = `total-${t.dataset}`;
     const key = `${t.projectId}-${t.dataset}`;
-
-    if (!inferenceTableData[totalKey]) {
-      inferenceTableData[totalKey] = {
-        name: "Total" + " - " + t.dataset,
-        tp: 0,
-        fn: 0,
-        fp: 0,
-        tn: 0,
-      };
-    }
 
     if (!inferenceTableData[key]) {
       inferenceTableData[key] = {

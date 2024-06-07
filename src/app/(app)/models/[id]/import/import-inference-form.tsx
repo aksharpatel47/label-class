@@ -4,21 +4,13 @@ import { importInference } from "@/app/lib/actions/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { TrainedModel } from "@/db/schema";
 import { useFormState, useFormStatus } from "react-dom";
 import { CheckCircle2, Loader2 } from "lucide-react";
 
 interface ILabelImportFormProps {
   modelId: number;
-  trainedModels: TrainedModel[];
 }
+
 export function ImportInferenceForm(props: ILabelImportFormProps) {
   const importInferenceForProject = importInference.bind(null, props.modelId);
   const [state, dispatch] = useFormState(importInferenceForProject, undefined);
