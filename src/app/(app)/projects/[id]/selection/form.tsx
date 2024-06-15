@@ -17,6 +17,7 @@ import {
 import { useFormState } from "react-dom";
 import { ImageInferenceTypes } from "@/app/lib/models/image";
 import { ReviewImages } from "@/app/(app)/projects/[id]/selection/review";
+import { Label } from "@/components/ui/label";
 
 interface ISelectionFormProps {
   projectId: string;
@@ -43,17 +44,18 @@ export function SelectionForm({
       state.taskData.labelId,
       state.taskData.imageInferenceType,
       projectId,
+      state.taskData.dataset
     );
   }
 
   return (
     <div>
-      <form action={dispatch} className="flex gap-2 w-[800px]">
+      <form action={dispatch} className="flex gap-2 w-[1000px]">
         <Input
           type="number"
           placeholder="Number of images to select"
           name="numImages"
-          disabled={state && !!state.taskData}
+          readOnly={state && !!state.taskData}
         />
         <Select name="labelId">
           <SelectTrigger>
@@ -91,19 +93,30 @@ export function SelectionForm({
             ))}
           </SelectContent>
         </Select>
+        <Select name="dataset" defaultValue="split">
+          <SelectTrigger>
+            <SelectValue placeholder="Select Dataset"></SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="split">Split</SelectItem>
+            <SelectItem value="train">Train</SelectItem>
+            <SelectItem value="valid">Valid</SelectItem>
+            <SelectItem value="test">Test</SelectItem>
+          </SelectContent>
+        </Select>
         <Button type="submit">Select</Button>
       </form>
 
       {state && state.error && <span>{state.error}</span>}
       {state && state.taskData && (
         <div className="flex flex-col gap-2">
-          <div>
+          <div className="pt-2">
             Total tasks available for the above criteria:{" "}
-            {state.taskData.totalAvailableImages}
+            {state.taskData.totalAvailableImages}, Total tasks selected:{" "}
+            {state.taskData.tasks.length}
           </div>
-          <div>Tasks selected: {state.taskData.tasks.length}</div>
           <form action={addImageToDatasetAction}>
-            <Button>Add Images to Dataset with Automatic Split</Button>
+            <Button type="submit">Add Images to Dataset</Button>
           </form>
           <ReviewImages
             tasks={state.taskData.tasks}
