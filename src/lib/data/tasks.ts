@@ -107,7 +107,7 @@ export async function fetchTasksForLabeling(
       filters.push(
         and(
           eq(taskInferences.modelId, trainedModelId),
-          gte(taskInferences.inference, 50)
+          gte(taskInferences.inference, 5000)
         )
       );
     } else if (inferenceValue === "<50%") {
@@ -117,7 +117,7 @@ export async function fetchTasksForLabeling(
       filters.push(
         and(
           eq(taskInferences.modelId, trainedModelId),
-          lte(taskInferences.inference, 50)
+          lte(taskInferences.inference, 5000)
         )
       );
     } else {
