@@ -40,7 +40,7 @@ export async function fetchTasksInProject(projectId: string, page: number) {
 }
 
 export function fetchNumberOfTasksInProject(
-  projectId: string,
+  projectId: string
 ): Promise<number> {
   return db
     .select({
@@ -60,7 +60,7 @@ export async function fetchTasksForLabeling(
   labelValue?: string | null,
   trainedModel?: string | null,
   inferenceValue?: string | null,
-  dataset?: string | null,
+  dataset?: string | null
 ) {
   let sl = db
     .select({
@@ -85,7 +85,7 @@ export async function fetchTasksForLabeling(
 
       filters.push(
         eq(taskLabels.labelId, labelId),
-        eq(taskLabels.value, labelValue as any),
+        eq(taskLabels.value, labelValue as any)
       );
     }
   } else if (labelId) {
@@ -99,26 +99,51 @@ export async function fetchTasksForLabeling(
 
   if (trainedModel && inferenceValue) {
     const trainedModelId = Number(trainedModel);
-    const inferenceValueRange = inferenceValue
-      .split("-")
-      .map(Number)
-      .filter((n) => !isNaN(n));
 
-    if (
-      inferenceValueRange.length === 2 &&
-      inferenceValueRange[0] < inferenceValueRange[1] &&
-      trainedModelId > 0
-    ) {
+    if (inferenceValue === ">=50%") {
       sl = sl
         .leftJoin(taskInferences, eq(tasks.name, taskInferences.imageName))
         .$dynamic();
       filters.push(
         and(
           eq(taskInferences.modelId, trainedModelId),
-          gte(taskInferences.inference, inferenceValueRange[0] * 100),
-          lte(taskInferences.inference, inferenceValueRange[1] * 100),
-        ),
+          gte(taskInferences.inference, 50)
+        )
       );
+    } else if (inferenceValue === "<50%") {
+      sl = sl
+        .leftJoin(taskInferences, eq(tasks.name, taskInferences.imageName))
+        .$dynamic();
+      filters.push(
+        and(
+          eq(taskInferences.modelId, trainedModelId),
+          lte(taskInferences.inference, 50)
+        )
+      );
+    } else {
+      const inferenceValueRange = inferenceValue
+        .slice(0, -1)
+        .split("-")
+        .map(Number)
+        .filter((n) => !isNaN(n))
+        .map((n) => Math.ceil(n * 100));
+
+      if (
+        inferenceValueRange.length === 2 &&
+        inferenceValueRange[0] < inferenceValueRange[1] &&
+        trainedModelId > 0
+      ) {
+        sl = sl
+          .leftJoin(taskInferences, eq(tasks.name, taskInferences.imageName))
+          .$dynamic();
+        filters.push(
+          and(
+            eq(taskInferences.modelId, trainedModelId),
+            gte(taskInferences.inference, inferenceValueRange[0]),
+            lte(taskInferences.inference, inferenceValueRange[1])
+          )
+        );
+      }
     }
   }
 
@@ -126,7 +151,7 @@ export async function fetchTasksForLabeling(
     sl = sl
       .leftJoin(
         projectTaskSelections,
-        eq(tasks.id, projectTaskSelections.taskId),
+        eq(tasks.id, projectTaskSelections.taskId)
       )
       .$dynamic();
 
@@ -138,8 +163,8 @@ export async function fetchTasksForLabeling(
       filters.push(
         and(
           eq(projectTaskSelections.dataset, dataset as any),
-          eq(projectTaskSelections.labelId, labelId),
-        ),
+          eq(projectTaskSelections.labelId, labelId)
+        )
       );
     }
   }
@@ -162,8 +187,8 @@ export async function fetchTasksForLabeling(
     .where(
       inArray(
         tasks.id,
-        results.map((t: any) => t.id),
-      ),
+        results.map((t: any) => t.id)
+      )
     );
 
   return results;
@@ -182,7 +207,7 @@ export function addInferencesForTasks(tx: postgres.TransactionSql) {
 export function addLabelsForTasks(
   tx: PgTransaction<any, any, any>,
   projectId: string,
-  labeledBy: string,
+  labeledBy: string
 ) {
   //language=PostgreSQL
   return tx.execute(sql`
@@ -204,7 +229,7 @@ export function addLabelsForTasks(
 export function addDatasetForTasks(
   tx: PgTransaction<any, any, any>,
   projectId: string,
-  labelId: string,
+  labelId: string
 ) {
   //language=PostgreSQL
   return tx.execute(sql`

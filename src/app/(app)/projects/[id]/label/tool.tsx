@@ -42,7 +42,7 @@ export function Tool(props: IToolProps) {
   async function handleApplyClick() {
     setLoadingTasks(true);
     const res = await fetch(
-      `/api/projects/${props.projectId}/tasks/label?${searchParams.toString()}`,
+      `/api/projects/${props.projectId}/tasks/label?${searchParams.toString()}`
     );
     const newTasks = await res.json();
     setIndex(0);
@@ -84,7 +84,7 @@ export function Tool(props: IToolProps) {
     }
 
     const res = await fetch(
-      `/api/projects/${props.projectId}/tasks/label?${newSearchParams.toString()}`,
+      `/api/projects/${props.projectId}/tasks/label?${newSearchParams.toString()}`
     );
 
     let newTasks = await res.json();
@@ -192,16 +192,18 @@ export function Tool(props: IToolProps) {
         labelValues={props.labelValues}
         currentValues={currentValues}
         inferenceValues={[
-          "0-10",
-          "11-20",
-          "21-30",
-          "31-40",
-          "41-50",
-          "51-60",
-          "61-70",
-          "71-80",
-          "81-90",
-          "91-100",
+          "0-9.99%",
+          "10.00-19.99%",
+          "20.00-29.99%",
+          "30.00-39.99%",
+          "40.00-49.99%",
+          "50.00-59.99%",
+          "60.00-69.99%",
+          "70.00-79.99%",
+          "80.00-89.99%",
+          "90.00-100.00%",
+          ">=50%",
+          "<50%",
         ]}
         onSelectChange={handleSelectChange}
         onApplyClick={handleApplyClick}
