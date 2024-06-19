@@ -12,6 +12,7 @@ export async function fetchProjects() {
         orderBy: (labels, { asc }) => [asc(labels.sequence)],
       },
     },
+    orderBy: (projects, { asc }) => [asc(projects.name)],
   });
 }
 
