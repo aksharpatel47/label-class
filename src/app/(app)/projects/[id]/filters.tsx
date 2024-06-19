@@ -5,24 +5,20 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { AuthUser } from "@/db/schema";
-import { current } from "immer";
 import { XCircle } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { set } from "zod";
 
 export function UserDropdown({ users }: { users: AuthUser[] }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(
-    searchParams.get("user") || undefined
+    searchParams.get("user") || undefined,
   );
   const router = useRouter();
   const createPageURL = (userId: string | undefined) => {
