@@ -8,21 +8,31 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { H3 } from "@/components/ui/typography";
+import { Link as LinkIcon } from "lucide-react";
+import Link from "next/link";
 
 export interface InferenceTableProps {
   title: string;
   tp: number;
+  tpLink?: string;
   fn: number;
+  fnLink?: string;
   fp: number;
+  fpLink?: string;
   tn: number;
+  tnLink?: string;
 }
 
 export async function InferenceTable({
   title,
   tp,
+  tpLink,
   fn,
+  fnLink,
   fp,
+  fpLink,
   tn,
+  tnLink,
 }: InferenceTableProps) {
   return (
     <div className="flex flex-col">
@@ -39,14 +49,66 @@ export async function InferenceTable({
         <TableBody>
           <TableRow>
             <TableHead>Predicted Present</TableHead>
-            <TableCell>{tp}</TableCell>
-            <TableCell>{fp}</TableCell>
+            <TableCell>
+              {tpLink ? (
+                <Link
+                  href={tpLink}
+                  target="_blank"
+                  className="flex items-center"
+                >
+                  <span>{tp}</span>
+                  <LinkIcon height={13} />
+                </Link>
+              ) : (
+                tp
+              )}
+            </TableCell>
+            <TableCell>
+              {fpLink ? (
+                <Link
+                  href={fpLink}
+                  target="_blank"
+                  className="flex items-center"
+                >
+                  <span>{fp}</span>
+                  <LinkIcon height={13} />
+                </Link>
+              ) : (
+                fp
+              )}
+            </TableCell>
             <TableCell>{tp + fp}</TableCell>
           </TableRow>
           <TableRow>
             <TableHead>Predicted Absent</TableHead>
-            <TableCell>{fn}</TableCell>
-            <TableCell>{tn}</TableCell>
+            <TableCell>
+              {fnLink ? (
+                <Link
+                  href={fnLink}
+                  target="_blank"
+                  className="flex items-center"
+                >
+                  <span>{fn}</span>
+                  <LinkIcon height={13} />
+                </Link>
+              ) : (
+                fn
+              )}
+            </TableCell>
+            <TableCell>
+              {tnLink ? (
+                <Link
+                  href={tnLink}
+                  target="_blank"
+                  className="flex items-center"
+                >
+                  <span>{tn}</span>
+                  <LinkIcon height={13} />
+                </Link>
+              ) : (
+                tn
+              )}
+            </TableCell>
             <TableCell>{fn + tn}</TableCell>
           </TableRow>
           <TableRow>

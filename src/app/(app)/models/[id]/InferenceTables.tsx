@@ -35,6 +35,7 @@ export async function InferenceTables({
     .select({
       projectId: projects.id,
       projectName: projects.name,
+      projectLabelId: projectLabels.id,
       label: taskLabels.value,
       dataset: projectTaskSelections.dataset,
       inference: sql`CASE WHEN task_inferences.inference >= 5000 THEN 'Present' ELSE 'Absent' END`,
@@ -47,37 +48,38 @@ export async function InferenceTables({
       taskInferences,
       and(
         eq(tasks.name, taskInferences.imageName),
-        eq(taskInferences.modelId, trainedModelId),
-      ),
+        eq(taskInferences.modelId, trainedModelId)
+      )
     )
     .innerJoin(
       taskLabels,
       and(
         eq(tasks.id, taskLabels.taskId),
-        eq(taskLabels.labelId, projectLabels.id),
-      ),
+        eq(taskLabels.labelId, projectLabels.id)
+      )
     )
     .innerJoin(
       projectTaskSelections,
       and(
         eq(tasks.id, projectTaskSelections.taskId),
-        eq(projectTaskSelections.labelId, projectLabels.id),
-      ),
+        eq(projectTaskSelections.labelId, projectLabels.id)
+      )
     )
     .where(
       and(
         inArray(tasks.projectId, selectedProjects),
         inArray(taskLabels.value, ["Present", "Absent"]),
         eq(projectLabels.labelName, labelName),
-        eq(taskInferences.modelId, trainedModelId),
-      ),
+        eq(taskInferences.modelId, trainedModelId)
+      )
     )
     .groupBy(
       projects.id,
       projects.name,
+      projectLabels.id,
       taskLabels.value,
       projectTaskSelections.dataset,
-      sql`CASE WHEN task_inferences.inference >= 5000 THEN 'Present' ELSE 'Absent' END`,
+      sql`CASE WHEN task_inferences.inference >= 5000 THEN 'Present' ELSE 'Absent' END`
     );
 
   let inferenceTableData: any = {};
@@ -101,9 +103,13 @@ export async function InferenceTables({
       inferenceTableData[key] = {
         name: t.projectName + " - " + t.dataset,
         tp: 0,
+        tpLink: `/projects/${t.projectId}/label?label=${t.projectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=>%3D50%25&dataset=${t.dataset}`,
         fn: 0,
+        fnLink: `/projects/${t.projectId}/label?label=${t.projectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=<50%25&dataset=${t.dataset}`,
         fp: 0,
+        fpLink: `/projects/${t.projectId}/label?label=${t.projectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=>%3D50%25&dataset=${t.dataset}`,
         tn: 0,
+        tnLink: `/projects/${t.projectId}/label?label=${t.projectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=<50%25&dataset=${t.dataset}`,
       };
     }
 
@@ -146,9 +152,13 @@ export async function InferenceTables({
             key={key}
             title={inferenceTableData[key].name}
             tp={inferenceTableData[key].tp}
+            tpLink={inferenceTableData[key].tpLink}
             fn={inferenceTableData[key].fn}
+            fnLink={inferenceTableData[key].fnLink}
             fp={inferenceTableData[key].fp}
+            fpLink={inferenceTableData[key].fpLink}
             tn={inferenceTableData[key].tn}
+            tnLink={inferenceTableData[key].tnLink}
           />
           <Separator className="mt-8 mb-8" />
         </div>
