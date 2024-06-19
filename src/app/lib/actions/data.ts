@@ -12,7 +12,7 @@ export async function importData(
   projectId: string,
   userId: string,
   prevState: string | undefined,
-  formData: FormData,
+  formData: FormData
 ) {
   const file = formData.get("file") as File;
   if (!file) {
@@ -62,7 +62,7 @@ export async function importData(
       const tempTaskReadable = Readable.from(tempTaskRows);
 
       console.log(
-        `Inserting ${tempTaskRows.length} tasks into the temp_tasks table.`,
+        `Inserting ${tempTaskRows.length} tasks into the temp_tasks table.`
       );
 
       // language=PostgreSQL
@@ -78,7 +78,7 @@ export async function importData(
 export async function importInference(
   modelId: number,
   prevState: string | undefined,
-  formData: FormData,
+  formData: FormData
 ) {
   const session = await getPageSession();
 
@@ -104,13 +104,13 @@ export async function importInference(
     const rowValues = row.split(",");
     const imageName = rowValues[0];
     const inference = rowValues[rowValues.length - 1];
-    const inferenceValue = (Number(inference) * 10000).toFixed(0);
+    const inferenceValue = Math.ceil(Number(inference) * 10000);
     return `${imageName}\t${inferenceValue}\t${modelId}\n`;
   });
   const tempInferences = Readable.from(tempInferenceRows);
 
   console.log(
-    `Inserting ${tempInferenceRows.length} inferences into the temp_task_inferences table.`,
+    `Inserting ${tempInferenceRows.length} inferences into the temp_task_inferences table.`
   );
 
   await dbSQL.begin(async (tx) => {
@@ -123,7 +123,7 @@ export async function importInference(
     await pipeline(tempInferences, query);
 
     console.log(
-      `Inserted inferences from the temp_task_inferences table to the tasks table.`,
+      `Inserted inferences from the temp_task_inferences table to the tasks table.`
     );
     // Insert the inferences into the task_inferences table
     // language=PostgreSQL
@@ -140,13 +140,13 @@ export async function importInference(
         `;
 
     console.log(
-      `Inserted inferences into the task_inferences table for model ${modelId} from the temp_task_inferences table.`,
+      `Inserted inferences into the task_inferences table for model ${modelId} from the temp_task_inferences table.`
     );
 
     await tx`truncate temp_tasks`;
 
     console.log(
-      `Deleted inferences from the temp_task_inferences table for model ${modelId}.`,
+      `Deleted inferences from the temp_task_inferences table for model ${modelId}.`
     );
   });
 
@@ -156,7 +156,7 @@ export async function importInference(
 export async function importDataset(
   projectId: string,
   state: string | undefined,
-  formData: FormData,
+  formData: FormData
 ) {
   const session = await getPageSession();
   if (!session) {
@@ -193,7 +193,7 @@ export async function importDataset(
     .filter((task) => task.taskName && task.dataset)
     .map(
       (task) =>
-        `${task.taskName}\t${task.labelId}\t${task.dataset}\t${projectId}\n`,
+        `${task.taskName}\t${task.labelId}\t${task.dataset}\t${projectId}\n`
     );
 
   await db.transaction(async (tx) => {
@@ -211,7 +211,7 @@ export async function importDataset(
 export async function clearDataset(
   projectId: string,
   state: string | undefined,
-  formData: FormData,
+  formData: FormData
 ) {
   const session = await getPageSession();
   if (!session) {
@@ -229,7 +229,7 @@ export async function clearDataset(
             from project_task_selections
             where task_id in (select id from tasks where project_id = ${projectId})
               and label_id = ${labelId};
-        `,
+        `
   );
 
   return "Done";
