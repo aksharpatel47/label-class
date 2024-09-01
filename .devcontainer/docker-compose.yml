@@ -1,17 +1,17 @@
 version: '3.8'
 services:
-  app:
+  label-class-app:
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ../..:/workspaces:cached
+      - label-class-app-vol:/workspace
     command: sleep infinity
     environment:
       - DATABASE_URL=postgres://postgres:postgres@db:5432/postgres
       - AUTH_SECRET=SSNAds759EeBQG64WpKmAwgdgSFj0sH7gXHcgy8mHgE=
       - AUTH_URL=http://localhost:3000/
-  db:
+  label-class-db:
     image: postgres:16.1
     restart: unless-stopped
     volumes:
@@ -23,3 +23,4 @@ services:
     
 volumes:
   postgres-data:
+  label-class-app-vol:
