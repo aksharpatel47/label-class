@@ -157,11 +157,13 @@ export function LabelTask({
 
   return (
     <div className={className}>
-      <div className="flex h-svh">
-        <div className="h-full">
-          <img src={task.imageUrl} alt={task.id} className="flex-1 h-[600px]" />
-          <div>{task.imageUrl}</div>
-        </div>
+      <div className="pb-4">{task.imageUrl}</div>
+      <div className="flex">
+        <img
+          src={task.imageUrl}
+          alt={task.id}
+          className="flex-1 w-[800px] h-[800px] object-contain"
+        />
 
         <div className="flex flex-col flex-1 pl-8 gap-4">
           {projectLabels.map((l, i) => (

@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
+import React from "react";
 
 type State = {
   name: string;
@@ -64,7 +65,7 @@ const useSignupFormState = create<State & Actions>()(
         state.loading = loading;
       });
     },
-  }))
+  })),
 );
 
 export function SignupForm() {

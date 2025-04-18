@@ -113,7 +113,7 @@ export function ImageTable(props: {
     <>
       {/* <UserDropdown users={props.users} /> */}
       <div className="flex gap-8">
-        <div className="w-[300px]">
+        <div className="mt-8 w-[300px] h-[800px] overflow-y-auto">
           <Table>
             <TableHeader>
               <TableRow>
