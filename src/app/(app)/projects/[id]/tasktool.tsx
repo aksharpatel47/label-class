@@ -2,10 +2,10 @@
 
 import { ProjectLabel, Task, TaskLabel } from "@/db/schema";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import Image from "next/image";
 import { useEffect } from "react";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
+import { Map } from "lucide-react";
 
 const taskLabelValues = [undefined, "Present", "Absent", "Difficult", "Skip"];
 
@@ -155,9 +155,22 @@ export function LabelTask({
     };
   }, [task.id]);
 
+  const coordinate = extractLatLng(task.imageUrl);
+
   return (
     <div className={className}>
-      <div className="pb-4">{task.imageUrl}</div>
+      <div className="pb-4 flex gap-2">
+        {task.imageUrl}
+        {coordinate && (
+          <a
+            href={buildGoogleMapsUrl(coordinate)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Map />
+          </a>
+        )}
+      </div>
       <div className="flex">
         <img
           src={task.imageUrl}
@@ -201,4 +214,42 @@ export function LabelTask({
       </div>
     </div>
   );
+}
+
+/**
+ * Coordinate pair
+ */
+export interface LatLng {
+  lat: number;
+  lng: number;
+}
+
+/**
+ * Extract the first “_<lat>_<lng>” pair found anywhere in the URL.
+ *
+ * @param url  Any URL or path containing “…_<lat>_<lng>…”
+ * @returns    The coordinates, or `null` if none found
+ */
+export function extractLatLng(url: string): LatLng | null {
+  // underscore, ±DDD(.ddd…)?  underscore, ±DDD(.ddd…)?   (no anchor ⇒ anywhere)
+  const regex = /_(-?\d{1,3}(?:\.\d+)?)_(-?\d{1,3}(?:\.\d+)?)/;
+  const match = url.match(regex);
+  if (!match) return null;
+
+  const [, latStr, lngStr] = match;
+  return {
+    lat: parseFloat(latStr),
+    lng: parseFloat(lngStr),
+  };
+}
+
+/**
+ * Produce a Google Maps link centered on the given coordinates.
+ *
+ * @param coords  `{ lat, lng }` from `extractLatLng`
+ * @param zoom    Optional zoom level (Google Maps 1 – 21). Default = 17
+ */
+export function buildGoogleMapsUrl(coords: LatLng, zoom: number = 17): string {
+  const { lat, lng } = coords;
+  return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}&zoom=${zoom}`;
 }
