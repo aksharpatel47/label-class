@@ -1,0 +1,1 @@
+ALTER TABLE "trained_models" ADD COLUMN "archived" boolean DEFAULT false NOT NULL;

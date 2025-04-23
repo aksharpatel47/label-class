@@ -3,9 +3,13 @@ import { asc, eq } from "drizzle-orm";
 import { trainedModels } from "@/db/schema";
 import { unstable_noStore } from "next/cache";
 
-export function fetchTrainedModels() {
+export function fetchTrainedModels(withArchived = true) {
   unstable_noStore();
+  const whereClause = withArchived
+    ? undefined
+    : eq(trainedModels.archived, false);
   return db.query.trainedModels.findMany({
+    where: whereClause,
     orderBy: [asc(trainedModels.name)],
   });
 }

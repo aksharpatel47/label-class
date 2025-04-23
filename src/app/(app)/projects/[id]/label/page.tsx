@@ -8,7 +8,7 @@ import { Tool } from "./tool";
 export default async function Page({ params }: { params: { id: string } }) {
   const labels = await fetchProjectLabels(params.id);
   const users = await fetchUsers();
-  const trainedModels = await fetchTrainedModels();
+  const trainedModels = await fetchTrainedModels(false);
   const labelValues = ["Unlabeled", ...taskLabelValue.enumValues];
 
   return (

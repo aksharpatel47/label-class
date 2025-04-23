@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ChevronRight } from "lucide-react";
+import { ArchiveButton } from "@/app/(app)/models/components/archive-button";
 
 export default async function Page() {
   const models = await fetchTrainedModels();
@@ -30,6 +31,7 @@ export default async function Page() {
           <TableRow>
             <TableHead>Model Name</TableHead>
             <TableHead></TableHead>
+            <TableHead></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -39,6 +41,9 @@ export default async function Page() {
                 <TableRow key={m.id}>
                   <TableCell>
                     <Link href={`/models/${m.id}`}>{m.name}</Link>
+                  </TableCell>
+                  <TableCell>
+                    <ArchiveButton modelId={m.id} archived={m.archived} />
                   </TableCell>
                   <TableCell className="flex justify-end">
                     <ChevronRight />
