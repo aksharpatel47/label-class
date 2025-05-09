@@ -1,6 +1,6 @@
 import { ProjectLabel, Task } from "@/db/schema";
 import { LabelTask } from "@/app/(app)/projects/[id]/tasktool";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { addImagesToDataset } from "@/app/lib/actions/selection";
 
@@ -10,6 +10,25 @@ export interface IReviewImagesProps {
 }
 export function ReviewImages({ tasks, projectLabels }: IReviewImagesProps) {
   const [index, setIndex] = useState(0);
+
+  function handleArrowClick(e: KeyboardEvent) {
+    if (e.key === "ArrowRight") {
+      if (index < tasks.length) {
+        setIndex(index + 1);
+      }
+    } else if (e.key === "ArrowLeft") {
+      if (index > 0) {
+        setIndex(index - 1);
+      }
+    }
+  }
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleArrowClick);
+    return () => {
+      window.removeEventListener("keydown", handleArrowClick);
+    };
+  });
 
   return (
     <div>
