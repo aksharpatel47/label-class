@@ -17,7 +17,6 @@ import {
 import { useFormState } from "react-dom";
 import { ImageInferenceTypes } from "@/app/lib/models/image";
 import { ReviewImages } from "@/app/(app)/projects/[id]/selection/review";
-import { Label } from "@/components/ui/label";
 
 interface ISelectionFormProps {
   projectId: string;
@@ -35,10 +34,10 @@ export function SelectionForm({
   const selectImagesForProject = selectionAction.bind(null, projectId);
   const [state, dispatch] = useFormState(selectImagesForProject, undefined);
 
-  let addImageToDatasetAction: any = null;
+  let addImagesToDatasetAction: any = null;
 
   if (state && state.taskData) {
-    addImageToDatasetAction = addImagesToDataset.bind(
+    addImagesToDatasetAction = addImagesToDataset.bind(
       null,
       state.taskData.tasks,
       state.taskData.labelId,
@@ -115,12 +114,11 @@ export function SelectionForm({
             {state.taskData.totalAvailableImages}, Total tasks selected:{" "}
             {state.taskData.tasks.length}
           </div>
-          <form action={addImageToDatasetAction}>
-            <Button type="submit">Add Images to Dataset</Button>
-          </form>
           <ReviewImages
             tasks={state.taskData.tasks}
             projectLabels={projectLabels}
+            selectedModelId={state.taskData.inferenceModelId}
+            addImagesToDatasetAction={addImagesToDatasetAction}
           />
         </div>
       )}

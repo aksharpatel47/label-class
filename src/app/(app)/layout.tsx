@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lucia";
 import * as context from "next/headers";
 import { redirect } from "next/navigation";
-import { CustomLink } from "@/components/ui/link";
 import NavLinks from "./nav-links";
+import { SessionProvider } from "./session-context";
 
 export default async function RootLayout({
   children,
@@ -32,7 +31,7 @@ export default async function RootLayout({
         </div>
       </div>
 
-      {children}
+      <SessionProvider session={session}>{children}</SessionProvider>
     </div>
   );
 }

@@ -1,13 +1,12 @@
 import { getRouteSession } from "@/app/lib/utils/session";
 import { db } from "@/db";
-import { projectLabels, taskLabels, tasks } from "@/db/schema";
+import { taskLabels, tasks } from "@/db/schema";
 import { and, eq, sql } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { taskId: string; labelId: string } },
+  { params }: { params: { taskId: string; labelId: string } }
 ) {
   const session = await getRouteSession(request.method);
   if (!session) {
@@ -45,7 +44,7 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { taskId: string; labelId: string } },
+  { params }: { params: { taskId: string; labelId: string } }
 ) {
   const session = await getRouteSession(request.method);
   if (!session) {
@@ -60,8 +59,8 @@ export async function DELETE(
       and(
         eq(taskLabels.taskId, taskId),
         eq(taskLabels.labelId, labelId),
-        eq(taskLabels.labeledBy, session.user.id),
-      ),
+        eq(taskLabels.labeledBy, session.user.id)
+      )
     );
 
   await db

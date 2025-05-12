@@ -32,6 +32,7 @@ interface IState {
     labelId: string;
     imageInferenceType: (typeof ImageInferenceTypes)[number];
     dataset: (typeof datasetEnumValues)[number] | "split";
+    inferenceModelId: number;
   };
   error?: string;
 }
@@ -200,6 +201,7 @@ export async function selectionAction(
       labelId,
       imageInferenceType,
       dataset: result.data.dataset,
+      inferenceModelId,
     },
   };
 }

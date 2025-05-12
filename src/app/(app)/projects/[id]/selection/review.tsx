@@ -2,13 +2,19 @@ import { ProjectLabel, Task } from "@/db/schema";
 import { LabelTask } from "@/app/(app)/projects/[id]/tasktool";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { addImagesToDataset } from "@/app/lib/actions/selection";
 
 export interface IReviewImagesProps {
   tasks: Task[];
   projectLabels: ProjectLabel[];
+  selectedModelId?: number;
+  addImagesToDatasetAction: any;
 }
-export function ReviewImages({ tasks, projectLabels }: IReviewImagesProps) {
+export function ReviewImages({
+  tasks,
+  projectLabels,
+  selectedModelId,
+  addImagesToDatasetAction,
+}: IReviewImagesProps) {
   const [index, setIndex] = useState(0);
 
   function handleArrowClick(e: KeyboardEvent) {
@@ -32,9 +38,11 @@ export function ReviewImages({ tasks, projectLabels }: IReviewImagesProps) {
 
   return (
     <div>
-      <div className="flex flex-col gap-4">
+      <form action={addImagesToDatasetAction}>
         <div className="flex gap-4">
+          <Button type="submit">Add Images to Dataset</Button>
           <Button
+            type="button"
             onClick={() => {
               if (index > 0) {
                 setIndex(index - 1);
@@ -45,6 +53,7 @@ export function ReviewImages({ tasks, projectLabels }: IReviewImagesProps) {
             Previous
           </Button>
           <Button
+            type="button"
             onClick={() => {
               if (index < tasks.length) {
                 setIndex(index + 1);
@@ -55,19 +64,21 @@ export function ReviewImages({ tasks, projectLabels }: IReviewImagesProps) {
             Next
           </Button>
         </div>
-        {tasks.length === 0 ? (
-          <div>No tasks yet.</div>
-        ) : index >= tasks.length ? (
-          <div>No more tasks to review.</div>
-        ) : (
-          <LabelTask
-            task={tasks[index]}
-            nextTask={index < tasks.length - 1 ? tasks[index + 1] : undefined}
-            projectLabels={projectLabels}
-            disableKeyboardShortcuts={true}
-          />
-        )}
-      </div>
+      </form>
+      <div className="flex flex-col gap-4"></div>
+      {tasks.length === 0 ? (
+        <div>No tasks yet.</div>
+      ) : index >= tasks.length ? (
+        <div>No more tasks to review.</div>
+      ) : (
+        <LabelTask
+          task={tasks[index]}
+          nextTask={index < tasks.length - 1 ? tasks[index + 1] : undefined}
+          projectLabels={projectLabels}
+          disableKeyboardShortcuts={true}
+          selectedModelId={selectedModelId}
+        />
+      )}
     </div>
   );
 }

@@ -1,31 +1,60 @@
 "use client";
 
-import { ProjectLabel, Task, TaskLabel } from "@/db/schema";
+import { AuthUser, ProjectLabel, Task } from "@/db/schema";
+
+interface TaskLabel {
+  value: TaskLabelValue;
+  createdAt: Date;
+  updatedAt: Date | null;
+  labelId: string;
+  taskId: string;
+  labeledBy: {
+    id: string;
+    name: string;
+  };
+  labelUpdatedBy: {
+    id: string;
+    name: string;
+  } | null;
+}
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { Map } from "lucide-react";
+import { IGetTaskLabelReponse } from "@/app/api/tasks/[taskId]/labels/route";
+import { SessionContext } from "@/app/(app)/session-context";
+import { Session } from "lucia";
 
-const taskLabelValues = [undefined, "Present", "Absent", "Difficult", "Skip"];
+const validLabelValues = ["Present", "Absent", "Difficult", "Skip"] as const;
+type ValidLabelValues = (typeof validLabelValues)[number];
+const taskLabelValues = [undefined, ...validLabelValues] as const;
+type TaskLabelValue = (typeof taskLabelValues)[number];
 
-type TaskLabels = Record<string, string | undefined>;
+type TaskLabels = Record<string, TaskLabel | undefined>;
 
 type State = {
   loadingInitialLabels: boolean;
   savingLabels: boolean;
   taskLabels: TaskLabels;
+  inferenceResult?: number;
 };
 
 type Actions = {
   setInitialLabels(taskLabels: TaskLabels): void;
   setLoadingInitialLabels(loading: boolean): void;
-  cycleLabelValue(currentTaskId: string, labelId: string): void;
+  cycleLabelValue(
+    currentTaskId: string,
+    labelId: string,
+    session: Session
+  ): void;
   setLabelValue(
     currentaskId: string,
     labelId: string,
     value: string | undefined,
+    session: Session
   ): void;
+  setInferenceResult(inference: number): void;
 };
 
 const useLabelTaskStore = create<State & Actions>()(
@@ -44,20 +73,39 @@ const useLabelTaskStore = create<State & Actions>()(
         state.taskLabels = taskLabels;
       });
     },
-    cycleLabelValue(currentTaskId: string, labelId: string) {
+    cycleLabelValue(currentTaskId: string, labelId: string, session: Session) {
       set((state) => {
-        const currentLabelValue = state.taskLabels[labelId];
+        const currentLabelValue = state.taskLabels[labelId]?.value;
         const currentLabelIndex = taskLabelValues.indexOf(currentLabelValue);
         const newLabelIndex = (currentLabelIndex + 1) % taskLabelValues.length;
         console.log(
-          `Updating label ${labelId} to ${newLabelIndex} (${taskLabelValues[newLabelIndex]})`,
+          `Updating label ${labelId} to ${newLabelIndex} (${taskLabelValues[newLabelIndex]})`
         );
         const newLabelValue = taskLabelValues[newLabelIndex];
-        state.taskLabels[labelId] = newLabelValue;
-        const method =
-          newLabelValue === undefined || newLabelValue === ""
-            ? "DELETE"
-            : "POST";
+        if (newLabelValue === undefined) {
+          delete state.taskLabels[labelId];
+        } else if (!!state.taskLabels[labelId]) {
+          state.taskLabels[labelId]!.value = newLabelValue;
+          state.taskLabels[labelId]!.updatedAt = new Date();
+          state.taskLabels[labelId]!.labelUpdatedBy = {
+            id: session.user.userId,
+            name: session.user.name,
+          };
+        } else {
+          state.taskLabels[labelId] = {
+            value: newLabelValue,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            labelId: labelId,
+            taskId: currentTaskId,
+            labeledBy: {
+              id: session.user.userId,
+              name: session.user.name,
+            },
+            labelUpdatedBy: null,
+          };
+        }
+        const method = !newLabelValue ? "DELETE" : "POST";
         fetch(`/api/tasks/${currentTaskId}/labels/${labelId}`, {
           method,
           headers: {
@@ -72,10 +120,33 @@ const useLabelTaskStore = create<State & Actions>()(
     setLabelValue(
       currentTaskId: string,
       labelId: string,
-      value: string | undefined,
+      value: TaskLabelValue,
+      session: Session
     ) {
       set((state) => {
-        state.taskLabels[labelId] = value;
+        if (value === undefined) {
+          delete state.taskLabels[labelId];
+        } else if (!!state.taskLabels[labelId]) {
+          state.taskLabels[labelId]!.value = value;
+          state.taskLabels[labelId]!.updatedAt = new Date();
+          state.taskLabels[labelId]!.labelUpdatedBy = {
+            id: session.user.userId,
+            name: session.user.name,
+          };
+        } else {
+          state.taskLabels[labelId] = {
+            value: value,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            labelId: labelId,
+            taskId: currentTaskId,
+            labeledBy: {
+              id: session.user.userId,
+              name: session.user.name,
+            },
+            labelUpdatedBy: null,
+          };
+        }
 
         const method = "POST";
         fetch(`/api/tasks/${currentTaskId}/labels/${labelId}`, {
@@ -89,7 +160,12 @@ const useLabelTaskStore = create<State & Actions>()(
           .then(console.log);
       });
     },
-  })),
+    setInferenceResult(inference: number) {
+      set((state) => {
+        state.inferenceResult = inference;
+      });
+    },
+  }))
 );
 
 export function LabelTask({
@@ -98,28 +174,33 @@ export function LabelTask({
   projectLabels,
   className,
   disableKeyboardShortcuts,
+  selectedModelId,
 }: {
   task: Task;
   nextTask?: Task;
   projectLabels: ProjectLabel[];
   className?: string;
   disableKeyboardShortcuts?: boolean;
+  selectedModelId?: number;
 }) {
+  const session = useContext(SessionContext);
   const projectLabelKeys = projectLabels.reduce(
     (acc, d, i) => ({
       ...acc,
       [`${i + 1}`]: d.id,
     }),
-    {},
+    {}
   );
 
   const {
     taskLabels,
     loadingInitialLabels,
+    inferenceResult,
     setLoadingInitialLabels,
     setInitialLabels,
     cycleLabelValue,
     setLabelValue,
+    setInferenceResult,
   } = useLabelTaskStore();
 
   useEffect(() => {
@@ -128,19 +209,29 @@ export function LabelTask({
 
     fetch(labelUrl)
       .then((resp) => resp.json())
-      .then((data) => {
+      .then((data: IGetTaskLabelReponse) => {
         const taskLabels: TaskLabels = {};
-        data.forEach((l: TaskLabel) => {
-          taskLabels[l.labelId] = l.value;
+        data.forEach((l) => {
+          taskLabels[l.labelId] = l;
         });
         setInitialLabels(taskLabels);
         setLoadingInitialLabels(false);
       });
+
+    if (selectedModelId) {
+      fetch(`/api/tasks/${task.id}/models/${selectedModelId}/inference`)
+        .then((resp) => resp.json())
+        .then((data) => {
+          if (data.inference) {
+            setInferenceResult(data.inference);
+          }
+        });
+    }
   }, [task.id]);
 
   function handleKeyDown(e: KeyboardEvent) {
     if (projectLabelKeys.hasOwnProperty(Number(e.key))) {
-      cycleLabelValue(task.id, projectLabels[Number(e.key) - 1].id);
+      cycleLabelValue(task.id, projectLabels[Number(e.key) - 1].id, session!);
     }
   }
 
@@ -179,8 +270,28 @@ export function LabelTask({
         />
 
         <div className="flex flex-col flex-1 pl-8 gap-4">
+          {selectedModelId && (
+            <div>
+              <span className="font-bold">Inference Result:</span>
+              {inferenceResult ? (
+                inferenceResult >= 5000 ? (
+                  <span className="text-green-500">
+                    {" "}
+                    {inferenceResult / 100.0}%
+                  </span>
+                ) : (
+                  <span className="text-red-500">
+                    {" "}
+                    {inferenceResult / 100.0}%
+                  </span>
+                )
+              ) : (
+                <span className="text-black"> No Inference</span>
+              )}
+            </div>
+          )}
           {projectLabels.map((l, i) => (
-            <div key={task.id + "-" + l.id} className="flex items-center">
+            <div key={task.id + "-" + l.id} className="flex items-center gap-4">
               <span className="w-[150px]">
                 ( {i + 1} ) &nbsp;
                 {l.labelName} &nbsp;
@@ -188,8 +299,8 @@ export function LabelTask({
               <ToggleGroup
                 variant="outline"
                 type="single"
-                value={taskLabels[l.id]}
-                onValueChange={(v) => setLabelValue(task.id, l.id, v)}
+                value={taskLabels[l.id]?.value}
+                onValueChange={(v) => setLabelValue(task.id, l.id, v, session!)}
                 disabled={loadingInitialLabels}
               >
                 {taskLabelValues.slice(1).map((pl) => (
@@ -198,6 +309,16 @@ export function LabelTask({
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>
+              <div className="flex flex-col text-sm">
+                {taskLabels[l.id] && (
+                  <div>🏷️ {taskLabels[l.id]?.labeledBy.name}</div>
+                )}
+                {taskLabels[l.id]?.labelUpdatedBy &&
+                  taskLabels[l.id]?.labelUpdatedBy?.name !=
+                    taskLabels[l.id]?.labeledBy.name && (
+                    <div>✍️ {taskLabels[l.id]?.labelUpdatedBy?.name}</div>
+                  )}
+              </div>
             </div>
           ))}
           {nextTask && (
