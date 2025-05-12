@@ -250,18 +250,6 @@ export function LabelTask({
 
   return (
     <div className={className}>
-      <div className="pb-4 flex gap-2">
-        {task.imageUrl}
-        {coordinate && (
-          <a
-            href={buildGoogleMapsUrl(coordinate)}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Map />
-          </a>
-        )}
-      </div>
       <div className="flex">
         <img
           src={task.imageUrl}
@@ -270,6 +258,18 @@ export function LabelTask({
         />
 
         <div className="flex flex-col flex-1 pl-8 gap-4">
+          <div className="flex gap-2">
+            {task.name}
+            {coordinate && (
+              <a
+                href={buildGoogleMapsUrl(coordinate)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Map />
+              </a>
+            )}
+          </div>
           {selectedModelId && (
             <div>
               <span className="font-bold">Inference Result:</span>
