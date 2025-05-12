@@ -65,7 +65,7 @@ async function fetchTasksForTruePositiveImages(
 ): Promise<Task[]> {
   // language=PostgreSQL
   return sql<Task[]>`
-    select t.id, t.image_url as "imageUrl"
+    select t.id, t.image_url as "imageUrl", t.name
     from tasks t
            inner join task_inferences ti on t.name = ti.image_name
            inner join task_labels tl on t.id = tl.task_id
@@ -87,7 +87,7 @@ async function fetchTasksForFalsePositiveImages(
 ): Promise<Task[]> {
   // language=PostgreSQL
   return sql<Task[]>`
-      select t.id, t.image_url as "imageUrl"
+      select t.id, t.image_url as "imageUrl", t.name
       from tasks t
                inner join task_inferences ti on t.name = ti.image_name
                inner join task_labels tl on t.id = tl.task_id
@@ -109,7 +109,7 @@ async function fetchTasksForFalseNegativeImages(
 ): Promise<Task[]> {
   // language=PostgreSQL
   return sql<Task[]>`
-      select t.id, t.image_url as "imageUrl"
+      select t.id, t.image_url as "imageUrl", t.name
       from tasks t
                inner join task_inferences ti on t.name = ti.image_name
                inner join task_labels tl on t.id = tl.task_id
@@ -130,7 +130,7 @@ async function fetchTasksForTrueNegativeImages(
 ): Promise<Task[]> {
   // language=PostgreSQL
   return sql<Task[]>`
-      select t.id, t.image_url as "imageUrl"
+      select t.id, t.image_url as "imageUrl", t.name
       from tasks t
                inner join task_inferences ti on t.name = ti.image_name
                inner join task_labels tl on t.id = tl.task_id

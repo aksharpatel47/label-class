@@ -65,6 +65,7 @@ export async function fetchTasksForLabeling(
   let sl = db
     .select({
       id: tasks.id,
+      name: tasks.name,
       imageUrl: tasks.imageUrl,
       createdAt: tasks.createdAt,
     })

@@ -227,7 +227,7 @@ export function LabelTask({
           }
         });
     }
-  }, [task.id]);
+  }, [task.id, selectedModelId]);
 
   function handleKeyDown(e: KeyboardEvent) {
     if (projectLabelKeys.hasOwnProperty(Number(e.key))) {
@@ -249,7 +249,7 @@ export function LabelTask({
   const coordinate = extractLatLng(task.imageUrl);
 
   return (
-    <div className={className}>
+    <div className={className + " mt-2"}>
       <div className="flex">
         <img
           src={task.imageUrl}
@@ -258,7 +258,7 @@ export function LabelTask({
         />
 
         <div className="flex flex-col flex-1 pl-8 gap-4">
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-[800px] text-wrap break-all">
             {task.name}
             {coordinate && (
               <a
@@ -270,7 +270,7 @@ export function LabelTask({
               </a>
             )}
           </div>
-          {selectedModelId && (
+          {!!selectedModelId && (
             <div>
               <span className="font-bold">Inference Result:</span>
               {inferenceResult ? (
