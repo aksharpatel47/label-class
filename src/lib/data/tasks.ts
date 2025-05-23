@@ -40,7 +40,7 @@ export async function fetchTasksInProject(projectId: string, page: number) {
 }
 
 export function fetchNumberOfTasksInProject(
-  projectId: string
+  projectId: string,
 ): Promise<number> {
   return db
     .select({
@@ -51,17 +51,34 @@ export function fetchNumberOfTasksInProject(
     .then((res) => res[0].count);
 }
 
+interface IFetchTasksForLabeling {
+  currentUserId: string;
+  projectId: string;
+  after?: string | null;
+  labeledBy?: string | null;
+  labeledOn?: string | null;
+  labelId?: string | null;
+  labelValue?: string | null;
+  trainedModel?: string | null;
+  inferenceValue?: string | null;
+  dataset?: string | null;
+}
+
 export async function fetchTasksForLabeling(
-  currentUserId: string,
-  projectId: string,
-  after?: string | null,
-  labeledBy?: string | null,
-  labelId?: string | null,
-  labelValue?: string | null,
-  trainedModel?: string | null,
-  inferenceValue?: string | null,
-  dataset?: string | null
+  queryParams: IFetchTasksForLabeling,
 ) {
+  const {
+    currentUserId,
+    projectId,
+    after,
+    labeledBy,
+    labeledOn,
+    labelId,
+    labelValue,
+    trainedModel,
+    inferenceValue,
+    dataset,
+  } = queryParams;
   let sl = db
     .select({
       id: tasks.id,
@@ -70,23 +87,60 @@ export async function fetchTasksForLabeling(
       createdAt: tasks.createdAt,
     })
     .from(tasks)
+    // .leftJoin(taskLabels, eq(tasks.id, taskLabels.taskId))
     .$dynamic();
 
   const filters: Array<SQL | undefined> = [];
-  filters.push(eq(tasks.projectId, projectId));
-  if (labelId && labelValue) {
-    sl = sl.leftJoin(taskLabels, eq(tasks.id, taskLabels.taskId)).$dynamic();
 
+  filters.push(eq(tasks.projectId, projectId));
+
+  if (labeledBy || labeledOn || (labelId && labelValue)) {
+    sl = sl.leftJoin(taskLabels, eq(tasks.id, taskLabels.taskId)).$dynamic();
+  }
+
+  if (labeledBy) {
+    filters.push(eq(taskLabels.labeledBy, labeledBy));
+  }
+
+  if (labeledOn) {
+    const labeledOnDate = new Date(labeledOn);
+    const lteDate = new Date(
+      Date.UTC(
+        labeledOnDate.getUTCFullYear(),
+        labeledOnDate.getUTCMonth(),
+        labeledOnDate.getUTCDate(),
+        23,
+        59,
+        59,
+        999,
+      ),
+    );
+    const gteDate = new Date(
+      Date.UTC(
+        labeledOnDate.getUTCFullYear(),
+        labeledOnDate.getUTCMonth(),
+        labeledOnDate.getUTCDate(),
+        0,
+        0,
+        0,
+        0,
+      ),
+    );
+    filters.push(
+      and(
+        gte(taskLabels.createdAt, gteDate),
+        lte(taskLabels.createdAt, lteDate),
+      ),
+    );
+  }
+
+  if (labelId && labelValue) {
     if (labelValue === "Unlabeled") {
       filters.push(isNull(taskLabels.labelId));
     } else {
-      if (labeledBy) {
-        filters.push(eq(taskLabels.labeledBy, labeledBy));
-      }
-
       filters.push(
         eq(taskLabels.labelId, labelId),
-        eq(taskLabels.value, labelValue as any)
+        eq(taskLabels.value, labelValue as any),
       );
     }
   } else if (labelId) {
@@ -108,8 +162,8 @@ export async function fetchTasksForLabeling(
       filters.push(
         and(
           eq(taskInferences.modelId, trainedModelId),
-          gte(taskInferences.inference, 5000)
-        )
+          gte(taskInferences.inference, 5000),
+        ),
       );
     } else if (inferenceValue === "<50%") {
       sl = sl
@@ -118,8 +172,8 @@ export async function fetchTasksForLabeling(
       filters.push(
         and(
           eq(taskInferences.modelId, trainedModelId),
-          lte(taskInferences.inference, 5000)
-        )
+          lte(taskInferences.inference, 5000),
+        ),
       );
     } else {
       const inferenceValueRange = inferenceValue
@@ -141,8 +195,8 @@ export async function fetchTasksForLabeling(
           and(
             eq(taskInferences.modelId, trainedModelId),
             gte(taskInferences.inference, inferenceValueRange[0]),
-            lte(taskInferences.inference, inferenceValueRange[1])
-          )
+            lte(taskInferences.inference, inferenceValueRange[1]),
+          ),
         );
       }
     }
@@ -152,7 +206,7 @@ export async function fetchTasksForLabeling(
     sl = sl
       .leftJoin(
         projectTaskSelections,
-        eq(tasks.id, projectTaskSelections.taskId)
+        eq(tasks.id, projectTaskSelections.taskId),
       )
       .$dynamic();
 
@@ -164,8 +218,8 @@ export async function fetchTasksForLabeling(
       filters.push(
         and(
           eq(projectTaskSelections.dataset, dataset as any),
-          eq(projectTaskSelections.labelId, labelId)
-        )
+          eq(projectTaskSelections.labelId, labelId),
+        ),
       );
     }
   }
@@ -188,8 +242,8 @@ export async function fetchTasksForLabeling(
     .where(
       inArray(
         tasks.id,
-        results.map((t: any) => t.id)
-      )
+        results.map((t: any) => t.id),
+      ),
     );
 
   return results;
@@ -208,7 +262,7 @@ export function addInferencesForTasks(tx: postgres.TransactionSql) {
 export function addLabelsForTasks(
   tx: PgTransaction<any, any, any>,
   projectId: string,
-  labeledBy: string
+  labeledBy: string,
 ) {
   //language=PostgreSQL
   return tx.execute(sql`
@@ -230,7 +284,7 @@ export function addLabelsForTasks(
 export function addDatasetForTasks(
   tx: PgTransaction<any, any, any>,
   projectId: string,
-  labelId: string
+  labelId: string,
 ) {
   //language=PostgreSQL
   return tx.execute(sql`

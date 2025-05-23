@@ -9,8 +9,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AuthUser, ProjectLabel, TrainedModel } from "@/db/schema";
-import { XCircle } from "lucide-react";
+import { CalendarIcon, XCircle } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { useState } from "react";
 
 interface ILabelFiltersProps {
   users: AuthUser[];
@@ -25,6 +32,7 @@ interface ILabelFiltersProps {
     trainedmodel: string;
     inferencevalue: string;
     dataset: string;
+    labeledon: string;
   };
   inferenceValues: string[];
 
@@ -33,6 +41,7 @@ interface ILabelFiltersProps {
 
 export function LabelFilters(props: ILabelFiltersProps) {
   const { onSelectChange } = props;
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   return (
     <div className="flex content-center">
@@ -117,7 +126,56 @@ export function LabelFilters(props: ILabelFiltersProps) {
           </Select>
           <Button
             variant="ghost"
-            onClick={() => onSelectChange({ user: undefined })}
+            onClick={() =>
+              onSelectChange({ user: undefined, labeledon: undefined })
+            }
+          >
+            <XCircle />
+          </Button>
+        </div>
+      </div>
+
+      <div>
+        <Label>Labeled On</Label>
+        <div className="flex">
+          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-[180px] justify-start text-left font-normal"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {props.currentValues.labeledon
+                  ? new Date(props.currentValues.labeledon).toLocaleDateString()
+                  : "Select Date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={
+                  props.currentValues.labeledon
+                    ? new Date(props.currentValues.labeledon)
+                    : undefined
+                }
+                onSelect={(date) => {
+                  if (date) {
+                    onSelectChange({
+                      labeledon: date.toISOString(),
+                    });
+                  }
+                  setIsCalendarOpen(false);
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              onSelectChange({ labeledon: undefined });
+              setIsCalendarOpen(false);
+            }}
           >
             <XCircle />
           </Button>

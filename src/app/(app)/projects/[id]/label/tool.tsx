@@ -24,6 +24,7 @@ export function Tool(props: IToolProps) {
   const trainedModel = searchParams.get("trainedmodel") || "";
   const inferenceValue = searchParams.get("inferencevalue") || "";
   const dataset = searchParams.get("dataset") || "";
+  const labeledon = searchParams.get("labeledon") || "";
   const currentValues = {
     label: projectLabel,
     labelvalue: projectLabelValue,
@@ -31,6 +32,7 @@ export function Tool(props: IToolProps) {
     trainedmodel: trainedModel,
     inferencevalue: inferenceValue,
     dataset,
+    labeledon,
   };
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [index, setIndex] = useState(0);
@@ -42,7 +44,7 @@ export function Tool(props: IToolProps) {
   async function handleApplyClick() {
     setLoadingTasks(true);
     const res = await fetch(
-      `/api/projects/${props.projectId}/tasks/label?${searchParams.toString()}`
+      `/api/projects/${props.projectId}/tasks/label?${searchParams.toString()}`,
     );
     const newTasks = await res.json();
     setIndex(0);
@@ -84,7 +86,7 @@ export function Tool(props: IToolProps) {
     }
 
     const res = await fetch(
-      `/api/projects/${props.projectId}/tasks/label?${newSearchParams.toString()}`
+      `/api/projects/${props.projectId}/tasks/label?${newSearchParams.toString()}`,
     );
 
     let newTasks = await res.json();

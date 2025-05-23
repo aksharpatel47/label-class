@@ -18,22 +18,24 @@ export async function GET(
   const after = searchParams.get("after");
   const labelId = searchParams.get("label");
   const labelValue = searchParams.get("labelvalue");
-  const user = searchParams.get("user");
+  const labeledOn = searchParams.get("labeledon");
+  const labeledBy = searchParams.get("user");
   const trainedModel = searchParams.get("trainedmodel");
   const inferenceValue = searchParams.get("inferencevalue");
   const dataset = searchParams.get("dataset");
 
-  const tasks = await fetchTasksForLabeling(
-    session.user.id,
+  const tasks = await fetchTasksForLabeling({
+    currentUserId: session.user.id,
     projectId,
     after,
-    user,
+    labeledBy,
+    labeledOn,
     labelId,
     labelValue,
     trainedModel,
     inferenceValue,
     dataset,
-  );
+  });
 
   return NextResponse.json(tasks);
 }
