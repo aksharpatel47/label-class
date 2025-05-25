@@ -35,7 +35,7 @@
     "immer": "^10.0.3",
     "lucia": "^2.7.4",
     "lucide-react": "0.363.0",
-    "next": "15.2.4",
+    "next": "14.2.29",
     "next-themes": "^0.3.0",
     "postgres": "^3.4.3",
     "react": "^18.2.0",
