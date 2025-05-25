@@ -13,8 +13,17 @@ import {
 import { ChevronRight } from "lucide-react";
 import { ArchiveButton } from "@/app/(app)/models/components/archive-button";
 
-export default async function Page() {
-  const models = await fetchTrainedModels();
+interface IPageSearchParams {
+  archived?: "true" | "false";
+}
+
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: IPageSearchParams;
+}) {
+  const archived = searchParams.archived === "true";
+  const models = await fetchTrainedModels(archived);
 
   return (
     <>
@@ -26,6 +35,14 @@ export default async function Page() {
           <Link href="/models/new">+ New Model</Link>
         </Button>
       </div>
+      <div className="flex gap-2">
+        <Button variant={archived ? "outline" : "default"}>
+          <Link href="/models?archived=false">Active</Link>
+        </Button>
+        <Button variant={archived ? "default" : "outline"} className="mr-4">
+          <Link href="/models?archived=true">Archived</Link>
+        </Button>
+      </div>
       <Table>
         <TableHeader>
           <TableRow>
@@ -35,9 +52,10 @@ export default async function Page() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {models.map((m) => {
-            return (
-              <>
+          {models
+            .filter((m) => m.archived === archived)
+            .map((m) => {
+              return (
                 <TableRow key={m.id}>
                   <TableCell>
                     <Link href={`/models/${m.id}`}>{m.name}</Link>
@@ -49,9 +67,8 @@ export default async function Page() {
                     <ChevronRight />
                   </TableCell>
                 </TableRow>
-              </>
-            );
-          })}
+              );
+            })}
         </TableBody>
       </Table>
     </>
