@@ -61,7 +61,7 @@ function selectAndShuffle<T>(array: T[], count: number): T[] {
 async function fetchTasksForTruePositiveImages(
   projectId: string,
   inferenceModelId: number,
-  labelId: string
+  labelId: string,
 ): Promise<Task[]> {
   // language=PostgreSQL
   return sql<Task[]>`
@@ -83,7 +83,7 @@ async function fetchTasksForTruePositiveImages(
 async function fetchTasksForFalsePositiveImages(
   projectId: string,
   inferenceModelId: number,
-  labelId: string
+  labelId: string,
 ): Promise<Task[]> {
   // language=PostgreSQL
   return sql<Task[]>`
@@ -105,7 +105,7 @@ async function fetchTasksForFalsePositiveImages(
 async function fetchTasksForFalseNegativeImages(
   projectId: string,
   inferenceModelId: number,
-  labelId: string
+  labelId: string,
 ): Promise<Task[]> {
   // language=PostgreSQL
   return sql<Task[]>`
@@ -126,7 +126,7 @@ async function fetchTasksForFalseNegativeImages(
 async function fetchTasksForTrueNegativeImages(
   projectId: string,
   inferenceModelId: number,
-  labelId: string
+  labelId: string,
 ): Promise<Task[]> {
   // language=PostgreSQL
   return sql<Task[]>`
@@ -148,7 +148,7 @@ async function fetchTasksForTrueNegativeImages(
 export async function selectionAction(
   projectId: string,
   prevState: IState | undefined,
-  formData: FormData
+  formData: FormData,
 ): Promise<IState> {
   const result = selectionSchema.safeParse(Object.fromEntries(formData));
 
@@ -158,7 +158,7 @@ export async function selectionAction(
 
   const { numImages, labelId, inferenceModelId } = result.data;
   console.log(
-    `numImages: ${numImages}, labelId: ${labelId}, inferenceModelId: ${inferenceModelId}`
+    `numImages: ${numImages}, labelId: ${labelId}, inferenceModelId: ${inferenceModelId}`,
   );
 
   let tasks: Task[] = [];
@@ -169,25 +169,25 @@ export async function selectionAction(
     tasks = await fetchTasksForTruePositiveImages(
       projectId,
       inferenceModelId,
-      labelId
+      labelId,
     );
   } else if (imageInferenceType === "False Positive") {
     tasks = await fetchTasksForFalsePositiveImages(
       projectId,
       inferenceModelId,
-      labelId
+      labelId,
     );
   } else if (imageInferenceType === "False Negative") {
     tasks = await fetchTasksForFalseNegativeImages(
       projectId,
       inferenceModelId,
-      labelId
+      labelId,
     );
   } else if (imageInferenceType === "True Negative") {
     tasks = await fetchTasksForTrueNegativeImages(
       projectId,
       inferenceModelId,
-      labelId
+      labelId,
     );
   }
 
@@ -206,24 +206,39 @@ export async function selectionAction(
   };
 }
 
+/**
+ * splitDataset function splits the dataset into train, validation, and test sets
+ * It shuffles the task IDs and divides them into 70% training, 15% validation, and 15% test sets.
+ * If the length of tasks is 1, it returns the single task in the train set and empty arrays for validation and test.
+ * If the length of tasks is 2, it returns one task in the train set and one in the validation set, leaving the test set empty.
+ * If the length of tasks is 3 or more, it splits them into the specified proportions.
+ * In any case, it should ensure the priority of the train set, followed by validation, and then test sets.
+ * @param taskIds
+ */
 function splitDataset(taskIds: string[]) {
   taskIds = shuffle(taskIds);
   const datasetLength = taskIds.length;
-  const validTestImageCount = Math.ceil(datasetLength * 0.15);
-  const trainImageCount = datasetLength - validTestImageCount * 2;
 
-  const trainImages = taskIds.slice(0, trainImageCount);
-  const validImages = taskIds.slice(
-    trainImageCount,
-    trainImageCount + validTestImageCount
-  );
-  const testImages = taskIds.slice(trainImageCount + validTestImageCount);
-
-  return {
-    train: trainImages,
-    valid: validImages,
-    test: testImages,
+  let result = {
+    train: [] as string[],
+    valid: [] as string[],
+    test: [] as string[],
   };
+
+  const trainCount = Math.max(1, Math.floor(datasetLength * 0.7));
+
+  result.train = taskIds.slice(0, trainCount);
+
+  if (datasetLength > trainCount) {
+    const validCount = Math.max(
+      1,
+      Math.floor((datasetLength - trainCount) * 0.5),
+    );
+    result.valid = taskIds.slice(trainCount, trainCount + validCount);
+    result.test = taskIds.slice(trainCount + validCount);
+  }
+
+  return result;
 }
 
 interface IAddImagesState {
@@ -238,7 +253,7 @@ export async function addImagesToDataset(
   projectId: string,
   dataset: (typeof datasetEnumValues)[number] | "split",
   prevState: IAddImagesState | undefined,
-  formData: FormData
+  formData: FormData,
 ): Promise<IAddImagesState> {
   const taskIds = selectedTasks.map((image) => image.id);
 
@@ -258,8 +273,8 @@ export async function addImagesToDataset(
       and(
         eq(taskLabels.labelId, labelId),
         eq(taskLabels.value, labelValue),
-        inArray(tasks.id, taskIds)
-      )
+        inArray(tasks.id, taskIds),
+      ),
     );
 
   const filteredTaskIds = filteredTasks.map((task) => task.id);
