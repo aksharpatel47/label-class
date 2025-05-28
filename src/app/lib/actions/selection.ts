@@ -230,10 +230,7 @@ function splitDataset(taskIds: string[]) {
   result.train = taskIds.slice(0, trainCount);
 
   if (datasetLength > trainCount) {
-    const validCount = Math.max(
-      1,
-      Math.floor((datasetLength - trainCount) * 0.5),
-    );
+    const validCount = Math.ceil((datasetLength - trainCount) * 0.5);
     result.valid = taskIds.slice(trainCount, trainCount + validCount);
     result.test = taskIds.slice(trainCount + validCount);
   }
