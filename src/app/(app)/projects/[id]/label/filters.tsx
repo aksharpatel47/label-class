@@ -81,6 +81,7 @@ export function LabelFilters(props: ILabelFiltersProps) {
               const newValues: any = { labelvalue: newValue };
               if (newValue === "Unlabeled") {
                 newValues.user = undefined;
+                newValues.labeledon = undefined;
               }
               onSelectChange(newValues);
             }}
@@ -143,6 +144,7 @@ export function LabelFilters(props: ILabelFiltersProps) {
               <Button
                 variant="outline"
                 className="w-[180px] justify-start text-left font-normal"
+                disabled={props.currentValues.labelvalue === "Unlabeled"}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {props.currentValues.labeledon
@@ -176,6 +178,7 @@ export function LabelFilters(props: ILabelFiltersProps) {
               onSelectChange({ labeledon: undefined });
               setIsCalendarOpen(false);
             }}
+            disabled={props.currentValues.labelvalue === "Unlabeled"}
           >
             <XCircle />
           </Button>
