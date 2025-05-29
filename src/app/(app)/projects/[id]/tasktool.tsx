@@ -1,6 +1,15 @@
 "use client";
 
-import { AuthUser, ProjectLabel, Task } from "@/db/schema";
+import { ProjectLabel, Task } from "@/db/schema";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useContext, useEffect } from "react";
+import { create } from "zustand";
+import { immer } from "zustand/middleware/immer";
+import { Map } from "lucide-react";
+import { IGetTaskLabelReponse } from "@/app/api/tasks/[taskId]/labels/route";
+import { SessionContext } from "@/app/(app)/session-context";
+import { Session } from "lucia";
+import { useToast } from "@/hooks/use-toast";
 
 interface TaskLabel {
   value: TaskLabelValue;
@@ -17,14 +26,6 @@ interface TaskLabel {
     name: string;
   } | null;
 }
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useContext, useEffect } from "react";
-import { create } from "zustand";
-import { immer } from "zustand/middleware/immer";
-import { Map } from "lucide-react";
-import { IGetTaskLabelReponse } from "@/app/api/tasks/[taskId]/labels/route";
-import { SessionContext } from "@/app/(app)/session-context";
-import { Session } from "lucia";
 
 const validLabelValues = ["Present", "Absent", "Difficult", "Skip"] as const;
 type ValidLabelValues = (typeof validLabelValues)[number];
@@ -46,13 +47,15 @@ type Actions = {
   cycleLabelValue(
     currentTaskId: string,
     labelId: string,
-    session: Session
+    session: Session,
+    toast: any
   ): void;
   setLabelValue(
     currentaskId: string,
     labelId: string,
     value: string | undefined,
-    session: Session
+    session: Session,
+    toast: any
   ): void;
   setInferenceResult(inference: number): void;
 };
@@ -73,7 +76,12 @@ const useLabelTaskStore = create<State & Actions>()(
         state.taskLabels = taskLabels;
       });
     },
-    cycleLabelValue(currentTaskId: string, labelId: string, session: Session) {
+    cycleLabelValue(
+      currentTaskId: string,
+      labelId: string,
+      session: Session,
+      toast
+    ) {
       set((state) => {
         const currentLabelValue = state.taskLabels[labelId]?.value;
         const currentLabelIndex = taskLabelValues.indexOf(currentLabelValue);
@@ -112,16 +120,23 @@ const useLabelTaskStore = create<State & Actions>()(
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ value: newLabelValue }),
-        })
-          .then((res) => res.json())
-          .then(console.log);
+        }).catch((error) => {
+          // Use the toast function if provided
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: `Failed to update label: ${error instanceof Error ? error.message : String(error)}`,
+          });
+        });
       });
     },
+
     setLabelValue(
       currentTaskId: string,
       labelId: string,
       value: TaskLabelValue,
-      session: Session
+      session: Session,
+      toast
     ) {
       set((state) => {
         if (value === undefined) {
@@ -156,8 +171,21 @@ const useLabelTaskStore = create<State & Actions>()(
           },
           body: JSON.stringify({ value }),
         })
-          .then((res) => res.json())
-          .then(console.log);
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! Status: ${res.status}`);
+            }
+            return res.json();
+          })
+          .then(console.log)
+          .catch((error) => {
+            // Use the toast function if provided
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: `Failed to set label value: ${error instanceof Error ? error.message : String(error)}`,
+            });
+          });
       });
     },
     setInferenceResult(inference: number) {
@@ -184,6 +212,8 @@ export function LabelTask({
   selectedModelId?: number;
 }) {
   const session = useContext(SessionContext);
+  const { toast } = useToast(); // Add toast hook
+
   const projectLabelKeys = projectLabels.reduce(
     (acc, d, i) => ({
       ...acc,
@@ -208,7 +238,12 @@ export function LabelTask({
     const labelUrl = `/api/tasks/${task.id}/labels`;
 
     fetch(labelUrl)
-      .then((resp) => resp.json())
+      .then((resp) => {
+        if (!resp.ok) {
+          throw new Error(`HTTP error! Status: ${resp.status}`);
+        }
+        return resp.json();
+      })
       .then((data: IGetTaskLabelReponse) => {
         const taskLabels: TaskLabels = {};
         data.forEach((l) => {
@@ -216,22 +251,47 @@ export function LabelTask({
         });
         setInitialLabels(taskLabels);
         setLoadingInitialLabels(false);
+      })
+      .catch((error) => {
+        setLoadingInitialLabels(false);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: `Failed to load labels: ${error.message}`,
+        });
       });
 
     if (selectedModelId) {
       fetch(`/api/tasks/${task.id}/models/${selectedModelId}/inference`)
-        .then((resp) => resp.json())
+        .then((resp) => {
+          if (!resp.ok) {
+            throw new Error(`HTTP error! Status: ${resp.status}`);
+          }
+          return resp.json();
+        })
         .then((data) => {
           if (data.inference) {
             setInferenceResult(data.inference);
           }
+        })
+        .catch((error) => {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: `Failed to load inference data: ${error.message}`,
+          });
         });
     }
   }, [task.id, selectedModelId]);
 
   function handleKeyDown(e: KeyboardEvent) {
     if (projectLabelKeys.hasOwnProperty(Number(e.key))) {
-      cycleLabelValue(task.id, projectLabels[Number(e.key) - 1].id, session!);
+      cycleLabelValue(
+        task.id,
+        projectLabels[Number(e.key) - 1].id,
+        session!,
+        toast // Pass the toast function
+      );
     }
   }
 
@@ -300,7 +360,9 @@ export function LabelTask({
                 variant="outline"
                 type="single"
                 value={taskLabels[l.id]?.value}
-                onValueChange={(v) => setLabelValue(task.id, l.id, v, session!)}
+                onValueChange={(v) => {
+                  setLabelValue(task.id, l.id, v, session!, toast); // Pass the toast function
+                }}
                 disabled={loadingInitialLabels}
               >
                 {taskLabelValues.slice(1).map((pl) => (
