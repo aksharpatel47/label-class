@@ -6,8 +6,8 @@ import {
   tasks,
 } from "@/db/schema";
 import { and, asc, eq, gte, inArray, isNull, lte, SQL, sql } from "drizzle-orm";
-import { unstable_noStore } from "next/cache";
 import { PgSelectBase, PgTransaction } from "drizzle-orm/pg-core";
+import { unstable_noStore } from "next/cache";
 import postgres from "postgres";
 
 export function addTaskInProject(projectId: string, name: string, url: string) {
@@ -64,6 +64,14 @@ interface IFetchTasksForLabeling {
   dataset?: string | null;
 }
 
+/**
+ * Builds the select query and filter array for fetching tasks based on the provided query params.
+ * Handles all supported filters and required joins for labeling task queries.
+ *
+ * @param oSQL - The base select query to start with
+ * @param queryParams - The search/filter params for labeling
+ * @returns { sl, filters } - The select query (with joins) and the array of filters to apply
+ */
 function generateFiltersBasedOnQueryParams(
   oSQL: PgSelectBase<any, any, any, any, any>,
   queryParams: IFetchTasksForLabeling
@@ -73,7 +81,6 @@ function generateFiltersBasedOnQueryParams(
 } {
   let sl = oSQL;
   const {
-    currentUserId,
     projectId,
     after,
     labeledBy,
@@ -87,16 +94,45 @@ function generateFiltersBasedOnQueryParams(
 
   const filters: Array<SQL | undefined> = [];
 
+  // Always filter by projectId
   filters.push(eq(tasks.projectId, projectId));
 
-  if (labeledBy || labeledOn || (labelId && labelValue)) {
-    sl = sl.leftJoin(taskLabels, eq(tasks.id, taskLabels.taskId)).$dynamic();
+  // If any label-based filter is present, join taskLabels
+  if (labelId) {
+    const joinCondition = and(
+      eq(tasks.id, taskLabels.taskId),
+      eq(taskLabels.labelId, labelId)
+    );
+    if (labelValue === "Unlabeled") {
+      // If labelId is present but labelValue is 'Unlabeled', we need to
+      // left join taskLabels to find tasks without this labelId
+      sl = sl.leftJoin(taskLabels, joinCondition).$dynamic();
+    } else {
+      sl = sl.innerJoin(taskLabels, joinCondition).$dynamic();
+    }
+  } else if (labeledBy || labeledOn) {
+    sl = sl.innerJoin(taskLabels, eq(tasks.id, taskLabels.taskId)).$dynamic();
   }
 
+  if (trainedModel) {
+    // If trainedModel is present, we need to join taskInferences
+    sl = sl
+      .innerJoin(
+        taskInferences,
+        and(
+          eq(tasks.name, taskInferences.imageName),
+          eq(taskInferences.modelId, Number(trainedModel))
+        )
+      )
+      .$dynamic();
+  }
+
+  // Filter by who labeled the task
   if (labeledBy) {
     filters.push(eq(taskLabels.labeledBy, labeledBy));
   }
 
+  // Filter by date the task was labeled (on a specific day)
   if (labeledOn) {
     const labeledOnDate = new Date(labeledOn);
     const lteDate = new Date(
@@ -129,31 +165,26 @@ function generateFiltersBasedOnQueryParams(
     );
   }
 
-  if (labelId && labelValue) {
-    if (labelValue === "Unlabeled") {
-      filters.push(isNull(taskLabels.labelId));
-    } else {
-      filters.push(
-        eq(taskLabels.labelId, labelId),
-        eq(taskLabels.value, labelValue as any)
-      );
-    }
-  } else if (labelId) {
-    sl = sl.leftJoin(taskLabels, eq(tasks.id, taskLabels.taskId)).$dynamic();
-    filters.push(eq(taskLabels.labelId, labelId));
+  // Filter by labelId and labelValue (including 'Unlabeled')
+  if (labelId && labelValue === "Unlabeled") {
+    // Only tasks with no label for this labelId
+    filters.push(isNull(taskLabels.labelId));
+  } else if (labelId && labelValue) {
+    // Only tasks with this labelId and labelValue
+    filters.push(eq(taskLabels.value, labelValue as any));
   }
 
+  // Filter for tasks after a certain id (pagination)
   if (after) {
     filters.push(sql`${tasks.id} > ${after}`);
   }
 
+  // Model inference-based filters
   if (trainedModel && inferenceValue) {
     const trainedModelId = Number(trainedModel);
 
     if (inferenceValue === ">=50%") {
-      sl = sl
-        .leftJoin(taskInferences, eq(tasks.name, taskInferences.imageName))
-        .$dynamic();
+      // Only tasks with inference >= 5000 for this model
       filters.push(
         and(
           eq(taskInferences.modelId, trainedModelId),
@@ -161,9 +192,7 @@ function generateFiltersBasedOnQueryParams(
         )
       );
     } else if (inferenceValue === "<50%") {
-      sl = sl
-        .leftJoin(taskInferences, eq(tasks.name, taskInferences.imageName))
-        .$dynamic();
+      // Only tasks with inference < 5000 for this model
       filters.push(
         and(
           eq(taskInferences.modelId, trainedModelId),
@@ -171,6 +200,7 @@ function generateFiltersBasedOnQueryParams(
         )
       );
     } else {
+      // Range filter, e.g. '0.2-0.5%'
       const inferenceValueRange = inferenceValue
         .slice(0, -1)
         .split("-")
@@ -183,9 +213,6 @@ function generateFiltersBasedOnQueryParams(
         inferenceValueRange[0] < inferenceValueRange[1] &&
         trainedModelId > 0
       ) {
-        sl = sl
-          .leftJoin(taskInferences, eq(tasks.name, taskInferences.imageName))
-          .$dynamic();
         filters.push(
           and(
             eq(taskInferences.modelId, trainedModelId),
@@ -197,6 +224,7 @@ function generateFiltersBasedOnQueryParams(
     }
   }
 
+  // Dataset-based filters (train/test/valid/any/none)
   if (dataset && labelId) {
     sl = sl
       .leftJoin(
