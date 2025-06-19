@@ -35,6 +35,7 @@ export function Tool(props: IToolProps) {
     labeledon,
   };
   const [tasks, setTasks] = useState<Task[] | null>(null);
+  const [totalTasks, setTotalTasks] = useState<number>(0);
   const [index, setIndex] = useState(0);
   const [loadingTasks, setLoadingTasks] = useState(false);
 
@@ -44,11 +45,12 @@ export function Tool(props: IToolProps) {
   async function handleApplyClick() {
     setLoadingTasks(true);
     const res = await fetch(
-      `/api/projects/${props.projectId}/tasks/label?${searchParams.toString()}`,
+      `/api/projects/${props.projectId}/tasks/label?${searchParams.toString()}`
     );
     const newTasks = await res.json();
     setIndex(0);
-    setTasks(newTasks);
+    setTasks(newTasks.tasks);
+    setTotalTasks(newTasks.totalTasks);
     setLoadingTasks(false);
   }
 
@@ -86,10 +88,12 @@ export function Tool(props: IToolProps) {
     }
 
     const res = await fetch(
-      `/api/projects/${props.projectId}/tasks/label?${newSearchParams.toString()}`,
+      `/api/projects/${props.projectId}/tasks/label?${newSearchParams.toString()}`
     );
 
-    let newTasks = await res.json();
+    let response = await res.json();
+    let newTasks: Task[] = response.tasks;
+    let totalTasks = response.totalTasks;
 
     if (newTasks.length > 0 && tasks !== null) {
       // find the index of the first task that is already present in the tasks array
@@ -105,6 +109,7 @@ export function Tool(props: IToolProps) {
     const previousTasks = tasks ?? [];
     const previousTaskLength = previousTasks.length;
     setTasks([...previousTasks, ...newTasks]);
+    setTotalTasks(totalTasks);
     setIndex(previousTaskLength);
     setLoadingTasks(false);
   }
@@ -173,8 +178,8 @@ export function Tool(props: IToolProps) {
       <div>
         <div className="p-2">
           Use the arrow keys to navigate between images. Currently on{" "}
-          {index + 1} of {tasks.length}. Current task bookmark:{" "}
-          {tasks[index].createdAt as any}
+          {index + 1} of {tasks.length}. Total {totalTasks}. Current task
+          bookmark: {tasks[index].createdAt as any}
         </div>
         <LabelTask
           task={tasks[index]}

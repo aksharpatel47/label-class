@@ -1,10 +1,13 @@
 import { getRouteSession } from "@/app/lib/utils/session";
-import { fetchTasksForLabeling } from "@/lib/data/tasks";
+import {
+  fetchTasksForLabeling,
+  fetchTotalTasksForLabeling,
+} from "@/lib/data/tasks";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { projectId: string } },
+  { params }: { params: { projectId: string } }
 ) {
   const session = await getRouteSession(request.method);
 
@@ -24,7 +27,7 @@ export async function GET(
   const inferenceValue = searchParams.get("inferencevalue");
   const dataset = searchParams.get("dataset");
 
-  const tasks = await fetchTasksForLabeling({
+  const input = {
     currentUserId: session.user.id,
     projectId,
     after,
@@ -35,7 +38,14 @@ export async function GET(
     trainedModel,
     inferenceValue,
     dataset,
-  });
+  };
 
-  return NextResponse.json(tasks);
+  const tasks = await fetchTasksForLabeling(input);
+  const totalTasks = await fetchTotalTasksForLabeling(input);
+
+  const response = {
+    tasks,
+    totalTasks,
+  };
+  return NextResponse.json(response);
 }

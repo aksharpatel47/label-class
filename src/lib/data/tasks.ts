@@ -7,7 +7,7 @@ import {
 } from "@/db/schema";
 import { and, asc, eq, gte, inArray, isNull, lte, SQL, sql } from "drizzle-orm";
 import { unstable_noStore } from "next/cache";
-import { PgTransaction } from "drizzle-orm/pg-core";
+import { PgSelectBase, PgTransaction } from "drizzle-orm/pg-core";
 import postgres from "postgres";
 
 export function addTaskInProject(projectId: string, name: string, url: string) {
@@ -40,7 +40,7 @@ export async function fetchTasksInProject(projectId: string, page: number) {
 }
 
 export function fetchNumberOfTasksInProject(
-  projectId: string,
+  projectId: string
 ): Promise<number> {
   return db
     .select({
@@ -64,9 +64,14 @@ interface IFetchTasksForLabeling {
   dataset?: string | null;
 }
 
-export async function fetchTasksForLabeling(
-  queryParams: IFetchTasksForLabeling,
-) {
+function generateFiltersBasedOnQueryParams(
+  oSQL: PgSelectBase<any, any, any, any, any>,
+  queryParams: IFetchTasksForLabeling
+): {
+  sl: PgSelectBase<any, any, any, any, any>;
+  filters: Array<SQL | undefined>;
+} {
+  let sl = oSQL;
   const {
     currentUserId,
     projectId,
@@ -79,16 +84,6 @@ export async function fetchTasksForLabeling(
     inferenceValue,
     dataset,
   } = queryParams;
-  let sl = db
-    .select({
-      id: tasks.id,
-      name: tasks.name,
-      imageUrl: tasks.imageUrl,
-      createdAt: tasks.createdAt,
-    })
-    .from(tasks)
-    // .leftJoin(taskLabels, eq(tasks.id, taskLabels.taskId))
-    .$dynamic();
 
   const filters: Array<SQL | undefined> = [];
 
@@ -112,8 +107,8 @@ export async function fetchTasksForLabeling(
         23,
         59,
         59,
-        999,
-      ),
+        999
+      )
     );
     const gteDate = new Date(
       Date.UTC(
@@ -123,14 +118,14 @@ export async function fetchTasksForLabeling(
         0,
         0,
         0,
-        0,
-      ),
+        0
+      )
     );
     filters.push(
       and(
         gte(taskLabels.createdAt, gteDate),
-        lte(taskLabels.createdAt, lteDate),
-      ),
+        lte(taskLabels.createdAt, lteDate)
+      )
     );
   }
 
@@ -140,7 +135,7 @@ export async function fetchTasksForLabeling(
     } else {
       filters.push(
         eq(taskLabels.labelId, labelId),
-        eq(taskLabels.value, labelValue as any),
+        eq(taskLabels.value, labelValue as any)
       );
     }
   } else if (labelId) {
@@ -162,8 +157,8 @@ export async function fetchTasksForLabeling(
       filters.push(
         and(
           eq(taskInferences.modelId, trainedModelId),
-          gte(taskInferences.inference, 5000),
-        ),
+          gte(taskInferences.inference, 5000)
+        )
       );
     } else if (inferenceValue === "<50%") {
       sl = sl
@@ -172,8 +167,8 @@ export async function fetchTasksForLabeling(
       filters.push(
         and(
           eq(taskInferences.modelId, trainedModelId),
-          lte(taskInferences.inference, 5000),
-        ),
+          lte(taskInferences.inference, 5000)
+        )
       );
     } else {
       const inferenceValueRange = inferenceValue
@@ -195,8 +190,8 @@ export async function fetchTasksForLabeling(
           and(
             eq(taskInferences.modelId, trainedModelId),
             gte(taskInferences.inference, inferenceValueRange[0]),
-            lte(taskInferences.inference, inferenceValueRange[1]),
-          ),
+            lte(taskInferences.inference, inferenceValueRange[1])
+          )
         );
       }
     }
@@ -206,7 +201,7 @@ export async function fetchTasksForLabeling(
     sl = sl
       .leftJoin(
         projectTaskSelections,
-        eq(tasks.id, projectTaskSelections.taskId),
+        eq(tasks.id, projectTaskSelections.taskId)
       )
       .$dynamic();
 
@@ -218,11 +213,58 @@ export async function fetchTasksForLabeling(
       filters.push(
         and(
           eq(projectTaskSelections.dataset, dataset as any),
-          eq(projectTaskSelections.labelId, labelId),
-        ),
+          eq(projectTaskSelections.labelId, labelId)
+        )
       );
     }
   }
+
+  return { sl, filters };
+}
+
+export async function fetchTotalTasksForLabeling(
+  queryParams: IFetchTasksForLabeling
+) {
+  let sl = db
+    .select({ count: sql<number>`cast(count(*) as integer)` })
+    .from(tasks)
+    .$dynamic();
+
+  const { sl: newSl, filters } = generateFiltersBasedOnQueryParams(
+    sl,
+    queryParams
+  );
+  sl = newSl as typeof sl;
+
+  const results = await sl.where(and(...filters));
+
+  if (!results.length) {
+    return 0;
+  }
+
+  return results[0].count;
+}
+
+export async function fetchTasksForLabeling(
+  queryParams: IFetchTasksForLabeling
+) {
+  let sl = db
+    .select({
+      id: tasks.id,
+      name: tasks.name,
+      imageUrl: tasks.imageUrl,
+      createdAt: tasks.createdAt,
+    })
+    .from(tasks)
+    // .leftJoin(taskLabels, eq(tasks.id, taskLabels.taskId))
+    .$dynamic();
+
+  const { currentUserId } = queryParams;
+  const { sl: newSl, filters } = generateFiltersBasedOnQueryParams(
+    sl,
+    queryParams
+  );
+  sl = newSl as typeof sl;
 
   const results: any = await sl
     .where(and(...filters))
@@ -242,8 +284,8 @@ export async function fetchTasksForLabeling(
     .where(
       inArray(
         tasks.id,
-        results.map((t: any) => t.id),
-      ),
+        results.map((t: any) => t.id)
+      )
     );
 
   return results;
@@ -262,7 +304,7 @@ export function addInferencesForTasks(tx: postgres.TransactionSql) {
 export function addLabelsForTasks(
   tx: PgTransaction<any, any, any>,
   projectId: string,
-  labeledBy: string,
+  labeledBy: string
 ) {
   //language=PostgreSQL
   return tx.execute(sql`
@@ -284,7 +326,7 @@ export function addLabelsForTasks(
 export function addDatasetForTasks(
   tx: PgTransaction<any, any, any>,
   projectId: string,
-  labelId: string,
+  labelId: string
 ) {
   //language=PostgreSQL
   return tx.execute(sql`
