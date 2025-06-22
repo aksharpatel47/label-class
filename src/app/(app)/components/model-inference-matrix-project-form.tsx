@@ -16,19 +16,23 @@ import {
 export interface IModelInferenceMatrixProps {
   projects: Project[];
   projectLabelNames: string[];
+  allProjectsWithSelectedLabelName: Project[];
 }
 
 export function ModelInferenceMatrixProjectForm({
   projects,
   projectLabelNames,
+  allProjectsWithSelectedLabelName,
 }: IModelInferenceMatrixProps) {
   const searchParams = useSearchParams();
+  const labelName = searchParams.get("labelName") || "";
+  const initialSelectedProjects = searchParams.getAll("selectedProject").length
+    ? searchParams.getAll("selectedProject")
+    : allProjectsWithSelectedLabelName.map((p) => p.id);
   const [selectedProject, setSelectedProject] = useState<string[]>(
-    searchParams.getAll("selectedProject"),
+    initialSelectedProjects
   );
-  const [selectedLabelName, setSelectedLabelName] = useState<string>(
-    searchParams.get("labelName") || "",
-  );
+  const [selectedLabelName, setSelectedLabelName] = useState<string>(labelName);
 
   return (
     <form method="get" className="flex flex-col gap-2 mt-2 mb-2">
@@ -59,7 +63,7 @@ export function ModelInferenceMatrixProjectForm({
               onClick={() => {
                 if (selectedProject.includes(project.id)) {
                   setSelectedProject(
-                    selectedProject.filter((id) => id !== project.id),
+                    selectedProject.filter((id) => id !== project.id)
                   );
                 } else {
                   setSelectedProject([...selectedProject, project.id]);
@@ -71,6 +75,19 @@ export function ModelInferenceMatrixProjectForm({
         ))}
       </div>
       <Button type="submit">Submit</Button>
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={() => {
+          if (typeof window !== "undefined") {
+            const url = window.location.pathname;
+            window.history.replaceState({}, "", url);
+            window.location.assign(url);
+          }
+        }}
+      >
+        Clear
+      </Button>
     </form>
   );
 }

@@ -7,7 +7,7 @@ import {
   taskLabelsRelations,
   tasks,
 } from "@/db/schema";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { unstable_noStore } from "next/cache";
 
 export async function addLabelToTask(
@@ -15,7 +15,7 @@ export async function addLabelToTask(
   labelMap: Record<string, string>,
   labelName: string,
   labelValue: string,
-  userId: string,
+  userId: string
 ) {
   unstable_noStore();
 
@@ -61,7 +61,7 @@ export async function fetchTaskLabelStatistics(projectId: string) {
       taskLabels.labelId,
       taskLabels.value,
       projectLabels.labelName,
-      authUser.id,
+      authUser.id
     );
 }
 
@@ -85,17 +85,56 @@ export async function fetchDatasetStatistics(projectId: string) {
       taskLabels,
       and(
         eq(tasks.id, taskLabels.taskId),
-        eq(taskLabels.labelId, projectTaskSelections.labelId),
-      ),
+        eq(taskLabels.labelId, projectTaskSelections.labelId)
+      )
     )
     .innerJoin(
       projectLabels,
-      eq(projectTaskSelections.labelId, projectLabels.id),
+      eq(projectTaskSelections.labelId, projectLabels.id)
     )
     .where(and(eq(tasks.projectId, projectId)))
     .groupBy(
       projectTaskSelections.dataset,
       projectLabels.labelName,
-      taskLabels.value,
+      taskLabels.value
     );
+}
+
+/**
+ * Fetches the dataset statistics for a given label name across multiple projects
+ * @param labelName Name of the label e.g. "Sidewalk", "Line Crosswalk", etc.
+ * @param projectIds Array of project IDs to filter the statistics
+ * @returns
+ */
+export async function fetchDatasetStatisticsByLabel(
+  labelName: string,
+  projectIds: string[]
+) {
+  unstable_noStore();
+
+  return db
+    .select({
+      dataset: projectTaskSelections.dataset,
+      labelValue: taskLabels.value,
+      projectId: tasks.projectId,
+      count: sql<number>`count(project_task_selections.task_id)::int`,
+    })
+    .from(projectTaskSelections)
+    .innerJoin(tasks, eq(projectTaskSelections.taskId, tasks.id))
+    .innerJoin(
+      taskLabels,
+      and(
+        eq(tasks.id, taskLabels.taskId),
+        eq(taskLabels.labelId, projectTaskSelections.labelId)
+      )
+    )
+    .innerJoin(
+      projectLabels,
+      and(
+        eq(projectTaskSelections.labelId, projectLabels.id),
+        eq(projectLabels.labelName, labelName),
+        inArray(tasks.projectId, projectIds)
+      )
+    )
+    .groupBy(projectTaskSelections.dataset, taskLabels.value, tasks.projectId);
 }

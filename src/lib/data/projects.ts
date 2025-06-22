@@ -27,6 +27,23 @@ export async function fetchProjectLabelNames() {
   return results.map((r) => r.labelName);
 }
 
+/**
+ * Fetch projects associated with a specific label name.
+ * @param labelName - The name of the label to filter projects by. Eg. "Sidewalk", "Buffer", etc.
+ * @returns A list of projects that have the specified label name.
+ */
+export async function fetchProjectsWithLabelName(labelName: string) {
+  unstable_noStore();
+  return db.query.projectLabels
+    .findMany({
+      where: eq(projectLabels.labelName, labelName),
+      with: {
+        project: true,
+      },
+    })
+    .then((projectLabels) => projectLabels.map((pl) => pl.project));
+}
+
 export async function fetchProjectsTaskCounts() {
   unstable_noStore();
   return db

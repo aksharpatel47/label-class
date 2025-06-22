@@ -1,8 +1,7 @@
-import { fetchTrainedModelById } from "@/lib/data/inferences";
-import { H1, H4 } from "@/components/ui/typography";
-import { InferenceTables } from "./InferenceTables";
-import { ModelInferenceMatrixProjectForm } from "@/app/(app)/models/[id]/form";
+import { ModelInferenceMatrixProjectForm } from "@/app/(app)/components/model-inference-matrix-project-form";
+import { H4 } from "@/components/ui/typography";
 import { fetchProjectLabelNames, fetchProjects } from "@/lib/data/projects";
+import { InferenceTables } from "./InferenceTables";
 
 export default async function Page({
   params,
@@ -17,7 +16,6 @@ export default async function Page({
 
   return (
     <div>
-      <div className="h-4"></div>
       <div className="flex gap-8">
         <div className="w-[400px]">
           <H4>Projects</H4>

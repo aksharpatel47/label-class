@@ -20,6 +20,10 @@ const links = [
     href: "/models",
   },
   {
+    name: "Datasets",
+    href: "/datasets",
+  },
+  {
     name: "Users",
     href: "/users",
   },
