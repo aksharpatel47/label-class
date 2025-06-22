@@ -12,7 +12,7 @@ export default async function Page({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { selectedProject: string[]; labelName: string };
+  searchParams: { selectedProject?: string[]; labelName?: string };
 }) {
   const modelId = parseInt(params.id);
   const projects = await fetchProjects();
@@ -32,11 +32,16 @@ export default async function Page({
             allProjectsWithSelectedLabelName={projectsWithSelectedLabelName}
           />
         </div>
-        <InferenceTables
-          selectedProjects={searchParams.selectedProject}
-          trainedModelId={modelId}
-          labelName={searchParams.labelName}
-        />
+        {searchParams.labelName && (
+          <InferenceTables
+            selectedProjects={
+              searchParams.selectedProject ||
+              projectsWithSelectedLabelName.map((p) => p.id)
+            }
+            trainedModelId={modelId}
+            labelName={searchParams.labelName}
+          />
+        )}
       </div>
     </div>
   );
