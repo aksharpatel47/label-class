@@ -59,10 +59,14 @@ export async function GET(req: NextRequest) {
   const csvHeader = "path,label,dataset";
   const csvData = [csvHeader, ...csvContent].join("\n");
 
+  // Format the file name: lower case, spaces to underscores
+  const safeLabelName = labelName.toLowerCase().replace(/\s+/g, "_");
+  const fileName = `${safeLabelName}_dataset.csv`;
+
   return new Response(csvData, {
     headers: {
       "Content-Type": "text/csv",
-      "Content-Disposition": `attachment; filename=\"${labelName}_dataset.csv\"`,
+      "Content-Disposition": `attachment; filename=\"${fileName}\"`,
       "Cache-Control": "no-store",
     },
   });
