@@ -125,7 +125,8 @@ export async function fetchDatasetStatisticsByLabel(
       taskLabels,
       and(
         eq(tasks.id, taskLabels.taskId),
-        eq(taskLabels.labelId, projectTaskSelections.labelId)
+        eq(taskLabels.labelId, projectTaskSelections.labelId),
+        inArray(taskLabels.value, ["Present", "Absent"])
       )
     )
     .innerJoin(
