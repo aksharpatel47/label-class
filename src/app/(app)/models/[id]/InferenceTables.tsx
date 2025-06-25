@@ -1,4 +1,5 @@
 import { InferenceTable } from "@/app/(app)/models/[id]/InferenceTable";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { db } from "@/db";
 import {
@@ -10,17 +11,20 @@ import {
   tasks,
 } from "@/db/schema";
 import { and, eq, gte, inArray, sql } from "drizzle-orm";
+import { User } from "lucia";
 
 export interface IIInferenceTablesProps {
   trainedModelId: number;
   selectedProjects: string[];
   labelName: string;
+  user: User;
 }
 
 export async function InferenceTables({
   trainedModelId,
   selectedProjects,
   labelName,
+  user,
 }: IIInferenceTablesProps) {
   if (!selectedProjects || !labelName || !trainedModelId) {
     return <div>No projects selected.</div>;
@@ -145,7 +149,16 @@ export async function InferenceTables({
   ];
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-4">
+      {user.role === "ADMIN" && (
+        <Button asChild>
+          <a
+            href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
+          >
+            Download Potential Positives CSV
+          </a>
+        </Button>
+      )}
       {keysWithSequence.map((key) => (
         <div key={key}>
           <InferenceTable
