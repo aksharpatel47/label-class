@@ -13,13 +13,13 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { trainedModelId: string; labelName: string } }
+  { params }: { params: { modelId: string; labelName: string } }
 ) {
-  const { trainedModelId, labelName } = params;
+  const { modelId, labelName } = params;
   const url = new URL(req.url);
   const selectedProjects = url.searchParams.getAll("selectedProject");
 
-  if (!selectedProjects.length || !labelName || !trainedModelId) {
+  if (!selectedProjects.length || !labelName || !modelId) {
     return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
   }
 
@@ -40,7 +40,7 @@ export async function GET(
       taskInferences,
       and(
         eq(tasks.name, taskInferences.imageName),
-        eq(taskInferences.modelId, Number(trainedModelId))
+        eq(taskInferences.modelId, Number(modelId))
       )
     )
     .innerJoin(
@@ -62,7 +62,7 @@ export async function GET(
         inArray(tasks.projectId, selectedProjects),
         inArray(taskLabels.value, ["Present", "Absent"]),
         eq(projectLabels.labelName, labelName),
-        eq(taskInferences.modelId, Number(trainedModelId))
+        eq(taskInferences.modelId, Number(modelId))
       )
     )
     .groupBy(
@@ -183,7 +183,7 @@ export async function GET(
     headers: {
       "Content-Type":
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename=InferenceTables_${labelName}_${trainedModelId}.xlsx`,
+      "Content-Disposition": `attachment; filename=InferenceTables_${labelName}_${modelId}.xlsx`,
     },
   });
 }
