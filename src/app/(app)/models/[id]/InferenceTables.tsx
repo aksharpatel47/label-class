@@ -151,13 +151,23 @@ export async function InferenceTables({
   return (
     <div className="flex flex-col gap-4">
       {user.role === "ADMIN" && (
-        <Button asChild>
-          <a
-            href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
-          >
-            Download Potential Positives CSV
-          </a>
-        </Button>
+        <div className="flex gap-2 mb-2">
+          <Button asChild>
+            <a
+              href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
+            >
+              Download Potential Positives CSV
+            </a>
+          </Button>
+          <Button asChild>
+            <a
+              href={`/api/models/${trainedModelId}/labels/${labelName}/inference-tables-excel?${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
+              download
+            >
+              Download Inference Tables Excel
+            </a>
+          </Button>
+        </div>
       )}
       {keysWithSequence.map((key) => (
         <div key={key}>

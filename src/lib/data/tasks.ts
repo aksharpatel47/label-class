@@ -258,10 +258,11 @@ export async function fetchTotalTasksForLabeling(
     .from(tasks)
     .$dynamic();
 
-  const { sl: newSl, filters } = generateFiltersBasedOnQueryParams(
-    sl,
-    queryParams
-  );
+  // Pass queryParams without 'after' to generateFiltersBasedOnQueryParams
+  const { sl: newSl, filters } = generateFiltersBasedOnQueryParams(sl, {
+    ...queryParams,
+    after: undefined,
+  });
   sl = newSl as typeof sl;
 
   const results = await sl.where(and(...filters));
