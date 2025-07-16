@@ -29,7 +29,7 @@
     "@radix-ui/react-toggle-group": "^1.0.4",
     "@tanstack/react-query": "^5.15.5",
     "@types/exceljs": "^0.5.3",
-    "bcrypt": "^5.1.1",
+    "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "date-fns": "^3.6.0",
