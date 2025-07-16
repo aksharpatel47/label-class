@@ -183,7 +183,15 @@ function generateFiltersBasedOnQueryParams(
   if (trainedModel && inferenceValue) {
     const trainedModelId = Number(trainedModel);
 
-    if (inferenceValue === ">=50%") {
+    if (inferenceValue === ">=10%") {
+      // Only tasks with inference >= 1000 for this model
+      filters.push(
+        and(
+          eq(taskInferences.modelId, trainedModelId),
+          gte(taskInferences.inference, 1000)
+        )
+      );
+    } else if (inferenceValue === ">=50%") {
       // Only tasks with inference >= 5000 for this model
       filters.push(
         and(

@@ -36,7 +36,7 @@ export async function GET(
       p.validAbsent,
       p.testPresent,
       p.testAbsent,
-      `https://walkit-labels.aksharpatel47.com/projects/${p.projectId}/label?label=${p.labelId}&labelvalue=Unlabeled&trainedmodel=${modelId}&inferencevalue=%3E%3D50%25`,
+      `https://walkit-labels.aksharpatel47.com/projects/${p.projectId}/label?label=${p.labelId}&labelvalue=Unlabeled&trainedmodel=${modelId}&inferencevalue=%3E%3D10%25`,
     ].join(",");
   });
 
