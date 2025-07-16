@@ -39,7 +39,7 @@ export async function fetchPotentialUnlabeledPositivesData(
         t.project_id,
         p.name as project_name,
         t.label_id,
-        count(distinct case when ti.inference >= 5000 and tl.task_id is null then t.task_id end) as potential_positives,
+        count(distinct case when ti.inference >= 1000 and tl.task_id is null then t.task_id end) as potential_positives,
         count(distinct case when pts.dataset = 'train' and tl.label_value = 'Present' then t.task_id end) as train_present,
         count(distinct case when pts.dataset = 'train' and tl.label_value = 'Absent' then t.task_id end) as train_absent,
         count(distinct case when pts.dataset = 'valid' and tl.label_value = 'Present' then t.task_id end) as valid_present,
