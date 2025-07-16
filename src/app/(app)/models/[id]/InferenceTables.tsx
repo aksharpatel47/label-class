@@ -12,6 +12,7 @@ import {
 } from "@/db/schema";
 import { and, eq, gte, inArray, sql } from "drizzle-orm";
 import { User } from "lucia";
+import { CopyToClipboard } from "./copy-to-clipboard-button";
 
 export interface IIInferenceTablesProps {
   trainedModelId: number;
@@ -84,10 +85,12 @@ export async function InferenceTables({
       taskLabels.value,
       projectTaskSelections.dataset,
       sql`CASE WHEN task_inferences.inference >= 5000 THEN 'Present' ELSE 'Absent' END`
-    );
+    )
+    .orderBy(projects.name);
 
   let inferenceTableData: any = {};
 
+  // Always create total tables for each dataset
   ["train", "valid", "test"].forEach((dataset) => {
     const totalKey = `total-${dataset}`;
     inferenceTableData[totalKey] = {
@@ -99,24 +102,44 @@ export async function InferenceTables({
     };
   });
 
+  // Create all project-dataset tables with zero values first
+  selectedProjects.forEach((projectId) => {
+    ["train", "valid", "test"].forEach((dataset) => {
+      const key = `${projectId}-${dataset}`;
+      if (!inferenceTableData[key]) {
+        // Try to find projectName and projectLabelId from tasksWithInferenceAndLabel, fallback to empty string/null
+        const found = tasksWithInferenceAndLabel.find(
+          (t) => t.projectId === projectId
+        );
+        inferenceTableData[key] = {
+          name: (found ? found.projectName : "") + " - " + dataset,
+          tp: 0,
+          tpLink: found
+            ? `/projects/${projectId}/label?label=${found.projectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=>%3D50%25&dataset=${dataset}`
+            : "",
+          fn: 0,
+          fnLink: found
+            ? `/projects/${projectId}/label?label=${found.projectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=<50%25&dataset=${dataset}`
+            : "",
+          fp: 0,
+          fpLink: found
+            ? `/projects/${projectId}/label?label=${found.projectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=>%3D50%25&dataset=${dataset}`
+            : "",
+          tn: 0,
+          tnLink: found
+            ? `/projects/${projectId}/label?label=${found.projectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=<50%25&dataset=${dataset}`
+            : "",
+        };
+      }
+    });
+  });
+
+  // Now fill in actual values from tasksWithInferenceAndLabel
   tasksWithInferenceAndLabel.forEach((t) => {
     const totalKey = `total-${t.dataset}`;
     const key = `${t.projectId}-${t.dataset}`;
 
-    if (!inferenceTableData[key]) {
-      inferenceTableData[key] = {
-        name: t.projectName + " - " + t.dataset,
-        tp: 0,
-        tpLink: `/projects/${t.projectId}/label?label=${t.projectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=>%3D50%25&dataset=${t.dataset}`,
-        fn: 0,
-        fnLink: `/projects/${t.projectId}/label?label=${t.projectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=<50%25&dataset=${t.dataset}`,
-        fp: 0,
-        fpLink: `/projects/${t.projectId}/label?label=${t.projectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=>%3D50%25&dataset=${t.dataset}`,
-        tn: 0,
-        tnLink: `/projects/${t.projectId}/label?label=${t.projectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=<50%25&dataset=${t.dataset}`,
-      };
-    }
-
+    // If not present, it was already created above
     if (t.inference === "Present" && t.label === "Present") {
       inferenceTableData[key].tp = t.count;
       inferenceTableData[totalKey].tp += t.count;
@@ -167,6 +190,10 @@ export async function InferenceTables({
               Download Inference Tables Excel
             </a>
           </Button>
+          <CopyToClipboard
+            inferenceTableData={inferenceTableData}
+            keysWithSequence={keysWithSequence}
+          />
         </div>
       )}
       {keysWithSequence.map((key) => (
