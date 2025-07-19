@@ -75,51 +75,65 @@ const useLabelTaskStore = create<State & Actions>()(
       });
     },
     cycleLabelValue(currentTaskId: string, labelId: string, session: Session) {
-      set((state) => {
-        const currentLabelValue = state.taskLabels[labelId]?.value;
-        const currentLabelIndex = taskLabelValues.indexOf(currentLabelValue);
-        const newLabelIndex = (currentLabelIndex + 1) % taskLabelValues.length;
-        console.log(
-          `Updating label ${labelId} to ${newLabelIndex} (${taskLabelValues[newLabelIndex]})`
-        );
-        const newLabelValue = taskLabelValues[newLabelIndex];
-        if (newLabelValue === undefined) {
-          delete state.taskLabels[labelId];
-        } else if (!!state.taskLabels[labelId]) {
-          state.taskLabels[labelId]!.value = newLabelValue;
-          state.taskLabels[labelId]!.updatedAt = new Date();
-          state.taskLabels[labelId]!.labelUpdatedBy = {
-            id: session.user.userId,
-            name: session.user.name,
-          };
-        } else {
-          state.taskLabels[labelId] = {
-            value: newLabelValue,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            labelId: labelId,
-            taskId: currentTaskId,
-            labeledBy: {
-              id: session.user.userId,
-              name: session.user.name,
-            },
-            labelUpdatedBy: null,
-          };
-        }
-        const method = !newLabelValue ? "DELETE" : "POST";
-        fetch(`/api/tasks/${currentTaskId}/labels/${labelId}`, {
-          method,
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ value: newLabelValue }),
-        }).catch((error) => {
-          // Use the toast function if provided
-          toast.error(
-            `Failed to update label: ${error instanceof Error ? error.message : String(error)}`
-          );
+      const currentLabelValue =
+        useLabelTaskStore.getState().taskLabels[labelId]?.value;
+      // If no label exists yet, treat it as undefined (index 0)
+      const currentLabelIndex =
+        currentLabelValue === undefined
+          ? 0
+          : taskLabelValues.indexOf(currentLabelValue);
+      const newLabelIndex = (currentLabelIndex + 1) % taskLabelValues.length;
+      console.log(
+        `Updating label ${labelId} from ${currentLabelIndex} (${currentLabelValue}) to ${newLabelIndex} (${taskLabelValues[newLabelIndex]})`
+      );
+      const newLabelValue = taskLabelValues[newLabelIndex];
+
+      const method = !newLabelValue ? "DELETE" : "POST";
+      fetch(`/api/tasks/${currentTaskId}/labels/${labelId}`, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ value: newLabelValue }),
+      })
+        .then(async (res) => {
+          const data = await res.json();
+          if (!res.ok) {
+            toast.error(data.error);
+            return;
+          }
+
+          // Only update state if API call was successful
+          set((state) => {
+            if (newLabelValue === undefined) {
+              delete state.taskLabels[labelId];
+            } else if (!!state.taskLabels[labelId]) {
+              state.taskLabels[labelId]!.value = newLabelValue;
+              state.taskLabels[labelId]!.updatedAt = new Date();
+              state.taskLabels[labelId]!.labelUpdatedBy = {
+                id: session.user.userId,
+                name: session.user.name,
+              };
+            } else {
+              state.taskLabels[labelId] = {
+                value: newLabelValue,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                labelId: labelId,
+                taskId: currentTaskId,
+                labeledBy: {
+                  id: session.user.userId,
+                  name: session.user.name,
+                },
+                labelUpdatedBy: null,
+              };
+            }
+          });
+        })
+        .catch((error) => {
+          toast.error(`Failed to set/update label value`);
+          console.error(error);
         });
-      });
     },
 
     setLabelValue(
@@ -128,53 +142,52 @@ const useLabelTaskStore = create<State & Actions>()(
       value: TaskLabelValue,
       session: Session
     ) {
-      set((state) => {
-        if (value === undefined) {
-          delete state.taskLabels[labelId];
-        } else if (!!state.taskLabels[labelId]) {
-          state.taskLabels[labelId]!.value = value;
-          state.taskLabels[labelId]!.updatedAt = new Date();
-          state.taskLabels[labelId]!.labelUpdatedBy = {
-            id: session.user.userId,
-            name: session.user.name,
-          };
-        } else {
-          state.taskLabels[labelId] = {
-            value: value,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            labelId: labelId,
-            taskId: currentTaskId,
-            labeledBy: {
-              id: session.user.userId,
-              name: session.user.name,
-            },
-            labelUpdatedBy: null,
-          };
-        }
+      const method = !value ? "DELETE" : "POST";
+      fetch(`/api/tasks/${currentTaskId}/labels/${labelId}`, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ value }),
+      })
+        .then(async (res) => {
+          const data = await res.json();
+          if (!res.ok) {
+            toast.error(data.error);
+            return;
+          }
 
-        const method = "POST";
-        fetch(`/api/tasks/${currentTaskId}/labels/${labelId}`, {
-          method,
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ value }),
-        })
-          .then((res) => {
-            if (!res.ok) {
-              throw new Error(`HTTP error! Status: ${res.status}`);
+          // Only update state if API call was successful
+          set((state) => {
+            if (!value) {
+              delete state.taskLabels[labelId];
+            } else if (!!state.taskLabels[labelId]) {
+              state.taskLabels[labelId]!.value = value;
+              state.taskLabels[labelId]!.updatedAt = new Date();
+              state.taskLabels[labelId]!.labelUpdatedBy = {
+                id: session.user.userId,
+                name: session.user.name,
+              };
+            } else {
+              state.taskLabels[labelId] = {
+                value: value,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                labelId: labelId,
+                taskId: currentTaskId,
+                labeledBy: {
+                  id: session.user.userId,
+                  name: session.user.name,
+                },
+                labelUpdatedBy: null,
+              };
             }
-            return res.json();
-          })
-          .then(console.log)
-          .catch((error) => {
-            // Use the toast function if provided
-            toast.error(
-              `Failed to set label value: ${error instanceof Error ? error.message : String(error)}`
-            );
           });
-      });
+        })
+        .catch((error) => {
+          toast.error(`Failed to set/update label value`);
+          console.error(error);
+        });
     },
     setInferenceResult(inference: number) {
       set((state) => {

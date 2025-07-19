@@ -1,6 +1,7 @@
 import { getRouteSession } from "@/app/lib/utils/session";
 import { db } from "@/db";
 import { taskLabels, tasks } from "@/db/schema";
+import { projectTaskSelections } from "@/db/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -15,6 +16,28 @@ export async function POST(
 
   const { taskId, labelId } = params;
   const data = await request.json();
+
+  // Check if this label is part of projectTaskSelections
+  const selection = await db
+    .select()
+    .from(projectTaskSelections)
+    .where(
+      and(
+        eq(projectTaskSelections.taskId, taskId),
+        eq(projectTaskSelections.labelId, labelId)
+      )
+    );
+
+  // If present in projectTaskSelections, only allow admin
+  if (selection.length > 0 && session.user.role !== "ADMIN") {
+    return NextResponse.json(
+      {
+        error:
+          "Forbidden: Image & Label is part of a dataset. Only an admin can update this label.",
+      },
+      { status: 403 }
+    );
+  }
 
   await db
     .insert(taskLabels)
@@ -53,15 +76,31 @@ export async function DELETE(
 
   const { taskId, labelId } = params;
 
-  await db
-    .delete(taskLabels)
+  // Check if this label is part of projectTaskSelections
+  const selection = await db
+    .select()
+    .from(projectTaskSelections)
     .where(
       and(
-        eq(taskLabels.taskId, taskId),
-        eq(taskLabels.labelId, labelId),
-        eq(taskLabels.labeledBy, session.user.id)
+        eq(projectTaskSelections.taskId, taskId),
+        eq(projectTaskSelections.labelId, labelId)
       )
     );
+
+  // If present in projectTaskSelections, only allow admin
+  if (selection.length > 0 && session.user.role !== "ADMIN") {
+    return NextResponse.json(
+      {
+        error:
+          "Forbidden: Image & Label is part of a dataset. Only an admin can delete this label",
+      },
+      { status: 403 }
+    );
+  }
+
+  await db
+    .delete(taskLabels)
+    .where(and(eq(taskLabels.taskId, taskId), eq(taskLabels.labelId, labelId)));
 
   await db
     .update(tasks)
