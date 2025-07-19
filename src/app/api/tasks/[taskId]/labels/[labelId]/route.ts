@@ -87,12 +87,12 @@ export async function DELETE(
       )
     );
 
-  // If present in projectTaskSelections, only allow admin
-  if (selection.length > 0 && session.user.role !== "ADMIN") {
+  // If present in projectTaskSelections, restrict deleting the project label.
+  if (selection.length > 0) {
     return NextResponse.json(
       {
         error:
-          "Forbidden: Image & Label is part of a dataset. Only an admin can delete this label",
+          "Forbidden: Image & Label is part of a dataset. Use 'Difficult' or 'Skip' labels instead to exclude from training.",
       },
       { status: 403 }
     );
