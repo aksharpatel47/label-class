@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { projectLabels, projects, tasks } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { unstable_noStore } from "next/cache";
 
 export async function fetchProjects() {
@@ -8,6 +8,19 @@ export async function fetchProjects() {
   return db.query.projects.findMany({
     with: {
       creator: true,
+      projectLabels: {
+        orderBy: (labels, { asc }) => [asc(labels.sequence)],
+      },
+    },
+    orderBy: (projects, { asc }) => [asc(projects.name)],
+  });
+}
+
+export async function fetchProjectsWithIds(ids: string[]) {
+  unstable_noStore();
+  return db.query.projects.findMany({
+    where: inArray(projects.id, ids),
+    with: {
       projectLabels: {
         orderBy: (labels, { asc }) => [asc(labels.sequence)],
       },

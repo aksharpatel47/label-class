@@ -4,7 +4,6 @@ import { z } from "zod";
 import { db, sql } from "@/db";
 import { ImageInferenceTypes } from "@/app/lib/models/image";
 import {
-  Dataset,
   datasetEnum,
   datasetEnumValues,
   ProjectTaskSelectionInsert,
@@ -61,7 +60,7 @@ function selectAndShuffle<T>(array: T[], count: number): T[] {
 async function fetchTasksForTruePositiveImages(
   projectId: string,
   inferenceModelId: number,
-  labelId: string,
+  labelId: string
 ): Promise<Task[]> {
   // language=PostgreSQL
   return sql<Task[]>`
@@ -83,7 +82,7 @@ async function fetchTasksForTruePositiveImages(
 async function fetchTasksForFalsePositiveImages(
   projectId: string,
   inferenceModelId: number,
-  labelId: string,
+  labelId: string
 ): Promise<Task[]> {
   // language=PostgreSQL
   return sql<Task[]>`
@@ -105,7 +104,7 @@ async function fetchTasksForFalsePositiveImages(
 async function fetchTasksForFalseNegativeImages(
   projectId: string,
   inferenceModelId: number,
-  labelId: string,
+  labelId: string
 ): Promise<Task[]> {
   // language=PostgreSQL
   return sql<Task[]>`
@@ -126,7 +125,7 @@ async function fetchTasksForFalseNegativeImages(
 async function fetchTasksForTrueNegativeImages(
   projectId: string,
   inferenceModelId: number,
-  labelId: string,
+  labelId: string
 ): Promise<Task[]> {
   // language=PostgreSQL
   return sql<Task[]>`
@@ -148,7 +147,7 @@ async function fetchTasksForTrueNegativeImages(
 export async function selectionAction(
   projectId: string,
   prevState: IState | undefined,
-  formData: FormData,
+  formData: FormData
 ): Promise<IState> {
   const result = selectionSchema.safeParse(Object.fromEntries(formData));
 
@@ -158,7 +157,7 @@ export async function selectionAction(
 
   const { numImages, labelId, inferenceModelId } = result.data;
   console.log(
-    `numImages: ${numImages}, labelId: ${labelId}, inferenceModelId: ${inferenceModelId}`,
+    `numImages: ${numImages}, labelId: ${labelId}, inferenceModelId: ${inferenceModelId}`
   );
 
   let tasks: Task[] = [];
@@ -169,25 +168,25 @@ export async function selectionAction(
     tasks = await fetchTasksForTruePositiveImages(
       projectId,
       inferenceModelId,
-      labelId,
+      labelId
     );
   } else if (imageInferenceType === "False Positive") {
     tasks = await fetchTasksForFalsePositiveImages(
       projectId,
       inferenceModelId,
-      labelId,
+      labelId
     );
   } else if (imageInferenceType === "False Negative") {
     tasks = await fetchTasksForFalseNegativeImages(
       projectId,
       inferenceModelId,
-      labelId,
+      labelId
     );
   } else if (imageInferenceType === "True Negative") {
     tasks = await fetchTasksForTrueNegativeImages(
       projectId,
       inferenceModelId,
-      labelId,
+      labelId
     );
   }
 
@@ -250,7 +249,7 @@ export async function addImagesToDataset(
   projectId: string,
   dataset: (typeof datasetEnumValues)[number] | "split",
   prevState: IAddImagesState | undefined,
-  formData: FormData,
+  formData: FormData
 ): Promise<IAddImagesState> {
   const taskIds = selectedTasks.map((image) => image.id);
 
@@ -270,8 +269,8 @@ export async function addImagesToDataset(
       and(
         eq(taskLabels.labelId, labelId),
         eq(taskLabels.value, labelValue),
-        inArray(tasks.id, taskIds),
-      ),
+        inArray(tasks.id, taskIds)
+      )
     );
 
   const filteredTaskIds = filteredTasks.map((task) => task.id);

@@ -13,11 +13,7 @@ export default async function Page({ params }: { params: { id: string } }) {
   return (
     <>
       <Pagination totalPages={totalPages} />
-      <ImageTable
-        projectId={params.id}
-        projectLabels={labels}
-        taskLabelValues={taskLabelValue.enumValues}
-      />
+      <ImageTable projectId={params.id} projectLabels={labels} />
     </>
   );
 }

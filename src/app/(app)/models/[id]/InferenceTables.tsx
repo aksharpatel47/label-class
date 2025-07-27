@@ -93,12 +93,46 @@ export async function InferenceTables({
   // Always create total tables for each dataset
   ["train", "valid", "test"].forEach((dataset) => {
     const totalKey = `total-${dataset}`;
+    const paramTuples = [
+      ["label", labelName],
+      ["trainedModelId", `${trainedModelId}`],
+      ["dataset", dataset],
+      ...selectedProjects.map((id) => ["selectedProjects", id]),
+    ];
     inferenceTableData[totalKey] = {
       name: "Total" + " - " + dataset,
       tp: 0,
+      tpLink:
+        "/browse?" +
+        new URLSearchParams([
+          ...paramTuples,
+          ["inferenceValue", ">=50%"],
+          ["labelValue", "Present"],
+        ]).toString(),
       fn: 0,
+      fnLink:
+        "/browse?" +
+        new URLSearchParams([
+          ...paramTuples,
+          ["inferenceValue", "<50%"],
+          ["labelValue", "Present"],
+        ]).toString(),
       fp: 0,
+      fpLink:
+        "/browse?" +
+        new URLSearchParams([
+          ...paramTuples,
+          ["labelValue", "Absent"],
+          ["inferenceValue", ">=50%"],
+        ]).toString(),
       tn: 0,
+      tnLink:
+        "/browse?" +
+        new URLSearchParams([
+          ...paramTuples,
+          ["labelValue", "Absent"],
+          ["inferenceValue", "<50%"],
+        ]).toString(),
     };
   });
 

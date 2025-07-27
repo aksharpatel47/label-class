@@ -47,13 +47,12 @@ const useImageTableStore = create<State & Actions>()(
         state.index = Math.max(0, state.index - 1);
       });
     },
-  })),
+  }))
 );
 
 export function ImageTable(props: {
   projectId: string;
   projectLabels: ProjectLabel[];
-  taskLabelValues: TaskLabelValue;
 }) {
   const searchParams = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;

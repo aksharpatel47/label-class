@@ -16,10 +16,10 @@ import {
 } from "drizzle-orm/pg-core";
 
 export const authUserRoleEnum = pgEnum("auth_user_role", ["ADMIN", "USER"]);
-export type AuthUserRole = typeof authUserRoleEnum.enumValues;
+export type AuthUserRole = (typeof authUserRoleEnum.enumValues)[number];
 export const datasetEnumValues = ["train", "valid", "test"] as const;
 export const datasetEnum = pgEnum("dataset", datasetEnumValues);
-export type Dataset = typeof datasetEnum.enumValues;
+export type Dataset = (typeof datasetEnum.enumValues)[number];
 
 export const authUser = pgTable("auth_user", {
   id: text("id").primaryKey().notNull(),
@@ -159,7 +159,7 @@ export const taskLabelValue = pgEnum("task_label_value", [
   "Difficult",
   "Skip",
 ]);
-export type TaskLabelValue = typeof taskLabelValue.enumValues;
+export type TaskLabelValue = (typeof taskLabelValue.enumValues)[number];
 
 export const taskLabels = pgTable(
   "task_labels",
