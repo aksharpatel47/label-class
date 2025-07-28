@@ -9,8 +9,8 @@
     "lint": "next lint",
     "test:ci": "echo \"Will be implemented soon\"",
     "studio": "drizzle-kit studio",
-    "migrate:create": "drizzle-kit generate:pg",
-    "migrate:apply": "tsx src/db/migrate.ts",
+    "migrate:create": "drizzle-kit generate",
+    "migrate:apply": "drizzle-kit migrate",
     "migrate:drop": "drizzle-kit drop"
   },
   "dependencies": {

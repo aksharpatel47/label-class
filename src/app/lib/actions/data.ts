@@ -98,19 +98,51 @@ export async function importInference(
 
   const fileContents = await file.text();
 
-  const rows = fileContents.split("\n").slice(1);
+  const rows = fileContents
+    .split("\n")
+    .slice(1)
+    .filter((row) => row.trim() !== "");
 
-  const tempInferenceRows: string[] = rows.map((row) => {
+  // Use a Map to deduplicate by image name, keeping the last occurrence
+  const inferenceMap = new Map<
+    string,
+    { inference: number; modelId: number }
+  >();
+
+  rows.forEach((row) => {
     const rowValues = row.split(",");
-    const imageName = rowValues[0];
-    const inference = rowValues[rowValues.length - 1];
-    const inferenceValue = Math.ceil(Number(inference) * 10000);
-    return `${imageName}\t${inferenceValue}\t${modelId}\n`;
+    if (rowValues.length < 2) {
+      return; // Skip malformed rows
+    }
+    const imageName = rowValues[0]?.trim();
+    const inference = rowValues[rowValues.length - 1]?.trim();
+
+    if (!imageName || !inference) {
+      return; // Skip rows with missing data
+    }
+
+    const inferenceNumber = Number(inference);
+    if (isNaN(inferenceNumber)) {
+      return; // Skip rows with invalid inference values
+    }
+
+    const inferenceValue = Math.ceil(inferenceNumber * 10000);
+    inferenceMap.set(imageName, { inference: inferenceValue, modelId });
   });
+
+  if (inferenceMap.size === 0) {
+    return "No valid inference data found in the CSV file.";
+  }
+
+  const tempInferenceRows: string[] = Array.from(inferenceMap.entries()).map(
+    ([imageName, { inference, modelId }]) =>
+      `${imageName}\t${inference}\t${modelId}\n`
+  );
+
   const tempInferences = Readable.from(tempInferenceRows);
 
   console.log(
-    `Inserting ${tempInferenceRows.length} inferences into the temp_task_inferences table.`
+    `Inserting ${tempInferenceRows.length} unique inferences into the temp_tasks table (deduplicating from ${rows.length} total rows).`
   );
 
   await dbSQL.begin(async (tx) => {
@@ -123,7 +155,7 @@ export async function importInference(
     await pipeline(tempInferences, query);
 
     console.log(
-      `Inserted inferences from the temp_task_inferences table to the tasks table.`
+      `Inserted inferences from the temp_tasks table to the task_inferences table.`
     );
     // Insert the inferences into the task_inferences table
     // language=PostgreSQL
@@ -140,14 +172,12 @@ export async function importInference(
         `;
 
     console.log(
-      `Inserted inferences into the task_inferences table for model ${modelId} from the temp_task_inferences table.`
+      `Inserted inferences into the task_inferences table for model ${modelId} from the temp_tasks table.`
     );
 
     await tx`truncate temp_tasks`;
 
-    console.log(
-      `Deleted inferences from the temp_task_inferences table for model ${modelId}.`
-    );
+    console.log(`Cleared temp_tasks table for model ${modelId}.`);
   });
 
   return "Done";

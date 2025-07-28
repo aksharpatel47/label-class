@@ -13,6 +13,7 @@ import {
 import { and, eq, gte, inArray, sql } from "drizzle-orm";
 import { User } from "lucia";
 import { CopyToClipboard } from "./copy-to-clipboard-button";
+import { fetchProjectsWithIds } from "@/lib/data/projects";
 
 export interface IIInferenceTablesProps {
   trainedModelId: number;
@@ -35,6 +36,8 @@ export async function InferenceTables({
   if (!Array.isArray(selectedProjects)) {
     selectedProjects = [selectedProjects];
   }
+
+  const projectsData = await fetchProjectsWithIds(selectedProjects);
 
   const tasksWithInferenceAndLabel = await db
     .select({
@@ -86,7 +89,7 @@ export async function InferenceTables({
       projectTaskSelections.dataset,
       sql`CASE WHEN task_inferences.inference >= 5000 THEN 'Present' ELSE 'Absent' END`
     )
-    .orderBy(projects.name);
+    .orderBy(projects.sequence, projects.name);
 
   let inferenceTableData: any = {};
 
@@ -142,26 +145,27 @@ export async function InferenceTables({
       const key = `${projectId}-${dataset}`;
       if (!inferenceTableData[key]) {
         // Try to find projectName and projectLabelId from tasksWithInferenceAndLabel, fallback to empty string/null
-        const found = tasksWithInferenceAndLabel.find(
-          (t) => t.projectId === projectId
-        );
+        const foundProject = projectsData.find((t) => t.id === projectId);
+        const foundProjectLabelId = foundProject?.projectLabels.find(
+          (l) => l.labelName === labelName
+        )?.id;
         inferenceTableData[key] = {
-          name: (found ? found.projectName : "") + " - " + dataset,
+          name: (foundProject ? foundProject.name : "") + " - " + dataset,
           tp: 0,
-          tpLink: found
-            ? `/projects/${projectId}/label?label=${found.projectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=>%3D50%25&dataset=${dataset}`
+          tpLink: foundProject
+            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=>%3D50%25&dataset=${dataset}`
             : "",
           fn: 0,
-          fnLink: found
-            ? `/projects/${projectId}/label?label=${found.projectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=<50%25&dataset=${dataset}`
+          fnLink: foundProject
+            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=<50%25&dataset=${dataset}`
             : "",
           fp: 0,
-          fpLink: found
-            ? `/projects/${projectId}/label?label=${found.projectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=>%3D50%25&dataset=${dataset}`
+          fpLink: foundProject
+            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=>%3D50%25&dataset=${dataset}`
             : "",
           tn: 0,
-          tnLink: found
-            ? `/projects/${projectId}/label?label=${found.projectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=<50%25&dataset=${dataset}`
+          tnLink: foundProject
+            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=<50%25&dataset=${dataset}`
             : "",
         };
       }
@@ -189,11 +193,11 @@ export async function InferenceTables({
     }
   });
 
-  let keysWithSequence = selectedProjects.reduce((acc, projectId) => {
+  let keysWithSequence = projectsData.reduce((acc, project) => {
     ["train", "valid", "test"].forEach((dataset) => {
-      const key = `${projectId}-${dataset}`;
+      const key = `${project.id}-${dataset}`;
       if (inferenceTableData[key]) {
-        acc.push(`${projectId}-${dataset}`);
+        acc.push(`${project.id}-${dataset}`);
       }
     });
 

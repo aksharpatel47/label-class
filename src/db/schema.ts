@@ -67,6 +67,7 @@ export const projects = pgTable("projects", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+  sequence: smallint("sequence").notNull().default(0),
   updatedAt: timestamp("updated_at", { withTimezone: true }),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdBy: text("created_by")

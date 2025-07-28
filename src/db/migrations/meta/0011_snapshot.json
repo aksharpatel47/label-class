@@ -1,10 +1,8 @@
 {
-  "id": "8e27ca44-2814-487c-ac9b-3961e9dbce94",
-  "prevId": "5ea3b73c-52d3-468c-9565-f5cd1ace46d0",
-  "version": "5",
-  "dialect": "pg",
+  "version": "7",
+  "dialect": "postgresql",
   "tables": {
-    "auth_user": {
+    "public.auth_user": {
       "name": "auth_user",
       "schema": "",
       "columns": {
@@ -50,9 +48,12 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "project_labels": {
+    "public.project_labels": {
       "name": "project_labels",
       "schema": "",
       "columns": {
@@ -106,30 +107,33 @@
         "project_labels_project_id_projects_id_fk": {
           "name": "project_labels_project_id_projects_id_fk",
           "tableFrom": "project_labels",
-          "tableTo": "projects",
           "columnsFrom": [
             "project_id"
           ],
+          "tableTo": "projects",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "project_labels_project_id_label_name_unique": {
           "name": "project_labels_project_id_label_name_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "project_id",
             "label_name"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
-      }
+      },
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "project_task_selections": {
+    "public.project_task_selections": {
       "name": "project_task_selections",
       "schema": "",
       "columns": {
@@ -163,43 +167,46 @@
         "project_task_selections_task_id_tasks_id_fk": {
           "name": "project_task_selections_task_id_tasks_id_fk",
           "tableFrom": "project_task_selections",
-          "tableTo": "tasks",
           "columnsFrom": [
             "task_id"
           ],
+          "tableTo": "tasks",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "project_task_selections_label_id_project_labels_id_fk": {
           "name": "project_task_selections_label_id_project_labels_id_fk",
           "tableFrom": "project_task_selections",
-          "tableTo": "project_labels",
           "columnsFrom": [
             "label_id"
           ],
+          "tableTo": "project_labels",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "project_task_selections_task_id_label_id_unique": {
           "name": "project_task_selections_task_id_label_id_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "task_id",
             "label_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
-      }
+      },
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "projects": {
+    "public.projects": {
       "name": "projects",
       "schema": "",
       "columns": {
@@ -253,21 +260,24 @@
         "projects_created_by_auth_user_id_fk": {
           "name": "projects_created_by_auth_user_id_fk",
           "tableFrom": "projects",
-          "tableTo": "auth_user",
           "columnsFrom": [
             "created_by"
           ],
+          "tableTo": "auth_user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "task_inferences": {
+    "public.task_inferences": {
       "name": "task_inferences",
       "schema": "",
       "columns": {
@@ -315,43 +325,46 @@
         "task_inferences_task_id_tasks_id_fk": {
           "name": "task_inferences_task_id_tasks_id_fk",
           "tableFrom": "task_inferences",
-          "tableTo": "tasks",
           "columnsFrom": [
             "task_id"
           ],
+          "tableTo": "tasks",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "task_inferences_model_id_trained_models_id_fk": {
           "name": "task_inferences_model_id_trained_models_id_fk",
           "tableFrom": "task_inferences",
-          "tableTo": "trained_models",
           "columnsFrom": [
             "model_id"
           ],
+          "tableTo": "trained_models",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "task_inferences_task_id_model_id_unique": {
           "name": "task_inferences_task_id_model_id_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "task_id",
             "model_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
-      }
+      },
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "task_labels": {
+    "public.task_labels": {
       "name": "task_labels",
       "schema": "",
       "columns": {
@@ -412,69 +425,72 @@
         "task_labels_task_id_tasks_id_fk": {
           "name": "task_labels_task_id_tasks_id_fk",
           "tableFrom": "task_labels",
-          "tableTo": "tasks",
           "columnsFrom": [
             "task_id"
           ],
+          "tableTo": "tasks",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "task_labels_label_id_project_labels_id_fk": {
           "name": "task_labels_label_id_project_labels_id_fk",
           "tableFrom": "task_labels",
-          "tableTo": "project_labels",
           "columnsFrom": [
             "label_id"
           ],
+          "tableTo": "project_labels",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "task_labels_labeled_by_auth_user_id_fk": {
           "name": "task_labels_labeled_by_auth_user_id_fk",
           "tableFrom": "task_labels",
-          "tableTo": "auth_user",
           "columnsFrom": [
             "labeled_by"
           ],
+          "tableTo": "auth_user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "task_labels_label_updated_by_auth_user_id_fk": {
           "name": "task_labels_label_updated_by_auth_user_id_fk",
           "tableFrom": "task_labels",
-          "tableTo": "auth_user",
           "columnsFrom": [
             "label_updated_by"
           ],
+          "tableTo": "auth_user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "task_labels_task_id_label_id_unique": {
           "name": "task_labels_task_id_label_id_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "task_id",
             "label_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
-      }
+      },
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "tasks": {
+    "public.tasks": {
       "name": "tasks",
       "schema": "",
       "columns": {
@@ -537,61 +553,80 @@
       },
       "indexes": {
         "tasks_project_id_index": {
-          "name": "tasks_project_id_index",
           "columns": [
-            "project_id"
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "with": {},
+          "name": "tasks_project_id_index",
+          "isUnique": false,
+          "method": "btree",
+          "concurrently": false
         },
         "tasks_name_index": {
-          "name": "tasks_name_index",
           "columns": [
-            "name"
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "with": {},
+          "name": "tasks_name_index",
+          "isUnique": false,
+          "method": "btree",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "tasks_project_id_projects_id_fk": {
           "name": "tasks_project_id_projects_id_fk",
           "tableFrom": "tasks",
-          "tableTo": "projects",
           "columnsFrom": [
             "project_id"
           ],
+          "tableTo": "projects",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "tasks_assigned_to_auth_user_id_fk": {
           "name": "tasks_assigned_to_auth_user_id_fk",
           "tableFrom": "tasks",
-          "tableTo": "auth_user",
           "columnsFrom": [
             "assigned_to"
           ],
+          "tableTo": "auth_user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "tasks_name_project_id_unique": {
           "name": "tasks_name_project_id_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "name",
             "project_id"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
-      }
+      },
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "temp_tasks": {
+    "public.temp_tasks": {
       "name": "temp_tasks",
       "schema": "",
       "columns": {
@@ -640,66 +675,77 @@
       },
       "indexes": {
         "temp_tasks_task_name_index": {
-          "name": "temp_tasks_task_name_index",
           "columns": [
-            "task_name"
+            {
+              "expression": "task_name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "isUnique": false
+          "with": {},
+          "name": "temp_tasks_task_name_index",
+          "isUnique": false,
+          "method": "btree",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "temp_tasks_model_id_trained_models_id_fk": {
           "name": "temp_tasks_model_id_trained_models_id_fk",
           "tableFrom": "temp_tasks",
-          "tableTo": "trained_models",
           "columnsFrom": [
             "model_id"
           ],
+          "tableTo": "trained_models",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "temp_tasks_project_id_projects_id_fk": {
           "name": "temp_tasks_project_id_projects_id_fk",
           "tableFrom": "temp_tasks",
-          "tableTo": "projects",
           "columnsFrom": [
             "project_id"
           ],
+          "tableTo": "projects",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "temp_tasks_label_id_project_labels_id_fk": {
           "name": "temp_tasks_label_id_project_labels_id_fk",
           "tableFrom": "temp_tasks",
-          "tableTo": "project_labels",
           "columnsFrom": [
             "label_id"
           ],
+          "tableTo": "project_labels",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "temp_tasks_task_name_unique": {
           "name": "temp_tasks_task_name_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "task_name"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
-      }
+      },
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "trained_models": {
+    "public.trained_models": {
       "name": "trained_models",
       "schema": "",
       "columns": {
@@ -719,9 +765,12 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "user_key": {
+    "public.user_key": {
       "name": "user_key",
       "schema": "",
       "columns": {
@@ -749,21 +798,24 @@
         "user_key_user_id_auth_user_id_fk": {
           "name": "user_key_user_id_auth_user_id_fk",
           "tableFrom": "user_key",
-          "tableTo": "auth_user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "auth_user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "user_session": {
+    "public.user_session": {
       "name": "user_session",
       "schema": "",
       "columns": {
@@ -797,51 +849,63 @@
         "user_session_user_id_auth_user_id_fk": {
           "name": "user_session_user_id_auth_user_id_fk",
           "tableFrom": "user_session",
-          "tableTo": "auth_user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "auth_user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     }
   },
   "enums": {
-    "auth_user_role": {
+    "public.auth_user_role": {
       "name": "auth_user_role",
-      "values": {
-        "ADMIN": "ADMIN",
-        "USER": "USER"
-      }
+      "schema": "public",
+      "values": [
+        "ADMIN",
+        "USER"
+      ]
     },
-    "dataset": {
+    "public.dataset": {
       "name": "dataset",
-      "values": {
-        "train": "train",
-        "valid": "valid",
-        "test": "test"
-      }
+      "schema": "public",
+      "values": [
+        "train",
+        "valid",
+        "test"
+      ]
     },
-    "task_label_value": {
+    "public.task_label_value": {
       "name": "task_label_value",
-      "values": {
-        "Present": "Present",
-        "Absent": "Absent",
-        "Difficult": "Difficult",
-        "Skip": "Skip"
-      }
+      "schema": "public",
+      "values": [
+        "Present",
+        "Absent",
+        "Difficult",
+        "Skip"
+      ]
     }
   },
   "schemas": {},
   "_meta": {
-    "columns": {},
     "schemas": {},
-    "tables": {}
-  }
+    "tables": {},
+    "columns": {}
+  },
+  "id": "8e27ca44-2814-487c-ac9b-3961e9dbce94",
+  "prevId": "5ea3b73c-52d3-468c-9565-f5cd1ace46d0",
+  "sequences": {},
+  "policies": {},
+  "views": {},
+  "roles": {}
 }

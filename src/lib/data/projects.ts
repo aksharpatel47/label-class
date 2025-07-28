@@ -12,7 +12,10 @@ export async function fetchProjects() {
         orderBy: (labels, { asc }) => [asc(labels.sequence)],
       },
     },
-    orderBy: (projects, { asc }) => [asc(projects.name)],
+    orderBy: (projects, { asc }) => [
+      asc(projects.sequence),
+      asc(projects.name),
+    ],
   });
 }
 
@@ -25,7 +28,10 @@ export async function fetchProjectsWithIds(ids: string[]) {
         orderBy: (labels, { asc }) => [asc(labels.sequence)],
       },
     },
-    orderBy: (projects, { asc }) => [asc(projects.name)],
+    orderBy: (projects, { asc }) => [
+      asc(projects.sequence),
+      asc(projects.name),
+    ],
   });
 }
 
