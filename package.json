@@ -52,7 +52,7 @@
     "tsx": "^4.6.2",
     "zod": "^3.22.4",
     "zustand": "^4.4.7",
-    "drizzle-kit": "0.31.4",
+    "drizzle-kit": "0.31.4"
   },
   "devDependencies": {
     "@types/bcrypt": "5.0.2",
