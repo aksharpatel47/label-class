@@ -139,6 +139,12 @@ export async function fetchDatasetStatisticsByLabel(
         inArray(tasks.projectId, projectIds)
       )
     )
-    .groupBy(projectTaskSelections.dataset, taskLabels.value, tasks.projectId)
+    .groupBy(
+      projectTaskSelections.dataset,
+      taskLabels.value,
+      tasks.projectId,
+      projects.sequence,
+      projects.name
+    )
     .orderBy(asc(projects.sequence), asc(projects.name));
 }
