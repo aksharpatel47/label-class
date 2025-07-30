@@ -2,12 +2,13 @@ import { db } from "@/db";
 import {
   authUser,
   projectLabels,
+  projects,
   projectTaskSelections,
   taskLabels,
   taskLabelsRelations,
   tasks,
 } from "@/db/schema";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { unstable_noStore } from "next/cache";
 
 export async function addLabelToTask(
@@ -121,6 +122,7 @@ export async function fetchDatasetStatisticsByLabel(
     })
     .from(projectTaskSelections)
     .innerJoin(tasks, eq(projectTaskSelections.taskId, tasks.id))
+    .innerJoin(projects, eq(tasks.projectId, projects.id))
     .innerJoin(
       taskLabels,
       and(
@@ -137,5 +139,6 @@ export async function fetchDatasetStatisticsByLabel(
         inArray(tasks.projectId, projectIds)
       )
     )
-    .groupBy(projectTaskSelections.dataset, taskLabels.value, tasks.projectId);
+    .groupBy(projectTaskSelections.dataset, taskLabels.value, tasks.projectId)
+    .orderBy(asc(projects.sequence), asc(projects.name));
 }
