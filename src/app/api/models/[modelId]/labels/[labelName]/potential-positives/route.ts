@@ -8,6 +8,7 @@ export async function GET(
   const { modelId, labelName } = params;
 
   const projectIds = request.nextUrl.searchParams.getAll("selectedProject");
+  const threshold = request.nextUrl.searchParams.get("threshold") || "0.10";
 
   if (!modelId || !labelName || !projectIds.length) {
     return new Response(
@@ -16,10 +17,21 @@ export async function GET(
     );
   }
 
+  const thresholdValue = parseFloat(threshold);
+  if (isNaN(thresholdValue) || thresholdValue < 0 || thresholdValue > 1) {
+    return new Response(
+      JSON.stringify({
+        error: "Invalid threshold value. Must be between 0 and 1.",
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   const positives = await fetchPotentialUnlabeledPositivesData(
     projectIds,
     labelName,
-    parseInt(modelId, 10)
+    parseInt(modelId, 10),
+    thresholdValue
   );
 
   const csvRowHeader = [
@@ -27,6 +39,10 @@ export async function GET(
   ];
 
   const csvRows = positives.map((p) => {
+    // Convert threshold to percentage for URL (e.g., 0.10 -> 10%, 0.50 -> 50%)
+    const thresholdPercent = Math.round(thresholdValue * 100);
+    const encodedThreshold = encodeURIComponent(`>=${thresholdPercent}%`);
+
     return [
       p.projectName,
       p.potentialPositives,
@@ -36,7 +52,7 @@ export async function GET(
       p.validAbsent,
       p.testPresent,
       p.testAbsent,
-      `https://walkit-labels.aksharpatel47.com/projects/${p.projectId}/label?label=${p.labelId}&labelvalue=Unlabeled&trainedmodel=${modelId}&inferencevalue=%3E%3D10%25`,
+      `https://walkit-labels.aksharpatel47.com/projects/${p.projectId}/label?label=${p.labelId}&labelvalue=Unlabeled&trainedmodel=${modelId}&inferencevalue=${encodedThreshold}`,
     ].join(",");
   });
 
@@ -60,7 +76,9 @@ export async function GET(
     .concat(csvRows)
     .concat([totalRow])
     .join("\n");
-  const fileName = `${labelName.toLowerCase().replace(/\s+/g, "_")}_potential_unlabeled_positives.csv`;
+
+  const thresholdPercent = Math.round(thresholdValue * 100);
+  const fileName = `${labelName.toLowerCase().replace(/\s+/g, "_")}_potential_unlabeled_positives_${thresholdPercent}pct.csv`;
 
   return new Response(csvContent, {
     headers: {

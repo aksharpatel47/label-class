@@ -25,8 +25,12 @@ export async function archiveModel(modelId: number, archived: boolean) {
 export async function fetchPotentialUnlabeledPositivesData(
   projectIds: string[],
   labelName: string,
-  modelId: number
+  modelId: number,
+  threshold: number = 0.1
 ) {
+  // Convert threshold from 0-1 scale to 0-10000 scale
+  const thresholdValue = Math.floor(threshold * 10000);
+
   // Use a single CTE and conditional aggregation for all stats, grouped by project
   const res = await db.execute(sql`
       with relevant_tasks as (
@@ -39,7 +43,7 @@ export async function fetchPotentialUnlabeledPositivesData(
         t.project_id,
         p.name as project_name,
         t.label_id,
-        count(distinct case when ti.inference >= 1000 and tl.task_id is null then t.task_id end) as potential_positives,
+        count(distinct case when ti.inference >= ${thresholdValue} and tl.task_id is null then t.task_id end) as potential_positives,
         count(distinct case when pts.dataset = 'train' and tl.label_value = 'Present' then t.task_id end) as train_present,
         count(distinct case when pts.dataset = 'train' and tl.label_value = 'Absent' then t.task_id end) as train_absent,
         count(distinct case when pts.dataset = 'valid' and tl.label_value = 'Present' then t.task_id end) as valid_present,
