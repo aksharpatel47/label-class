@@ -211,6 +211,11 @@ export const taskLabelsRelations = relations(taskLabels, ({ one }) => ({
 export const trainedModels = pgTable("trained_models", {
   id: serial("id").primaryKey().notNull(),
   name: varchar("name", { length: 255 }).notNull(),
+  link: varchar("link", { length: 1024 }),
+  labelName: varchar("label_name", { length: 255 }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
   archived: boolean("archived").notNull().default(false),
 });
 
