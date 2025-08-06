@@ -47,8 +47,10 @@ export default async function Page({
         <TableHeader>
           <TableRow>
             <TableHead>Model Name</TableHead>
-            <TableHead></TableHead>
-            <TableHead></TableHead>
+            <TableHead>Label Name</TableHead>
+            <TableHead>Created At</TableHead>
+            <TableHead>Archived</TableHead>
+            <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -59,6 +61,14 @@ export default async function Page({
                 <TableRow key={m.id}>
                   <TableCell>
                     <Link href={`/models/${m.id}`}>{m.name}</Link>
+                  </TableCell>
+                  <TableCell>{m.labelName}</TableCell>
+                  <TableCell>
+                    {m.createdAt.toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                    })}
                   </TableCell>
                   <TableCell>
                     <ArchiveButton modelId={m.id} archived={m.archived} />
