@@ -8,7 +8,7 @@ export async function GET(
   const { modelId, labelName } = params;
 
   const projectIds = request.nextUrl.searchParams.getAll("selectedProject");
-  const threshold = request.nextUrl.searchParams.get("threshold") || "0.10";
+  const threshold = request.nextUrl.searchParams.get("threshold") || "0.01";
 
   if (!modelId || !labelName || !projectIds.length) {
     return new Response(

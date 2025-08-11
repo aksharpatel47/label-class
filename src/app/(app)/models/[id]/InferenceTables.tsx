@@ -216,10 +216,10 @@ export async function InferenceTables({
         <div className="flex gap-2 mb-2">
           <Button asChild>
             <a
-              href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?threshold=0.10&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
+              href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?threshold=0.01&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
             >
               <Download className="mr-2 h-4 w-4" />
-              Potential Positives (0.10 to 1.00)
+              Potential Positives (0.01 to 1.00)
             </a>
           </Button>
           <Button asChild>
@@ -236,6 +236,15 @@ export async function InferenceTables({
               download
             >
               Download Inference Tables Excel
+            </a>
+          </Button>
+          <Button asChild>
+            <a
+              href={`/api/models/${trainedModelId}/labels/${labelName}/dataset-candidates?${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
+              download
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Dataset Candidates CSV
             </a>
           </Button>
           <CopyToClipboard
