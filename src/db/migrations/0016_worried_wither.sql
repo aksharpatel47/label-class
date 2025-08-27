@@ -1,0 +1,1 @@
+ALTER TABLE "task_labels" ADD COLUMN "flag" boolean DEFAULT false NOT NULL;

@@ -10,11 +10,14 @@ import { H4 } from "@/components/ui/typography";
 import { db } from "@/db";
 import {
   Dataset,
+  datasetEnumValues,
   projectLabels,
   projects,
   projectTaskSelections,
   taskInferences,
+  taskLabelEnumValues,
   taskLabels,
+  taskLabelValue,
   TaskLabelValue,
   tasks,
 } from "@/db/schema";
@@ -27,9 +30,12 @@ export default async function Page({
 }: {
   searchParams: {
     label: string;
-    labelValue: TaskLabelValue;
-    dataset: Dataset;
+    labelValue?: TaskLabelValue;
+    dataset?: Dataset;
     selectedProjects: string[];
+    labeledBy?: string;
+    updatedBy?: string;
+    flag?: "true";
     trainedModelId?: string;
     inferenceValue?: string;
   };
@@ -37,6 +43,8 @@ export default async function Page({
   const projectLabelsResult = await fetchProjectsWithIds(
     searchParams.selectedProjects
   );
+
+  const flag = searchParams.flag === "true";
 
   let query = db
     .select({
@@ -55,23 +63,52 @@ export default async function Page({
       taskLabels,
       and(
         eq(tasks.id, taskLabels.taskId),
-        eq(taskLabels.labelId, projectLabels.id),
-        eq(taskLabels.value, searchParams.labelValue)
+        eq(taskLabels.labelId, projectLabels.id)
       )
     )
     .innerJoin(
       projectTaskSelections,
       and(
         eq(tasks.id, projectTaskSelections.taskId),
-        eq(projectTaskSelections.labelId, projectLabels.id),
-        eq(projectTaskSelections.dataset, searchParams.dataset)
+        eq(projectTaskSelections.labelId, projectLabels.id)
       )
     )
     .$dynamic();
 
   const whereConditions = [
     inArray(tasks.projectId, searchParams.selectedProjects),
+    eq(taskLabels.flag, flag),
   ];
+
+  if (searchParams.labeledBy) {
+    whereConditions.push(eq(taskLabels.labeledBy, searchParams.labeledBy));
+  }
+
+  if (searchParams.updatedBy) {
+    whereConditions.push(eq(taskLabels.labelUpdatedBy, searchParams.updatedBy));
+  }
+
+  let datasetLabel = datasetEnumValues.join(", ");
+
+  if (searchParams.dataset) {
+    whereConditions.push(
+      eq(projectTaskSelections.dataset, searchParams.dataset)
+    );
+    datasetLabel = searchParams.dataset;
+  } else {
+    whereConditions.push(
+      inArray(projectTaskSelections.dataset, datasetEnumValues)
+    );
+  }
+
+  let labelValueLabel = taskLabelEnumValues.join(", ");
+
+  if (searchParams.labelValue) {
+    whereConditions.push(eq(taskLabels.value, searchParams.labelValue));
+    labelValueLabel = searchParams.labelValue;
+  } else {
+    whereConditions.push(inArray(taskLabels.value, taskLabelEnumValues));
+  }
 
   if (searchParams.trainedModelId && searchParams.inferenceValue) {
     query = query
@@ -107,11 +144,11 @@ export default async function Page({
         </div>
         <div>
           <H4>Label Value</H4>
-          {searchParams.labelValue}
+          {labelValueLabel}
         </div>
         <div>
           <H4>Dataset</H4>
-          {searchParams.dataset}
+          {datasetLabel}
         </div>
         <div>
           <H4>Selected Projects</H4>
@@ -128,14 +165,36 @@ export default async function Page({
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <H4>Trained Model ID</H4>
-          {searchParams.trainedModelId}
-        </div>
-        <div>
-          <H4>Inference Value</H4>
-          {searchParams.inferenceValue}
-        </div>
+        {searchParams.labeledBy && (
+          <div>
+            <H4>Labeled By</H4>
+            {searchParams.labeledBy}
+          </div>
+        )}
+        {searchParams.updatedBy && (
+          <div>
+            <H4>Updated By</H4>
+            {searchParams.updatedBy}
+          </div>
+        )}
+        {searchParams.flag && (
+          <div>
+            <H4>Flagged</H4>
+            {searchParams.flag}
+          </div>
+        )}
+        {searchParams.trainedModelId && (
+          <div>
+            <H4>Trained Model ID</H4>
+            {searchParams.trainedModelId}
+          </div>
+        )}
+        {searchParams.inferenceValue && (
+          <div>
+            <H4>Inference Value</H4>
+            {searchParams.inferenceValue}
+          </div>
+        )}
         <div>Found {results.length} results</div>
       </div>
       <DatasetViewer

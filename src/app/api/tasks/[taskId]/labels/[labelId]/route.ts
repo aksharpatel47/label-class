@@ -65,6 +65,29 @@ export async function POST(
   return NextResponse.json({ inserted: true });
 }
 
+// using PATCH to set the value of `flag` in taskLabels
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { taskId: string; labelId: string } }
+) {
+  const session = await getRouteSession(request.method);
+  if (!session) {
+    return new Response(null, { status: 401 });
+  }
+
+  const { taskId, labelId } = params;
+  const data = await request.json();
+
+  await db
+    .update(taskLabels)
+    .set({
+      flag: data.flag,
+    })
+    .where(and(eq(taskLabels.taskId, taskId), eq(taskLabels.labelId, labelId)));
+
+  return NextResponse.json({ updated: true });
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { taskId: string; labelId: string } }

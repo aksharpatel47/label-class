@@ -5,11 +5,12 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useContext, useEffect } from "react";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { Map } from "lucide-react";
+import { Flag, FlagOff, Map } from "lucide-react";
 import { IGetTaskLabelReponse } from "@/app/api/tasks/[taskId]/labels/route";
 import { SessionContext } from "@/app/(app)/session-context";
 import { Session } from "lucia";
 import { toast } from "sonner";
+import { Toggle } from "@/components/ui/toggle";
 
 interface TaskLabel {
   value: TaskLabelValue;
@@ -17,6 +18,7 @@ interface TaskLabel {
   updatedAt: Date | null;
   labelId: string;
   taskId: string;
+  flag: boolean;
   labeledBy: {
     id: string;
     name: string;
@@ -56,6 +58,12 @@ type Actions = {
     session: Session
   ): void;
   setInferenceResult(inference: number): void;
+  setTaskLabelFlag(
+    currentTaskId: string,
+    labelId: string,
+    flag: boolean,
+    session: Session
+  ): void;
 };
 
 const useLabelTaskStore = create<State & Actions>()(
@@ -121,6 +129,7 @@ const useLabelTaskStore = create<State & Actions>()(
                 updatedAt: new Date(),
                 labelId: labelId,
                 taskId: currentTaskId,
+                flag: false,
                 labeledBy: {
                   id: session.user.userId,
                   name: session.user.name,
@@ -175,6 +184,7 @@ const useLabelTaskStore = create<State & Actions>()(
                 updatedAt: new Date(),
                 labelId: labelId,
                 taskId: currentTaskId,
+                flag: false,
                 labeledBy: {
                   id: session.user.userId,
                   name: session.user.name,
@@ -193,6 +203,38 @@ const useLabelTaskStore = create<State & Actions>()(
       set((state) => {
         state.inferenceResult = inference;
       });
+    },
+    setTaskLabelFlag(
+      currentTaskId: string,
+      labelId: string,
+      flag: boolean,
+      session: Session
+    ) {
+      fetch(`/api/tasks/${currentTaskId}/labels/${labelId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ flag }),
+      })
+        .then(async (res) => {
+          const data = await res.json();
+          if (!res.ok) {
+            toast.error(data.error);
+            return;
+          }
+
+          // Only update state if API call was successful
+          set((state) => {
+            if (!!state.taskLabels[labelId]) {
+              state.taskLabels[labelId]!.flag = flag;
+            }
+          });
+        })
+        .catch((error) => {
+          toast.error(`Failed to set/update label flag`);
+          console.error(error);
+        });
     },
   }))
 );
@@ -231,6 +273,7 @@ export function LabelTask({
     cycleLabelValue,
     setLabelValue,
     setInferenceResult,
+    setTaskLabelFlag,
   } = useLabelTaskStore();
 
   useEffect(() => {
@@ -358,6 +401,21 @@ export function LabelTask({
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>
+              {!!taskLabels[l.id] ? (
+                <Toggle
+                  pressed={taskLabels[l.id]?.flag}
+                  onPressedChange={(flag) => {
+                    setTaskLabelFlag(task.id, l.id, flag, session!);
+                  }}
+                >
+                  {taskLabels[l.id]?.flag ? (
+                    <Flag style={{ color: "red" }} />
+                  ) : (
+                    <Flag style={{ color: "grey" }} />
+                  )}
+                </Toggle>
+              ) : null}
+
               <div className="flex flex-col text-sm">
                 {taskLabels[l.id] && (
                   <div>🏷️ {taskLabels[l.id]?.labeledBy.name}</div>

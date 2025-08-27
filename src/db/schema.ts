@@ -154,12 +154,13 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   taskLabels: many(taskLabels),
 }));
 
-export const taskLabelValue = pgEnum("task_label_value", [
+export const taskLabelEnumValues = [
   "Present",
   "Absent",
   "Difficult",
   "Skip",
-]);
+] as const;
+export const taskLabelValue = pgEnum("task_label_value", taskLabelEnumValues);
 export type TaskLabelValue = (typeof taskLabelValue.enumValues)[number];
 
 export const taskLabels = pgTable(
@@ -173,6 +174,7 @@ export const taskLabels = pgTable(
       .references(() => projectLabels.id)
       .notNull(),
     value: taskLabelValue("label_value").notNull().default("Present"),
+    flag: boolean("flag").notNull().default(false),
     labeledBy: text("labeled_by")
       .references(() => authUser.id)
       .notNull(),

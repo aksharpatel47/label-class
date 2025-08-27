@@ -34,6 +34,10 @@ export function DatasetViewer({
     };
   }, [tasks.length]);
 
+  if (tasks.length === 0) {
+    return <div className="p-2">No tasks available to display.</div>;
+  }
+
   return (
     <LabelTask
       task={tasks[index]}
