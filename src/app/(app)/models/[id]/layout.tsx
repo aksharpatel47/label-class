@@ -17,7 +17,16 @@ export default async function ModelLayout({
 
   return (
     <>
-      <H1>{model?.name}</H1>
+      <H1>
+        {model?.name +
+          " (" +
+          model?.createdAt.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          }) +
+          ")"}
+      </H1>
       <ModelNav id={modelId} />
       {children}
     </>

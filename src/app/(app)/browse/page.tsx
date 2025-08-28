@@ -9,6 +9,7 @@ import {
 import { H4 } from "@/components/ui/typography";
 import { db } from "@/db";
 import {
+  authUser,
   Dataset,
   datasetEnumValues,
   projectLabels,
@@ -80,12 +81,23 @@ export default async function Page({
     eq(taskLabels.flag, flag),
   ];
 
+  let labeledByName = "";
+
   if (searchParams.labeledBy) {
     whereConditions.push(eq(taskLabels.labeledBy, searchParams.labeledBy));
+    const result = await db.query.authUser.findFirst({
+      where: eq(authUser.id, searchParams.labeledBy),
+    });
+    labeledByName = result?.name || "";
   }
 
+  let updatedByName = "";
   if (searchParams.updatedBy) {
     whereConditions.push(eq(taskLabels.labelUpdatedBy, searchParams.updatedBy));
+    const result = await db.query.authUser.findFirst({
+      where: eq(authUser.id, searchParams.updatedBy),
+    });
+    updatedByName = result?.name || "";
   }
 
   let datasetLabel = datasetEnumValues.join(", ");
@@ -168,13 +180,13 @@ export default async function Page({
         {searchParams.labeledBy && (
           <div>
             <H4>Labeled By</H4>
-            {searchParams.labeledBy}
+            {labeledByName}
           </div>
         )}
         {searchParams.updatedBy && (
           <div>
             <H4>Updated By</H4>
-            {searchParams.updatedBy}
+            {updatedByName}
           </div>
         )}
         {searchParams.flag && (
