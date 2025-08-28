@@ -96,6 +96,38 @@ const useLabelTaskStore = create<State & Actions>()(
       );
       const newLabelValue = taskLabelValues[newLabelIndex];
 
+      // Optimistically update state first
+      const prevLabel = structuredClone(
+        useLabelTaskStore.getState().taskLabels[labelId]
+      );
+
+      set((state) => {
+        if (newLabelValue === undefined) {
+          delete state.taskLabels[labelId];
+        } else if (!!state.taskLabels[labelId]) {
+          state.taskLabels[labelId]!.value = newLabelValue;
+          state.taskLabels[labelId]!.updatedAt = new Date();
+          state.taskLabels[labelId]!.labelUpdatedBy = {
+            id: session.user.userId,
+            name: session.user.name,
+          };
+        } else {
+          state.taskLabels[labelId] = {
+            value: newLabelValue,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            labelId: labelId,
+            taskId: currentTaskId,
+            flag: false,
+            labeledBy: {
+              id: session.user.userId,
+              name: session.user.name,
+            },
+            labelUpdatedBy: null,
+          };
+        }
+      });
+
       const method = !newLabelValue ? "DELETE" : "POST";
       fetch(`/api/tasks/${currentTaskId}/labels/${labelId}`, {
         method,
@@ -107,39 +139,28 @@ const useLabelTaskStore = create<State & Actions>()(
         .then(async (res) => {
           const data = await res.json();
           if (!res.ok) {
+            // Rollback on error
+            set((state) => {
+              if (prevLabel === undefined) {
+                delete state.taskLabels[labelId];
+              } else {
+                state.taskLabels[labelId] = prevLabel;
+              }
+            });
             toast.error(data.error);
             return;
           }
-
-          // Only update state if API call was successful
-          set((state) => {
-            if (newLabelValue === undefined) {
-              delete state.taskLabels[labelId];
-            } else if (!!state.taskLabels[labelId]) {
-              state.taskLabels[labelId]!.value = newLabelValue;
-              state.taskLabels[labelId]!.updatedAt = new Date();
-              state.taskLabels[labelId]!.labelUpdatedBy = {
-                id: session.user.userId,
-                name: session.user.name,
-              };
-            } else {
-              state.taskLabels[labelId] = {
-                value: newLabelValue,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                labelId: labelId,
-                taskId: currentTaskId,
-                flag: false,
-                labeledBy: {
-                  id: session.user.userId,
-                  name: session.user.name,
-                },
-                labelUpdatedBy: null,
-              };
-            }
-          });
+          // Success: state already updated optimistically
         })
         .catch((error) => {
+          // Rollback on network failure
+          set((state) => {
+            if (prevLabel === undefined) {
+              delete state.taskLabels[labelId];
+            } else {
+              state.taskLabels[labelId] = prevLabel;
+            }
+          });
           toast.error(`Failed to set/update label value`);
           console.error(error);
         });
@@ -453,14 +474,16 @@ export interface LatLng {
 }
 
 /**
- * Extract the first “_<lat>_<lng>” pair found anywhere in the URL.
+ * Extract the first "<lat>_<lng>" pair found anywhere in the URL or filename.
+ * Handles coordinates that appear at the start (e.g. "39.38_-76.52_180_0.jpg")
+ * or after an underscore (e.g. "..._39.38_-76.52_0_0.jpg").
  *
- * @param url  Any URL or path containing “…_<lat>_<lng>…”
+ * @param url  Any URL or path containing "<lat>_<lng>"
  * @returns    The coordinates, or `null` if none found
  */
 export function extractLatLng(url: string): LatLng | null {
-  // underscore, ±DDD(.ddd…)?  underscore, ±DDD(.ddd…)?   (no anchor ⇒ anywhere)
-  const regex = /_(-?\d{1,3}(?:\.\d+)?)_(-?\d{1,3}(?:\.\d+)?)/;
+  // (start or underscore), ±DDD(.ddd…)?  underscore, ±DDD(.ddd…)?
+  const regex = /(?:^|_)(-?\d{1,3}(?:\.\d+)?)[_](-?\d{1,3}(?:\.\d+)?)/;
   const match = url.match(regex);
   if (!match) return null;
 
