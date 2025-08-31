@@ -1,7 +1,7 @@
-import { ProjectLabel, Task } from "@/db/schema";
-import { LabelTask } from "@/app/(app)/projects/[id]/tasktool";
-import { useEffect, useState } from "react";
+import { LabelTask } from "@/app/components/tasktool";
 import { Button } from "@/components/ui/button";
+import { ProjectLabel, Task } from "@/db/schema";
+import { useEffect, useState } from "react";
 
 export interface IReviewImagesProps {
   tasks: Task[];

@@ -1,5 +1,7 @@
 "use client";
 
+import { LabelTask } from "@/app/components/tasktool";
+import { fetcher } from "@/app/lib/utils/fetcher";
 import {
   Table,
   TableBody,
@@ -8,16 +10,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import Image from "next/image";
+import { ProjectLabel, Task } from "@/db/schema";
 import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import useSwr from "swr";
-import { UserDropdown } from "./filters";
-import { ProjectLabel, Task, TaskLabelValue } from "@/db/schema";
-import { LabelTask } from "./tasktool";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { useEffect } from "react";
-import { fetcher } from "@/app/lib/utils/fetcher";
 
 type State = {
   index: number;

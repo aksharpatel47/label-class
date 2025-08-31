@@ -1,9 +1,8 @@
+import { Tool } from "@/app/components/tool";
 import { taskLabelValue } from "@/db/schema";
 import { fetchTrainedModels } from "@/lib/data/inferences";
 import { fetchProjectLabels } from "@/lib/data/labels";
 import { fetchUsers } from "@/lib/data/users";
-import { LabelFilters } from "./filters";
-import { Tool } from "./tool";
 
 export default async function Page({ params }: { params: { id: string } }) {
   const labels = await fetchProjectLabels(params.id);

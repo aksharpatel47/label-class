@@ -1,16 +1,16 @@
 "use client";
 
-import { ProjectLabel, Task } from "@/db/schema";
+import { SessionContext } from "@/app/(app)/session-context";
+import { IGetTaskLabelReponse } from "@/app/api/tasks/[taskId]/labels/route";
+import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ProjectLabel, Task } from "@/db/schema";
+import { Session } from "lucia";
+import { Flag, Map } from "lucide-react";
 import { useContext, useEffect } from "react";
+import { toast } from "sonner";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { Flag, FlagOff, Map } from "lucide-react";
-import { IGetTaskLabelReponse } from "@/app/api/tasks/[taskId]/labels/route";
-import { SessionContext } from "@/app/(app)/session-context";
-import { Session } from "lucia";
-import { toast } from "sonner";
-import { Toggle } from "@/components/ui/toggle";
 
 interface TaskLabel {
   value: TaskLabelValue;

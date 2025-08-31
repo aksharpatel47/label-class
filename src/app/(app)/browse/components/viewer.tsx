@@ -1,9 +1,9 @@
 "use client";
 
+import { LabelTask } from "@/app/components/tasktool";
 import { Task } from "@/db/schema";
-import { LabelTask } from "../../projects/[id]/tasktool";
 import { fetchProjectsWithIds } from "@/lib/data/projects";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface DatasetViewerProps {
   tasks: Task[];

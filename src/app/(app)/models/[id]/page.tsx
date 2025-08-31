@@ -1,4 +1,5 @@
-import { ModelInferenceMatrixProjectForm } from "@/app/(app)/components/model-inference-matrix-project-form";
+import { ModelInferenceMatrixProjectForm } from "@/app/components/model-inference-matrix-project-form";
+import { getPageSession } from "@/app/lib/utils/session";
 import { H4 } from "@/components/ui/typography";
 import {
   fetchProjectLabelNames,
@@ -6,7 +7,6 @@ import {
   fetchProjectsWithLabelName,
 } from "@/lib/data/projects";
 import { InferenceTables } from "./InferenceTables";
-import { getPageSession } from "@/app/lib/utils/session";
 
 export default async function Page({
   params,

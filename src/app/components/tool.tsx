@@ -1,10 +1,10 @@
 "use client";
 
 import { AuthUser, ProjectLabel, Task, TrainedModel } from "@/db/schema";
-import { LabelFilters } from "./filters";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
-import { LabelTask } from "../tasktool";
+import { LabelFilters } from "./filters";
+import { LabelTask } from "./tasktool";
 
 interface IToolProps {
   projectId: string;

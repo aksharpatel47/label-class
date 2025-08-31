@@ -1,10 +1,7 @@
 "use client";
 
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Project } from "@/db/schema";
-import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -12,6 +9,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Project } from "@/db/schema";
+import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 
 export interface IModelInferenceMatrixProps {
   projects: Project[];

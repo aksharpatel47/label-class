@@ -1,6 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -10,13 +17,6 @@ import {
 } from "@/components/ui/select";
 import { AuthUser, ProjectLabel, TrainedModel } from "@/db/schema";
 import { CalendarIcon, XCircle } from "lucide-react";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
 
 interface ILabelFiltersProps {

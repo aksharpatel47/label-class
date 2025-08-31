@@ -1,4 +1,3 @@
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -11,19 +10,17 @@ import { db } from "@/db";
 import {
   authUser,
   Dataset,
-  datasetEnumValues,
   projectLabels,
   projects,
   projectTaskSelections,
   taskInferences,
   taskLabelEnumValues,
   taskLabels,
-  taskLabelValue,
   TaskLabelValue,
   tasks,
 } from "@/db/schema";
 import { fetchProjectsWithIds } from "@/lib/data/projects";
-import { and, eq, getTableColumns, gte, inArray, lt, sql } from "drizzle-orm";
+import { and, eq, getTableColumns, gte, inArray, lt } from "drizzle-orm";
 import { DatasetViewer } from "./components/viewer";
 
 export default async function Page({
@@ -67,13 +64,7 @@ export default async function Page({
         eq(taskLabels.labelId, projectLabels.id)
       )
     )
-    .innerJoin(
-      projectTaskSelections,
-      and(
-        eq(tasks.id, projectTaskSelections.taskId),
-        eq(projectTaskSelections.labelId, projectLabels.id)
-      )
-    )
+
     .$dynamic();
 
   const whereConditions = [
@@ -100,17 +91,18 @@ export default async function Page({
     updatedByName = result?.name || "";
   }
 
-  let datasetLabel = datasetEnumValues.join(", ");
+  let datasetLabel = "Any Or None";
 
   if (searchParams.dataset) {
-    whereConditions.push(
-      eq(projectTaskSelections.dataset, searchParams.dataset)
+    query = query.innerJoin(
+      projectTaskSelections,
+      and(
+        eq(tasks.id, projectTaskSelections.taskId),
+        eq(projectTaskSelections.labelId, projectLabels.id),
+        eq(projectTaskSelections.dataset, searchParams.dataset)
+      )
     );
     datasetLabel = searchParams.dataset;
-  } else {
-    whereConditions.push(
-      inArray(projectTaskSelections.dataset, datasetEnumValues)
-    );
   }
 
   let labelValueLabel = taskLabelEnumValues.join(", ");
