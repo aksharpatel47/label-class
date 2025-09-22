@@ -150,6 +150,7 @@ export async function GET(
     "False Positives",
     "True Negatives",
     "Total",
+    "Link",
   ];
 
   const csvRows = Object.entries(projectData).map(
@@ -160,6 +161,7 @@ export async function GET(
       data.fp,
       data.tn,
       data.total,
+      `https://walkit-labels.aksharpatel47.com/projects/${projectId}/selection`,
     ]
   );
 
@@ -171,6 +173,7 @@ export async function GET(
     totals.fp,
     totals.tn,
     totals.total,
+    "", // no link for totals
   ];
 
   const csvContent = [
