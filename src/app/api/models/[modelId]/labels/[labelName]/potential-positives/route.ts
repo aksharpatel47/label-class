@@ -52,11 +52,11 @@ export async function GET(
     "project_name,potential_unlabeled_positives,train_present,train_absent,valid_present,valid_absent,test_present,test_absent,link_to_label",
   ];
   // Convert threshold to percentage for URL (e.g., 0.10 -> 10%, 0.50 -> 50%)
-  const leftThresholdPercent = Math.round(leftThresholdValue * 100);
-  const rightThresholdPercent = Math.round(rightThresholdValue * 100);
+  const leftThresholdPercent = Math.floor(leftThresholdValue * 100);
+  const rightThresholdPercent = Math.floor(rightThresholdValue * 100);
   // Encode as >=X% and <=Y% for URL
   const encodedThreshold = encodeURIComponent(
-    `${leftThresholdPercent}-${rightThresholdPercent}%`
+    `${leftThresholdPercent}.00-${rightThresholdPercent}.00%`
   );
   const csvRows = positives.map((p) => {
     return [
