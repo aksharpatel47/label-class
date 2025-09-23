@@ -183,52 +183,25 @@ function generateFiltersBasedOnQueryParams(
   if (trainedModel && inferenceValue) {
     const trainedModelId = Number(trainedModel);
 
-    if (inferenceValue === ">=1%") {
-      // Only tasks with inference >= 100 for this model
-      filters.push(
-        and(
-          eq(taskInferences.modelId, trainedModelId),
-          gte(taskInferences.inference, 100)
-        )
-      );
-    } else if (inferenceValue === ">=50%") {
-      // Only tasks with inference >= 5000 for this model
-      filters.push(
-        and(
-          eq(taskInferences.modelId, trainedModelId),
-          gte(taskInferences.inference, 5000)
-        )
-      );
-    } else if (inferenceValue === "<50%") {
-      // Only tasks with inference < 5000 for this model
-      filters.push(
-        and(
-          eq(taskInferences.modelId, trainedModelId),
-          lte(taskInferences.inference, 5000)
-        )
-      );
-    } else {
-      // Range filter, e.g. '0.2-0.5%'
-      const inferenceValueRange = inferenceValue
-        .slice(0, -1)
-        .split("-")
-        .map(Number)
-        .filter((n) => !isNaN(n))
-        .map((n) => Math.ceil(n * 100));
+    const inferenceValueRange = inferenceValue
+      .slice(0, -1)
+      .split("-")
+      .map(Number)
+      .filter((n) => !isNaN(n))
+      .map((n) => Math.ceil(n * 100));
 
-      if (
-        inferenceValueRange.length === 2 &&
-        inferenceValueRange[0] < inferenceValueRange[1] &&
-        trainedModelId > 0
-      ) {
-        filters.push(
-          and(
-            eq(taskInferences.modelId, trainedModelId),
-            gte(taskInferences.inference, inferenceValueRange[0]),
-            lte(taskInferences.inference, inferenceValueRange[1])
-          )
-        );
-      }
+    if (
+      inferenceValueRange.length === 2 &&
+      inferenceValueRange[0] < inferenceValueRange[1] &&
+      trainedModelId > 0
+    ) {
+      filters.push(
+        and(
+          eq(taskInferences.modelId, trainedModelId),
+          gte(taskInferences.inference, inferenceValueRange[0]),
+          lte(taskInferences.inference, inferenceValueRange[1])
+        )
+      );
     }
   }
 

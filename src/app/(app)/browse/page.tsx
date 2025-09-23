@@ -20,7 +20,7 @@ import {
   tasks,
 } from "@/db/schema";
 import { fetchProjectsWithIds } from "@/lib/data/projects";
-import { and, eq, getTableColumns, gte, inArray, lt } from "drizzle-orm";
+import { and, eq, getTableColumns, gte, inArray, lt, lte } from "drizzle-orm";
 import { DatasetViewer } from "./components/viewer";
 
 export default async function Page({
@@ -125,13 +125,16 @@ export default async function Page({
       )
       .$dynamic();
 
-    let inferenceCondition = gte(taskInferences.inference, 5000);
+    const [leftThreshold, rightThreshold] = searchParams.inferenceValue
+      .split("-")
+      .map((v) => Number(v.replace("%", "")));
 
-    if (searchParams.inferenceValue === "<50%") {
-      inferenceCondition = lt(taskInferences.inference, 5000);
-    }
-
-    whereConditions.push(inferenceCondition);
+    whereConditions.push(
+      and(
+        gte(taskInferences.inference, Math.floor(leftThreshold * 10000)),
+        lte(taskInferences.inference, Math.floor(rightThreshold * 10000))
+      )!
+    );
   }
 
   const results = await query

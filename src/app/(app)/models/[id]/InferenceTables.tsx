@@ -110,7 +110,7 @@ export async function InferenceTables({
         "/browse?" +
         new URLSearchParams([
           ...paramTuples,
-          ["inferenceValue", ">=50%"],
+          ["inferenceValue", "50.00-100.00%"],
           ["labelValue", "Present"],
         ]).toString(),
       fn: 0,
@@ -118,7 +118,7 @@ export async function InferenceTables({
         "/browse?" +
         new URLSearchParams([
           ...paramTuples,
-          ["inferenceValue", "<50%"],
+          ["inferenceValue", "0-49.99%"],
           ["labelValue", "Present"],
         ]).toString(),
       fp: 0,
@@ -127,7 +127,7 @@ export async function InferenceTables({
         new URLSearchParams([
           ...paramTuples,
           ["labelValue", "Absent"],
-          ["inferenceValue", ">=50%"],
+          ["inferenceValue", "50.00-100.00%"],
         ]).toString(),
       tn: 0,
       tnLink:
@@ -135,7 +135,7 @@ export async function InferenceTables({
         new URLSearchParams([
           ...paramTuples,
           ["labelValue", "Absent"],
-          ["inferenceValue", "<50%"],
+          ["inferenceValue", "0-49.99%"],
         ]).toString(),
     };
   });
@@ -150,23 +150,24 @@ export async function InferenceTables({
         const foundProjectLabelId = foundProject?.projectLabels.find(
           (l) => l.labelName === labelName
         )?.id;
+
         inferenceTableData[key] = {
           name: (foundProject ? foundProject.name : "") + " - " + dataset,
           tp: 0,
           tpLink: foundProject
-            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=>%3D50%25&dataset=${dataset}`
+            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=50.00-100.00%25&dataset=${dataset}`
             : "",
           fn: 0,
           fnLink: foundProject
-            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=<50%25&dataset=${dataset}`
+            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=0-49.99%25&dataset=${dataset}`
             : "",
           fp: 0,
           fpLink: foundProject
-            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=>%3D50%25&dataset=${dataset}`
+            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=50.00-100.00%25&dataset=${dataset}`
             : "",
           tn: 0,
           tnLink: foundProject
-            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=<50%25&dataset=${dataset}`
+            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=0-49.99%25&dataset=${dataset}`
             : "",
         };
       }
@@ -216,7 +217,7 @@ export async function InferenceTables({
         <div className="flex gap-2 mb-2">
           <Button asChild>
             <a
-              href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?threshold=0.01&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
+              href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?leftThreshold=0.01&rightThreshold=1.00&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
             >
               <Download className="mr-2 h-4 w-4" />
               Potential Positives (0.01 to 1.00)
@@ -224,7 +225,15 @@ export async function InferenceTables({
           </Button>
           <Button asChild>
             <a
-              href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?threshold=0.50&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
+              href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?leftThreshold=0.01&rightThreshold=0.50&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Potential Negatives (0.01 to 0.50)
+            </a>
+          </Button>
+          <Button asChild>
+            <a
+              href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?leftThreshold=0.50&rightThreshold=1.00&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
             >
               <Download className="mr-2 h-4 w-4" />
               Potential Positives (0.50 to 1.00)

@@ -8,7 +8,9 @@ export async function GET(
   const { modelId, labelName } = params;
 
   const projectIds = request.nextUrl.searchParams.getAll("selectedProject");
-  const threshold = request.nextUrl.searchParams.get("threshold") || "0.01";
+  const leftThreshold = request.nextUrl.searchParams.get("leftThreshold") || "";
+  const rightThreshold =
+    request.nextUrl.searchParams.get("rightThreshold") || "";
 
   if (!modelId || !labelName || !projectIds.length) {
     return new Response(
@@ -17,11 +19,22 @@ export async function GET(
     );
   }
 
-  const thresholdValue = parseFloat(threshold);
-  if (isNaN(thresholdValue) || thresholdValue < 0 || thresholdValue > 1) {
+  const leftThresholdValue = parseFloat(leftThreshold);
+  const rightThresholdValue = parseFloat(rightThreshold);
+
+  if (
+    isNaN(leftThresholdValue) ||
+    isNaN(rightThresholdValue) ||
+    leftThresholdValue < 0 ||
+    leftThresholdValue > 1 ||
+    rightThresholdValue < 0 ||
+    rightThresholdValue > 1 ||
+    leftThresholdValue >= rightThresholdValue
+  ) {
     return new Response(
       JSON.stringify({
-        error: "Invalid threshold value. Must be between 0 and 1.",
+        error:
+          "Invalid threshold values. Ensure they are between 0 and 1, and leftThreshold < rightThreshold.",
       }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
@@ -31,18 +44,21 @@ export async function GET(
     projectIds,
     labelName,
     parseInt(modelId, 10),
-    thresholdValue
+    leftThresholdValue,
+    rightThresholdValue
   );
 
   const csvRowHeader = [
     "project_name,potential_unlabeled_positives,train_present,train_absent,valid_present,valid_absent,test_present,test_absent,link_to_label",
   ];
-
+  // Convert threshold to percentage for URL (e.g., 0.10 -> 10%, 0.50 -> 50%)
+  const leftThresholdPercent = Math.round(leftThresholdValue * 100);
+  const rightThresholdPercent = Math.round(rightThresholdValue * 100);
+  // Encode as >=X% and <=Y% for URL
+  const encodedThreshold = encodeURIComponent(
+    `${leftThresholdPercent}-${rightThresholdPercent}%`
+  );
   const csvRows = positives.map((p) => {
-    // Convert threshold to percentage for URL (e.g., 0.10 -> 10%, 0.50 -> 50%)
-    const thresholdPercent = Math.round(thresholdValue * 100);
-    const encodedThreshold = encodeURIComponent(`>=${thresholdPercent}%`);
-
     return [
       p.projectName,
       p.potentialPositives,
@@ -77,8 +93,7 @@ export async function GET(
     .concat([totalRow])
     .join("\n");
 
-  const thresholdPercent = Math.round(thresholdValue * 100);
-  const fileName = `${labelName.toLowerCase().replace(/\s+/g, "_")}_potential_unlabeled_positives_${thresholdPercent}pct.csv`;
+  const fileName = `${labelName.toLowerCase().replace(/\s+/g, "_")}_potential_unlabeled_positives_${leftThresholdPercent}-${rightThresholdPercent}pct.csv`;
 
   return new Response(csvContent, {
     headers: {

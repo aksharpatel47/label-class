@@ -210,9 +210,10 @@ export function Tool(props: IToolProps) {
           "70.00-79.99%",
           "80.00-89.99%",
           "90.00-100.00%",
-          ">=1%",
-          ">=50%",
-          "<50%",
+          "0-49.99%",
+          "1.00-49.99%",
+          "1.00-100.00%",
+          "50.00-100.00%",
         ]}
         onSelectChange={handleSelectChange}
         onApplyClick={handleApplyClick}
