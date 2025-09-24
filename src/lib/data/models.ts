@@ -26,13 +26,9 @@ export async function fetchPotentialUnlabeledPositivesData(
   projectIds: string[],
   labelName: string,
   modelId: number,
-  leftThreshold: number = 0.1,
-  rightThreshold: number = 1.0
+  leftThreshold: number = 1000,
+  rightThreshold: number = 10000
 ) {
-  // Convert threshold from 0-1 scale to 0-10000 scale
-  const leftThresholdValue = Math.floor(leftThreshold * 10000);
-  const rightThresholdValue = Math.floor(rightThreshold * 10000);
-
   // Use a single CTE and conditional aggregation for all stats, grouped by project
   const res = await db.execute(sql`
       with relevant_tasks as (
@@ -45,7 +41,7 @@ export async function fetchPotentialUnlabeledPositivesData(
         t.project_id,
         p.name as project_name,
         t.label_id,
-        count(distinct case when ti.inference >= ${leftThresholdValue} and ti.inference <= ${rightThresholdValue} and tl.task_id is null then t.task_id end) as potential_positives,
+        count(distinct case when ti.inference >= ${leftThreshold} and ti.inference <= ${rightThreshold} and tl.task_id is null then t.task_id end) as potential_positives,
         count(distinct case when pts.dataset = 'train' and tl.label_value = 'Present' then t.task_id end) as train_present,
         count(distinct case when pts.dataset = 'train' and tl.label_value = 'Absent' then t.task_id end) as train_absent,
         count(distinct case when pts.dataset = 'valid' and tl.label_value = 'Present' then t.task_id end) as valid_present,
