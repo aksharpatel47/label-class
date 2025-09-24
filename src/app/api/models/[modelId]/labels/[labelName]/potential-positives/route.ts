@@ -19,16 +19,16 @@ export async function GET(
     );
   }
 
-  const leftThresholdValue = parseFloat(leftThreshold);
-  const rightThresholdValue = parseFloat(rightThreshold);
+  const leftThresholdValue = parseInt(leftThreshold);
+  const rightThresholdValue = parseInt(rightThreshold);
 
   if (
     isNaN(leftThresholdValue) ||
     isNaN(rightThresholdValue) ||
     leftThresholdValue < 0 ||
-    leftThresholdValue > 1 ||
+    leftThresholdValue > 10000 ||
     rightThresholdValue < 0 ||
-    rightThresholdValue > 1 ||
+    rightThresholdValue > 10000 ||
     leftThresholdValue >= rightThresholdValue
   ) {
     return new Response(
@@ -51,12 +51,12 @@ export async function GET(
   const csvRowHeader = [
     "project_name,potential_unlabeled_positives,train_present,train_absent,valid_present,valid_absent,test_present,test_absent,link_to_label",
   ];
-  // Convert threshold to percentage for URL (e.g., 0.10 -> 10%, 0.50 -> 50%)
-  const leftThresholdPercent = Math.floor(leftThresholdValue * 100);
-  const rightThresholdPercent = Math.floor(rightThresholdValue * 100);
+  // Convert threshold to percentage for URL (e.g., 100 -> 1.00%, 5000 -> 50.00%, 4999 -> 49.99%)
+  const leftThresholdPercent = (leftThresholdValue / 100.0).toFixed(2);
+  const rightThresholdPercent = (rightThresholdValue / 100.0).toFixed(2);
   // Encode as >=X% and <=Y% for URL
   const encodedThreshold = encodeURIComponent(
-    `${leftThresholdPercent}.00-${rightThresholdPercent}.00%`
+    `${leftThresholdPercent}-${rightThresholdPercent}%`
   );
   const csvRows = positives.map((p) => {
     return [

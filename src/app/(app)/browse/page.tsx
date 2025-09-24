@@ -127,12 +127,12 @@ export default async function Page({
 
     const [leftThreshold, rightThreshold] = searchParams.inferenceValue
       .split("-")
-      .map((v) => Number(v.replace("%", "")));
+      .map(Number);
 
     whereConditions.push(
       and(
-        gte(taskInferences.inference, Math.floor(leftThreshold * 10000)),
-        lte(taskInferences.inference, Math.floor(rightThreshold * 10000))
+        gte(taskInferences.inference, leftThreshold),
+        lte(taskInferences.inference, rightThreshold)
       )!
     );
   }

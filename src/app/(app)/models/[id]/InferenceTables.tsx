@@ -110,7 +110,7 @@ export async function InferenceTables({
         "/browse?" +
         new URLSearchParams([
           ...paramTuples,
-          ["inferenceValue", "50.00-100.00%"],
+          ["inferenceValue", "5000-10000"],
           ["labelValue", "Present"],
         ]).toString(),
       fn: 0,
@@ -118,7 +118,7 @@ export async function InferenceTables({
         "/browse?" +
         new URLSearchParams([
           ...paramTuples,
-          ["inferenceValue", "0-49.99%"],
+          ["inferenceValue", "0-4999"],
           ["labelValue", "Present"],
         ]).toString(),
       fp: 0,
@@ -127,7 +127,7 @@ export async function InferenceTables({
         new URLSearchParams([
           ...paramTuples,
           ["labelValue", "Absent"],
-          ["inferenceValue", "50.00-100.00%"],
+          ["inferenceValue", "5000-10000"],
         ]).toString(),
       tn: 0,
       tnLink:
@@ -135,7 +135,7 @@ export async function InferenceTables({
         new URLSearchParams([
           ...paramTuples,
           ["labelValue", "Absent"],
-          ["inferenceValue", "0-49.99%"],
+          ["inferenceValue", "0-4999"],
         ]).toString(),
     };
   });
@@ -217,7 +217,7 @@ export async function InferenceTables({
         <div className="flex gap-2 mb-2">
           <Button asChild>
             <a
-              href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?leftThreshold=0.01&rightThreshold=1.00&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
+              href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?leftThreshold=100&rightThreshold=10000&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
             >
               <Download className="mr-2 h-4 w-4" />
               Potential Positives (0.01 to 1.00)
@@ -225,7 +225,7 @@ export async function InferenceTables({
           </Button>
           <Button asChild>
             <a
-              href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?leftThreshold=0.01&rightThreshold=0.50&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
+              href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?leftThreshold=100&rightThreshold=4999&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
             >
               <Download className="mr-2 h-4 w-4" />
               Potential Negatives (0.01 to 0.50)
@@ -233,7 +233,7 @@ export async function InferenceTables({
           </Button>
           <Button asChild>
             <a
-              href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?leftThreshold=0.50&rightThreshold=1.00&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
+              href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?leftThreshold=5000&rightThreshold=10000&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
             >
               <Download className="mr-2 h-4 w-4" />
               Potential Positives (0.50 to 1.00)

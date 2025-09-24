@@ -200,7 +200,7 @@ export function Tool(props: IToolProps) {
         labelValues={props.labelValues}
         currentValues={currentValues}
         inferenceValues={[
-          "0-9.99%",
+          "0.00-9.99%",
           "10.00-19.99%",
           "20.00-29.99%",
           "30.00-39.99%",
@@ -210,7 +210,7 @@ export function Tool(props: IToolProps) {
           "70.00-79.99%",
           "80.00-89.99%",
           "90.00-100.00%",
-          "0-49.99%",
+          "0.00-49.99%",
           "1.00-49.99%",
           "1.00-100.00%",
           "50.00-100.00%",
