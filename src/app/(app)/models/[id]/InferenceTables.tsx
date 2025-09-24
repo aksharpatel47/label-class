@@ -155,19 +155,19 @@ export async function InferenceTables({
           name: (foundProject ? foundProject.name : "") + " - " + dataset,
           tp: 0,
           tpLink: foundProject
-            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=50.00-100.00%25&dataset=${dataset}`
+            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=5000-10000%25&dataset=${dataset}`
             : "",
           fn: 0,
           fnLink: foundProject
-            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=0-49.99%25&dataset=${dataset}`
+            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=0-4999%25&dataset=${dataset}`
             : "",
           fp: 0,
           fpLink: foundProject
-            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=50.00-100.00%25&dataset=${dataset}`
+            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=5000-10000%25&dataset=${dataset}`
             : "",
           tn: 0,
           tnLink: foundProject
-            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=0-49.99%25&dataset=${dataset}`
+            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=0-4999%25&dataset=${dataset}`
             : "",
         };
       }
