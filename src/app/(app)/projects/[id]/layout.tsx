@@ -3,15 +3,20 @@ import { fetchProjectById } from "@/lib/data/projects";
 import { ProjectNav } from "./nav";
 import type { ReactNode } from "react";
 
-export default async function ProjectLayout({
-  children,
-  params,
-}: {
-  children: ReactNode;
-  params: {
-    id: string;
-  };
-}) {
+export default async function ProjectLayout(
+  props: {
+    children: ReactNode;
+    params: Promise<{
+      id: string;
+    }>;
+  }
+) {
+  const params = await props.params;
+
+  const {
+    children
+  } = props;
+
   const { id: projectId } = params;
   const project = await fetchProjectById(projectId);
   return (

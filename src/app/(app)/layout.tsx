@@ -1,19 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { auth } from "@/lucia";
-import * as context from "next/headers";
 import { redirect } from "next/navigation";
 import NavLinks from "./nav-links";
 import { SessionProvider } from "./session-context";
+import { validateRequest } from "@/lib/auth/auth";
 
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const authRequest = auth.handleRequest("GET", context);
-  const session = await authRequest.validate();
+  const result = await validateRequest();
 
-  if (!session) {
+  if (!result) {
     redirect("/login");
   }
 
@@ -24,14 +22,14 @@ export default async function RootLayout({
           <NavLinks />
         </div>
         <div className="flex items-center gap-4">
-          User: {session?.user?.name}
+          User: {result.user.name}
           <form action="/api/auth/logout" method="POST">
             <Button type="submit">Sign Out</Button>
           </form>
         </div>
       </div>
 
-      <SessionProvider session={session}>{children}</SessionProvider>
+      <SessionProvider session={result.session}>{children}</SessionProvider>
     </div>
   );
 }

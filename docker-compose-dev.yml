@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   label-class-db:
-    image: postgres:16.1-alpine3.19
+    image: postgres:18-alpine3.22
     volumes:
       - label-class-db-data:/var/lib/postgresql/data
       - ./backup:/backup

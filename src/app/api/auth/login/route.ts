@@ -1,9 +1,11 @@
-import { auth } from "@/lucia";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import * as context from "next/headers";
-import { LuciaError } from "lucia";
 import { unstable_noStore } from "next/cache";
+import { getUserWithKey } from "@/lib/auth/db";
+import { validateScryptHash } from "@/lib/auth/crypto";
+import { createSession, setSessionCookie } from "@/lib/auth/session";
+import { createSessionCookie } from "@/lib/auth/cookie";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -28,52 +30,59 @@ export const POST = async (req: NextRequest) => {
   const { email, password } = result.data;
 
   try {
-    const key = await auth.useKey(
-      "username",
-      email.toLocaleLowerCase(),
-      password
-    );
+    const user = await getUserWithKey(email);
+    if (!user) {
+      return NextResponse.json(
+        {
+          error: "Invalid username or password",
+        },
+        { status: 400 }
+      );
+    }
+    const { userId, hashedPassword } = user;
 
-    const session = await auth.createSession({
-      userId: key.userId,
-      attributes: {},
+    if (!hashedPassword) {
+      return NextResponse.json(
+        {
+          error: "Invalid username or password",
+        },
+        { status: 400 }
+      );
+    }
+
+    const result = await validateScryptHash(password, hashedPassword);
+
+    if (!result) {
+      return NextResponse.json(
+        {
+          error: "Invalid username or password",
+        },
+        { status: 400 }
+      );
+    }
+
+    const session = await createSession(userId);
+
+    const sessionCookie = createSessionCookie(session, {
+      cookie: {},
     });
 
-    const authRequest = auth.handleRequest(req.method, context);
-    authRequest.setSession(session);
+    setSessionCookie(sessionCookie, context);
 
     return NextResponse.json({
       message: "Success",
     });
   } catch (error) {
-    if (error instanceof LuciaError) {
-      if (
-        error.message === "AUTH_INVALID_PASSWORD" ||
-        error.message === "AUTH_INVALID_KEY_ID"
-      ) {
-        return NextResponse.json(
-          {
-            error: "Invalid username or password",
-          },
-          {
-            status: 400,
-          }
-        );
-      }
-      return NextResponse.json(
-        {
-          error: error.message,
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
     console.error(error);
 
-    return NextResponse.json({
-      status: 500,
-    });
+    return NextResponse.json(
+      {
+        error: "Server error",
+        message: (error as Error).message,
+      },
+      {
+        status: 500,
+      }
+    );
   }
 };

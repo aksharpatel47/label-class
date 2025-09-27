@@ -1,3 +1,4 @@
+import { useActionState } from "react";
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { importDataset } from "@/app/lib/actions/data";
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2 } from "lucide-react";
 
@@ -23,7 +24,7 @@ interface IImportSelectionFormProps {
 
 export function ImportDatasetForm(props: IImportSelectionFormProps) {
   const importDatasetForProject = importDataset.bind(null, props.projectId);
-  const [state, dispatch] = useFormState(importDatasetForProject, undefined);
+  const [state, dispatch] = useActionState(importDatasetForProject, undefined);
   return (
     <form action={dispatch} className="flex flex-col gap-4 w-[350px]">
       <Card className="w-[350px]">

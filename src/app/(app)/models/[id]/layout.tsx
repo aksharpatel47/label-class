@@ -3,15 +3,20 @@ import { fetchTrainedModelById } from "@/lib/data/inferences";
 import { H1 } from "@/components/ui/typography";
 import { ModelNav } from "@/app/(app)/models/[id]/nav";
 
-export default async function ModelLayout({
-  children,
-  params,
-}: {
-  children: ReactNode;
-  params: {
-    id: string;
-  };
-}) {
+export default async function ModelLayout(
+  props: {
+    children: ReactNode;
+    params: Promise<{
+      id: string;
+    }>;
+  }
+) {
+  const params = await props.params;
+
+  const {
+    children
+  } = props;
+
   const { id: modelId } = params;
   const model = await fetchTrainedModelById(Number(modelId));
 

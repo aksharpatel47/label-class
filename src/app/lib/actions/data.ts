@@ -2,9 +2,9 @@
 
 import { db, sql as dbSQL } from "@/db";
 import { tempTasks } from "@/db/schema";
+import { validateRequest } from "@/lib/auth/auth";
 import { addDatasetForTasks, addLabelsForTasks } from "@/lib/data/tasks";
 import { eq, sql } from "drizzle-orm";
-import { getPageSession } from "../utils/session";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
@@ -80,9 +80,9 @@ export async function importInference(
   prevState: string | undefined,
   formData: FormData
 ) {
-  const session = await getPageSession();
+  const result = await validateRequest();
 
-  if (!session) {
+  if (!result) {
     return "Not logged in.";
   }
 
@@ -188,8 +188,8 @@ export async function importDataset(
   state: string | undefined,
   formData: FormData
 ) {
-  const session = await getPageSession();
-  if (!session) {
+  const result = await validateRequest();
+  if (!result) {
     return "Not logged in.";
   }
 
@@ -243,8 +243,8 @@ export async function clearDataset(
   state: string | undefined,
   formData: FormData
 ) {
-  const session = await getPageSession();
-  if (!session) {
+  const result = await validateRequest();
+  if (!result) {
     return "Not logged in.";
   }
 

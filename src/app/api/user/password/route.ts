@@ -1,8 +1,8 @@
-import { getRouteSession } from "@/app/lib/utils/session";
-import { auth } from "@/lucia";
+import { updatePassword, validateRequest } from "@/lib/auth/auth";
 import { unstable_noStore } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import * as context from "next/headers";
 
 const passwordSchema = z.object({
   password: z.string().min(6),
@@ -10,9 +10,9 @@ const passwordSchema = z.object({
 
 export const PATCH = async (req: NextRequest) => {
   unstable_noStore();
-  const session = await getRouteSession(req.method);
+  const result = await validateRequest();
 
-  if (!session) {
+  if (!result) {
     return NextResponse.json(
       {
         error: "Unauthorized",
@@ -23,12 +23,12 @@ export const PATCH = async (req: NextRequest) => {
     );
   }
 
-  const result = passwordSchema.safeParse(await req.json());
+  const parsedResult = passwordSchema.safeParse(await req.json());
 
-  if (!result.success) {
+  if (!parsedResult.success) {
     return NextResponse.json(
       {
-        error: result.error.message,
+        error: parsedResult.error.message,
       },
       {
         status: 400,
@@ -36,12 +36,11 @@ export const PATCH = async (req: NextRequest) => {
     );
   }
 
-  const { password } = result.data;
+  const { password } = parsedResult.data;
 
   try {
-    const keys = await auth.getAllUserKeys(session.user.userId);
-    const key = keys[0];
-    await auth.updateKeyPassword(key.providerId, key.providerUserId, password);
+    await updatePassword(result.user.id, password);
+
     return NextResponse.json({
       message: "Success",
     });

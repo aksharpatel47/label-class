@@ -17,11 +17,12 @@ interface IPageSearchParams {
   archived?: "true" | "false";
 }
 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: IPageSearchParams;
-}) {
+export default async function Page(
+  props: {
+    searchParams: Promise<IPageSearchParams>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const archived = searchParams.archived === "true";
   const models = await fetchTrainedModels(archived);
 

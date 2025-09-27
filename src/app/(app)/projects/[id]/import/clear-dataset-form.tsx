@@ -1,8 +1,9 @@
+import { useActionState } from "react";
 "use client";
 
 import { ProjectLabel } from "@/db/schema";
 import { clearDataset } from "@/app/lib/actions/data";
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -21,7 +22,7 @@ interface IClearDatasetFormProps {
 
 export function ClearDatasetForm(props: IClearDatasetFormProps) {
   const clearDatasetForProject = clearDataset.bind(null, props.projectId);
-  const [state, dispatch] = useFormState(clearDatasetForProject, undefined);
+  const [state, dispatch] = useActionState(clearDatasetForProject, undefined);
 
   return (
     <form action={dispatch} className="flex flex-col gap-4 w-[350px]">

@@ -3,8 +3,9 @@ import { NextRequest } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { modelId: string; labelName: string } }
+  props: { params: Promise<{ modelId: string; labelName: string }> }
 ) {
+  const params = await props.params;
   const { modelId, labelName } = params;
 
   const projectIds = request.nextUrl.searchParams.getAll("selectedProject");

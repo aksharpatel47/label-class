@@ -4,7 +4,8 @@ import { fetchTrainedModels } from "@/lib/data/inferences";
 import { fetchProjectLabels } from "@/lib/data/labels";
 import { fetchUsers } from "@/lib/data/users";
 
-export default async function Page({ params }: { params: { id: string } }) {
+export default async function Page(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const labels = await fetchProjectLabels(params.id);
   const users = await fetchUsers();
   const trainedModels = await fetchTrainedModels(false);

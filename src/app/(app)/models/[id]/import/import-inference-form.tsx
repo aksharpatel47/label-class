@@ -1,10 +1,11 @@
+import { useActionState } from "react";
 "use client";
 
 import { importInference } from "@/app/lib/actions/data";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
 import { CheckCircle2, Loader2 } from "lucide-react";
 
 interface ILabelImportFormProps {
@@ -13,7 +14,7 @@ interface ILabelImportFormProps {
 
 export function ImportInferenceForm(props: ILabelImportFormProps) {
   const importInferenceForProject = importInference.bind(null, props.modelId);
-  const [state, dispatch] = useFormState(importInferenceForProject, undefined);
+  const [state, dispatch] = useActionState(importInferenceForProject, undefined);
   return (
     <form action={dispatch} className="flex flex-col gap-4 w-[350px]">
       <Card className="w-[350px]">

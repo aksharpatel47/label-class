@@ -1,15 +1,13 @@
-import { getRouteSession } from "@/app/lib/utils/session";
+import { validateRequest } from "@/lib/auth/auth";
 import {
   fetchTasksForLabeling,
   fetchTotalTasksForLabeling,
 } from "@/lib/data/tasks";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { projectId: string } }
-) {
-  const session = await getRouteSession(request.method);
+export async function GET(request: NextRequest, props: { params: Promise<{ projectId: string }> }) {
+  const params = await props.params;
+  const session = await validateRequest();
 
   if (!session) {
     return new Response(null, { status: 401 });

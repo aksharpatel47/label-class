@@ -1,16 +1,18 @@
-import { getRouteSession } from "@/app/lib/utils/session";
 import { db } from "@/db";
 import { taskLabels, tasks } from "@/db/schema";
 import { projectTaskSelections } from "@/db/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
+import { validateRequest } from "@/lib/auth/auth";
+import * as context from "next/headers";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { taskId: string; labelId: string } }
+  props: { params: Promise<{ taskId: string; labelId: string }> }
 ) {
-  const session = await getRouteSession(request.method);
-  if (!session) {
+  const params = await props.params;
+  const result = await validateRequest();
+  if (!result) {
     return new Response(null, { status: 401 });
   }
 
@@ -29,7 +31,7 @@ export async function POST(
     );
 
   // If present in projectTaskSelections, only allow admin
-  if (selection.length > 0 && session.user.role !== "ADMIN") {
+  if (selection.length > 0 && result.user.role !== "ADMIN") {
     return NextResponse.json(
       {
         error:
@@ -44,7 +46,7 @@ export async function POST(
     .values({
       taskId,
       labelId,
-      labeledBy: session.user.id,
+      labeledBy: result.user.id,
       value: data.value,
     })
     .onConflictDoUpdate({
@@ -52,7 +54,7 @@ export async function POST(
       set: {
         labelId,
         value: data.value,
-        labelUpdatedBy: session.user.id,
+        labelUpdatedBy: result.user.id,
         updatedAt: sql`now()`,
       },
     });
@@ -68,10 +70,11 @@ export async function POST(
 // using PATCH to set the value of `flag` in taskLabels
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { taskId: string; labelId: string } }
+  props: { params: Promise<{ taskId: string; labelId: string }> }
 ) {
-  const session = await getRouteSession(request.method);
-  if (!session) {
+  const params = await props.params;
+  const result = await validateRequest();
+  if (!result) {
     return new Response(null, { status: 401 });
   }
 
@@ -90,10 +93,11 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { taskId: string; labelId: string } }
+  props: { params: Promise<{ taskId: string; labelId: string }> }
 ) {
-  const session = await getRouteSession(request.method);
-  if (!session) {
+  const params = await props.params;
+  const result = await validateRequest();
+  if (!result) {
     return new Response(null, { status: 401 });
   }
 

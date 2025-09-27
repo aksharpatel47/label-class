@@ -12,7 +12,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export default async function Page({ params }: { params: { id: string } }) {
+export default async function Page(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const datasetStatistics = await fetchDatasetStatistics(params.id);
 
   const datasetLabelValues = ["Present", "Absent"];

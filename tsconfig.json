@@ -5,6 +5,8 @@
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
+    "noUnusedLocals": true,
+    "importsNotUsedAsValues": "error",
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",

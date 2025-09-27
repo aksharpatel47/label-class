@@ -1,7 +1,8 @@
-import { auth } from "@/lucia";
 import { NextRequest, NextResponse } from "next/server";
 import * as context from "next/headers";
 import { z } from "zod";
+import { createUser } from "@/lib/auth/auth";
+import { createSession } from "@/lib/auth/session";
 
 const signupSchema = z.object({
   name: z.string(),
@@ -26,7 +27,7 @@ export const POST = async (req: NextRequest) => {
   const { name, email, password } = result.data;
 
   try {
-    const user = await auth.createUser({
+    await createUser({
       key: {
         providerId: "username",
         providerUserId: email.toLowerCase(),
@@ -38,13 +39,6 @@ export const POST = async (req: NextRequest) => {
       },
     });
 
-    const session = await auth.createSession({
-      userId: user.userId,
-      attributes: {},
-    });
-
-    const authRequest = auth.handleRequest(req.method, context);
-    authRequest.setSession(session);
     return NextResponse.json({
       message: "Success",
     });

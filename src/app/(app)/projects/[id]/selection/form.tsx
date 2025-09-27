@@ -1,3 +1,4 @@
+import { useActionState } from "react";
 "use client";
 
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,6 @@ import {
   addImagesToDataset,
   selectionAction,
 } from "@/app/lib/actions/selection";
-import { useFormState } from "react-dom";
 import { ImageInferenceTypes } from "@/app/lib/models/image";
 import { ReviewImages } from "@/app/(app)/projects/[id]/selection/review";
 
@@ -32,7 +32,7 @@ export function SelectionForm({
   imageInferenceTypes,
 }: ISelectionFormProps) {
   const selectImagesForProject = selectionAction.bind(null, projectId);
-  const [state, dispatch] = useFormState(selectImagesForProject, undefined);
+  const [state, dispatch] = useActionState(selectImagesForProject, undefined);
 
   let addImagesToDatasetAction: any = null;
 

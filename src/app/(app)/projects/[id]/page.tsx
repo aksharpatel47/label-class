@@ -4,7 +4,8 @@ import { ImageTable } from "./imagetable";
 import { fetchProjectLabels } from "@/lib/data/labels";
 import { taskLabelValue } from "@/db/schema";
 
-export default async function Page({ params }: { params: { id: string } }) {
+export default async function Page(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const totalTasks = await fetchNumberOfTasksInProject(params.id);
   const labels = await fetchProjectLabels(params.id);
   const imagesPerPage = 50;

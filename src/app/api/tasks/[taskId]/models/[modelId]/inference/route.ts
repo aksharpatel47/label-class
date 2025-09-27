@@ -1,22 +1,24 @@
-import { getRouteSession } from "@/app/lib/utils/session";
 import { db } from "@/db";
 import { taskInferences, tasks } from "@/db/schema";
+import { validateRequest } from "@/lib/auth/auth";
 import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { parse } from "path";
+import * as context from "next/headers";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { taskId: string; modelId: string } }
+  props: { params: Promise<{ taskId: string; modelId: string }> }
 ) {
-  const session = await getRouteSession(request.method);
-  if (!session) {
+  const params = await props.params;
+  const result = await validateRequest();
+  if (!result) {
     return new Response(null, { status: 401 });
   }
 
   const { taskId, modelId } = params;
 
-  const result = await db
+  const dbResult = await db
     .select({ inference: taskInferences.inference })
     .from(tasks)
     .innerJoin(
@@ -29,12 +31,12 @@ export async function GET(
     .where(eq(tasks.id, taskId))
     .limit(1);
 
-  if (result.length === 0) {
+  if (dbResult.length === 0) {
     return NextResponse.json({ error: "No inference found" }, { status: 404 });
   }
 
   const response = {
-    inference: result[0].inference,
+    inference: dbResult[0].inference,
   };
 
   return NextResponse.json(response);

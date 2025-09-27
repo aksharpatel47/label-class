@@ -1,21 +1,24 @@
-import * as context from "next/headers";
-import { auth } from "@/lucia";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { validateRequest } from "@/lib/auth/auth";
 
-export default async function StatisticsLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: {
-    id: string;
-  };
-}) {
-  const authRequest = auth.handleRequest("GET", context);
-  const session = await authRequest.validate();
+export default async function StatisticsLayout(
+  props: {
+    children: React.ReactNode;
+    params: Promise<{
+      id: string;
+    }>;
+  }
+) {
+  const params = await props.params;
 
-  if (!session) {
+  const {
+    children
+  } = props;
+
+  const result = await validateRequest();
+
+  if (!result) {
     redirect("/login");
   }
 

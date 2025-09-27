@@ -23,21 +23,22 @@ import { fetchProjectsWithIds } from "@/lib/data/projects";
 import { and, eq, getTableColumns, gte, inArray, lt, lte } from "drizzle-orm";
 import { DatasetViewer } from "./components/viewer";
 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: {
-    label: string;
-    labelValue?: TaskLabelValue;
-    dataset?: Dataset;
-    selectedProjects: string[];
-    labeledBy?: string;
-    updatedBy?: string;
-    flag?: "true";
-    trainedModelId?: string;
-    inferenceValue?: string;
-  };
-}) {
+export default async function Page(
+  props: {
+    searchParams: Promise<{
+      label: string;
+      labelValue?: TaskLabelValue;
+      dataset?: Dataset;
+      selectedProjects: string[];
+      labeledBy?: string;
+      updatedBy?: string;
+      flag?: "true";
+      trainedModelId?: string;
+      inferenceValue?: string;
+    }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const projectLabelsResult = await fetchProjectsWithIds(
     searchParams.selectedProjects
   );

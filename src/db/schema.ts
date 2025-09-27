@@ -42,6 +42,8 @@ export const userKey = pgTable("user_key", {
   hashedPassword: text("hashed_password"),
 });
 
+export type UserKey = typeof userKey.$inferSelect;
+
 export const userSession = pgTable("user_session", {
   id: text("id").primaryKey().notNull(),
   userId: text("user_id")
@@ -54,6 +56,8 @@ export const userSession = pgTable("user_session", {
     mode: "number",
   }).notNull(),
 });
+
+export type UserSession = typeof userSession.$inferSelect;
 
 export const usersRelations = relations(authUser, ({ many }) => ({
   projects: many(projects),

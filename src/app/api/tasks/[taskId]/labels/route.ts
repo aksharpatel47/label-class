@@ -1,8 +1,9 @@
-import { getRouteSession } from "@/app/lib/utils/session";
 import { db } from "@/db";
 import { taskLabels } from "@/db/schema";
+import { validateRequest } from "@/lib/auth/auth";
 import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
+import * as context from "next/headers";
 
 async function getResultsFromDb(taskId: string) {
   return await db.query.taskLabels.findMany({
@@ -27,13 +28,11 @@ async function getResultsFromDb(taskId: string) {
 
 export type IGetTaskLabelReponse = Awaited<ReturnType<typeof getResultsFromDb>>;
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { taskId: string } }
-) {
-  const session = await getRouteSession(req.method);
+export async function GET(req: NextRequest, props: { params: Promise<{ taskId: string }> }) {
+  const params = await props.params;
+  const result = await validateRequest();
 
-  if (!session) {
+  if (!result) {
     return new Response(null, { status: 401 });
   }
 

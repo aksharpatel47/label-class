@@ -1,12 +1,12 @@
-import { getPageSession } from "@/app/lib/utils/session";
+import { validateRequest } from "@/lib/auth/auth";
 import { NewProjectForm } from "./form";
 
 export default async function Page() {
-  const session = await getPageSession();
+  const result = await validateRequest();
 
   return (
     <div>
-      <NewProjectForm userId={session!.user.id} />
+      <NewProjectForm userId={result!.user.id} />
     </div>
   );
 }

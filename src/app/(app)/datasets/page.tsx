@@ -1,5 +1,4 @@
 import { ModelInferenceMatrixProjectForm } from "@/app/components/model-inference-matrix-project-form";
-import { getPageSession } from "@/app/lib/utils/session";
 import { H4 } from "@/components/ui/typography";
 import {
   fetchProjectLabelNames,
@@ -7,14 +6,16 @@ import {
   fetchProjectsWithLabelName,
 } from "@/lib/data/projects";
 import { DatasetTables } from "./dataset-tables";
+import { validateRequest } from "@/lib/auth/auth";
 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: { selectedProject?: string[]; labelName?: string };
-}) {
-  const session = await getPageSession();
-  if (!session) {
+export default async function Page(
+  props: {
+    searchParams: Promise<{ selectedProject?: string[]; labelName?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const result = await validateRequest();
+  if (!result) {
     return (
       <div className="text-red-500">
         You must be logged in to view this page.
@@ -40,7 +41,7 @@ export default async function Page({
         </div>
         {searchParams.labelName && (
           <DatasetTables
-            user={session.user}
+            user={result.user}
             allProjects={projects}
             selectedProjects={
               searchParams.selectedProject ||

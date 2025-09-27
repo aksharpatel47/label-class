@@ -12,7 +12,8 @@ import {
 import { taskLabelValue } from "@/db/schema";
 import { Separator } from "@/components/ui/separator";
 
-export default async function Page({ params }: { params: { id: string } }) {
+export default async function Page(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const labelStatistics = await fetchTaskLabelStatistics(params.id);
 
   if (labelStatistics.length === 0) {

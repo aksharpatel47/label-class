@@ -13,8 +13,9 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { modelId: string; labelName: string } }
+  props: { params: Promise<{ modelId: string; labelName: string }> }
 ) {
+  const params = await props.params;
   const { modelId, labelName } = params;
   const url = new URL(req.url);
   const selectedProjects = url.searchParams.getAll("selectedProject");

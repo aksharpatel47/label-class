@@ -1,9 +1,10 @@
+import { useActionState } from "react";
 "use client";
 
 import { importData } from "@/app/lib/actions/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useFormState, useFormStatus } from "react-dom";
+import { useFormStatus } from "react-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectLabel } from "@/db/schema";
 import {
@@ -25,7 +26,7 @@ export function ImageImportForm(props: {
     props.projectId,
     props.userId,
   );
-  const [state, dispatch] = useFormState(importDataWithUser, undefined);
+  const [state, dispatch] = useActionState(importDataWithUser, undefined);
   return (
     <form action={dispatch}>
       <Card className="w-[350px]">
