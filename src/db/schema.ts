@@ -62,6 +62,14 @@ export type UserSession = typeof userSession.$inferSelect;
 export const usersRelations = relations(authUser, ({ many }) => ({
   projects: many(projects),
   assignedTasks: many(tasks),
+  sessions: many(userSession),
+}));
+
+export const sessionsRelations = relations(userSession, ({ one }) => ({
+  user: one(authUser, {
+    fields: [userSession.userId],
+    references: [authUser.id],
+  }),
 }));
 
 export const projects = pgTable("projects", {
@@ -310,3 +318,10 @@ export const projectTaskSelectionsRelations = relations(
     }),
   })
 );
+
+export const userSessionRelations = relations(userSession, ({ one }) => ({
+  user: one(authUser, {
+    fields: [userSession.userId],
+    references: [authUser.id],
+  }),
+}));

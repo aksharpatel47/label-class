@@ -1,23 +1,18 @@
-import { useActionState } from "react";
 "use client";
 
+import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
   CardContent,
   CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { immer } from "zustand/middleware/immer";
-import { create } from "zustand";
-import useSWR from "swr";
-import { fetcher } from "@/app/lib/utils/fetcher";
+import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-import { set } from "zod";
+import { create } from "zustand";
+import { immer } from "zustand/middleware/immer";
 
 type State = {
   email: string;

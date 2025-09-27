@@ -7,15 +7,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { H3 } from "@/components/ui/typography";
-import { datasetEnumValues, Project, taskLabelValue } from "@/db/schema";
+import {
+  AuthUser,
+  datasetEnumValues,
+  Project,
+  taskLabelValue,
+} from "@/db/schema";
 import { fetchDatasetStatisticsByLabel } from "@/lib/data/labels";
-import { User } from "lucia";
 
 interface DatasetTableProps {
   allProjects: Project[];
   selectedProjects: string[];
   labelName: string;
-  user: User;
+  user: AuthUser;
 }
 
 export async function DatasetTables({

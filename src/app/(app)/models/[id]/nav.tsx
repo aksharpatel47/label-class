@@ -1,6 +1,5 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -9,6 +8,7 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export function ModelNav({ id }: { id: string }) {
   const pathName = usePathname();
@@ -29,14 +29,13 @@ export function ModelNav({ id }: { id: string }) {
       <NavigationMenuList>
         {links.map(({ href, label }) => (
           <NavigationMenuItem key={href}>
-            <Link href={href} legacyBehavior passHref>
-              <NavigationMenuLink
-                className={navigationMenuTriggerStyle()}
-                active={pathName === href}
-              >
-                {label}
-              </NavigationMenuLink>
-            </Link>
+            <NavigationMenuLink
+              className={navigationMenuTriggerStyle()}
+              active={pathName === href}
+              asChild
+            >
+              <Link href={href}>{label}</Link>
+            </NavigationMenuLink>
           </NavigationMenuItem>
         ))}
       </NavigationMenuList>

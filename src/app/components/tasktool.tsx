@@ -5,7 +5,7 @@ import { IGetTaskLabelReponse } from "@/app/api/tasks/[taskId]/labels/route";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ProjectLabel, Task } from "@/db/schema";
-import { Session } from "lucia";
+import { ValidateRequestResult } from "@/lib/auth/auth";
 import { Flag, Map } from "lucide-react";
 import { useContext, useEffect } from "react";
 import { toast } from "sonner";
@@ -30,7 +30,6 @@ interface TaskLabel {
 }
 
 const validLabelValues = ["Present", "Absent", "Difficult", "Skip"] as const;
-type ValidLabelValues = (typeof validLabelValues)[number];
 const taskLabelValues = [undefined, ...validLabelValues] as const;
 type TaskLabelValue = (typeof taskLabelValues)[number];
 
@@ -49,20 +48,20 @@ type Actions = {
   cycleLabelValue(
     currentTaskId: string,
     labelId: string,
-    session: Session
+    session: ValidateRequestResult
   ): void;
   setLabelValue(
     currentaskId: string,
     labelId: string,
     value: string | undefined,
-    session: Session
+    session: ValidateRequestResult
   ): void;
   setInferenceResult(inference: number): void;
   setTaskLabelFlag(
     currentTaskId: string,
     labelId: string,
     flag: boolean,
-    session: Session
+    session: ValidateRequestResult
   ): void;
 };
 
@@ -82,7 +81,11 @@ const useLabelTaskStore = create<State & Actions>()(
         state.taskLabels = taskLabels;
       });
     },
-    cycleLabelValue(currentTaskId: string, labelId: string, session: Session) {
+    cycleLabelValue(
+      currentTaskId: string,
+      labelId: string,
+      session: ValidateRequestResult
+    ) {
       const currentLabelValue =
         useLabelTaskStore.getState().taskLabels[labelId]?.value;
       // If no label exists yet, treat it as undefined (index 0)
@@ -108,8 +111,8 @@ const useLabelTaskStore = create<State & Actions>()(
           state.taskLabels[labelId]!.value = newLabelValue;
           state.taskLabels[labelId]!.updatedAt = new Date();
           state.taskLabels[labelId]!.labelUpdatedBy = {
-            id: session.user.userId,
-            name: session.user.name,
+            id: session!.user.id,
+            name: session!.user.name,
           };
         } else {
           state.taskLabels[labelId] = {
@@ -120,8 +123,8 @@ const useLabelTaskStore = create<State & Actions>()(
             taskId: currentTaskId,
             flag: false,
             labeledBy: {
-              id: session.user.userId,
-              name: session.user.name,
+              id: session!.user.id,
+              name: session!.user.name,
             },
             labelUpdatedBy: null,
           };
@@ -170,7 +173,7 @@ const useLabelTaskStore = create<State & Actions>()(
       currentTaskId: string,
       labelId: string,
       value: TaskLabelValue,
-      session: Session
+      session: ValidateRequestResult
     ) {
       const method = !value ? "DELETE" : "POST";
       fetch(`/api/tasks/${currentTaskId}/labels/${labelId}`, {
@@ -195,8 +198,8 @@ const useLabelTaskStore = create<State & Actions>()(
               state.taskLabels[labelId]!.value = value;
               state.taskLabels[labelId]!.updatedAt = new Date();
               state.taskLabels[labelId]!.labelUpdatedBy = {
-                id: session.user.userId,
-                name: session.user.name,
+                id: session!.user.id,
+                name: session!.user.name,
               };
             } else {
               state.taskLabels[labelId] = {
@@ -207,8 +210,8 @@ const useLabelTaskStore = create<State & Actions>()(
                 taskId: currentTaskId,
                 flag: false,
                 labeledBy: {
-                  id: session.user.userId,
-                  name: session.user.name,
+                  id: session!.user.id,
+                  name: session!.user.name,
                 },
                 labelUpdatedBy: null,
               };
@@ -229,7 +232,7 @@ const useLabelTaskStore = create<State & Actions>()(
       currentTaskId: string,
       labelId: string,
       flag: boolean,
-      session: Session
+      session: ValidateRequestResult
     ) {
       fetch(`/api/tasks/${currentTaskId}/labels/${labelId}`, {
         method: "PATCH",

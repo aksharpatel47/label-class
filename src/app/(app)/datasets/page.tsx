@@ -8,14 +8,12 @@ import {
 import { DatasetTables } from "./dataset-tables";
 import { validateRequest } from "@/lib/auth/auth";
 
-export default async function Page(
-  props: {
-    searchParams: Promise<{ selectedProject?: string[]; labelName?: string }>;
-  }
-) {
+export default async function Page(props: {
+  searchParams: Promise<{ selectedProject?: string[]; labelName?: string }>;
+}) {
   const searchParams = await props.searchParams;
-  const result = await validateRequest();
-  if (!result) {
+  const session = await validateRequest();
+  if (!session) {
     return (
       <div className="text-red-500">
         You must be logged in to view this page.
@@ -41,7 +39,7 @@ export default async function Page(
         </div>
         {searchParams.labelName && (
           <DatasetTables
-            user={result.user}
+            user={session.user}
             allProjects={projects}
             selectedProjects={
               searchParams.selectedProject ||

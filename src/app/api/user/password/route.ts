@@ -1,18 +1,15 @@
 import { updatePassword, validateRequest } from "@/lib/auth/auth";
-import { unstable_noStore } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import * as context from "next/headers";
 
 const passwordSchema = z.object({
   password: z.string().min(6),
 });
 
 export const PATCH = async (req: NextRequest) => {
-  unstable_noStore();
-  const result = await validateRequest();
+  const session = await validateRequest();
 
-  if (!result) {
+  if (!session) {
     return NextResponse.json(
       {
         error: "Unauthorized",
@@ -39,7 +36,7 @@ export const PATCH = async (req: NextRequest) => {
   const { password } = parsedResult.data;
 
   try {
-    await updatePassword(result.user.id, password);
+    await updatePassword(session.user.id, password);
 
     return NextResponse.json({
       message: "Success",

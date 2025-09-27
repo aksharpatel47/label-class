@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import * as context from "next/headers";
 import { z } from "zod";
 import { createUser } from "@/lib/auth/auth";
-import { createSession } from "@/lib/auth/session";
 
 const signupSchema = z.object({
   name: z.string(),

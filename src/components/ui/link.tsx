@@ -1,7 +1,5 @@
 import clsx from "clsx";
-import { PanelBottom } from "lucide-react";
 import Link from "next/link";
-import { basename } from "path/posix";
 
 interface ICustomLinkProps {
   href: string;

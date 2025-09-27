@@ -25,14 +25,13 @@ export function ProjectNav({ id }: { id: string }) {
       <NavigationMenuList>
         {links.map(({ href, label }) => (
           <NavigationMenuItem key={href}>
-            <Link href={href} legacyBehavior passHref>
-              <NavigationMenuLink
-                className={navigationMenuTriggerStyle()}
-                active={pathName === href}
-              >
-                {label}
-              </NavigationMenuLink>
-            </Link>
+            <NavigationMenuLink
+              className={navigationMenuTriggerStyle()}
+              active={pathName === href}
+              asChild
+            >
+              <Link href={href}>{label}</Link>
+            </NavigationMenuLink>
           </NavigationMenuItem>
         ))}
       </NavigationMenuList>

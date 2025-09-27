@@ -231,7 +231,14 @@ export function LabelFilters(props: ILabelFiltersProps) {
             </SelectTrigger>
             <SelectContent>
               {props.inferenceValues.map((inferenceValue) => (
-                <SelectItem key={inferenceValue} value={inferenceValue}>
+                <SelectItem
+                  key={inferenceValue}
+                  value={inferenceValue
+                    .slice(0, -1)
+                    .split("-")
+                    .map((s) => Math.floor(Number(s) * 100))
+                    .join("-")}
+                >
                   {inferenceValue}
                 </SelectItem>
               ))}

@@ -9,9 +9,9 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const result = await validateRequest();
+  const session = await validateRequest();
 
-  if (!result) {
+  if (!session) {
     redirect("/login");
   }
 
@@ -22,14 +22,14 @@ export default async function RootLayout({
           <NavLinks />
         </div>
         <div className="flex items-center gap-4">
-          User: {result.user.name}
+          User: {session.user.name}
           <form action="/api/auth/logout" method="POST">
             <Button type="submit">Sign Out</Button>
           </form>
         </div>
       </div>
 
-      <SessionProvider session={result.session}>{children}</SessionProvider>
+      <SessionProvider session={session}>{children}</SessionProvider>
     </div>
   );
 }

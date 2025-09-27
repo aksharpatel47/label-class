@@ -1,3 +1,4 @@
+import { db } from "@/db";
 import {
   authUser,
   AuthUser,
@@ -6,12 +7,12 @@ import {
   UserKey,
   userSession,
 } from "@/db/schema";
-import { generateRandomString, generateScryptHash } from "./crypto";
-import { db } from "@/db";
-import { getSessionCookie, setSessionCookie, validateSession } from "./session";
-import { createSessionCookie, DEFAULT_SESSION_COOKIE_NAME } from "./cookie";
 import { eq } from "drizzle-orm";
 import * as context from "next/headers";
+import { cookies } from "next/headers";
+import { createSessionCookie, DEFAULT_SESSION_COOKIE_NAME } from "./cookie";
+import { generateRandomString, generateScryptHash } from "./crypto";
+import { getSessionCookie, setSessionCookie, validateSession } from "./session";
 
 export async function createUser(options: {
   key: {
@@ -47,33 +48,33 @@ export async function createUser(options: {
   return authUserData;
 }
 
+export type ValidateRequestResult = Awaited<ReturnType<typeof validateRequest>>;
+
 export async function validateRequest() {
-  const sessionId = getSessionCookie(context);
+  const sessionId = await getSessionCookie();
   if (!sessionId) return null;
   const result = await validateSession(sessionId);
   if (!result) return null;
-  const { user, session, fresh } = result;
+  const { session, fresh } = result;
   if (fresh) {
     const newCookie = createSessionCookie(session, { cookie: {} });
     setSessionCookie(newCookie, context);
   }
-  return {
-    user,
-    session,
-  };
+  return session;
 }
 
 export async function login() {}
 
-export async function logout(context: typeof import("next/headers")) {
-  const sessionId = getSessionCookie(context);
+export async function logout() {
+  const sessionId = await getSessionCookie();
   if (!sessionId) return;
   const dbSession = await db.query.userSession.findFirst({
     where: eq(userSession.id, sessionId),
   });
   if (!dbSession) return;
   await db.delete(userSession).where(eq(userSession.id, sessionId));
-  context.cookies().delete(DEFAULT_SESSION_COOKIE_NAME);
+  const cookieStore = await cookies();
+  cookieStore.delete(DEFAULT_SESSION_COOKIE_NAME);
 }
 
 export async function updatePassword(userId: string, newPassword: string) {

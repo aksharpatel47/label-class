@@ -8,16 +8,14 @@ import {
 import { InferenceTables } from "./InferenceTables";
 import { validateRequest } from "@/lib/auth/auth";
 
-export default async function Page(
-  props: {
-    params: Promise<{ id: string }>;
-    searchParams: Promise<{ selectedProject?: string[]; labelName?: string }>;
-  }
-) {
+export default async function Page(props: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ selectedProject?: string[]; labelName?: string }>;
+}) {
   const searchParams = await props.searchParams;
   const params = await props.params;
-  const result = await validateRequest();
-  if (!result) {
+  const session = await validateRequest();
+  if (!session) {
     return (
       <div className="text-red-500">
         You must be logged in to view this page.
@@ -44,7 +42,7 @@ export default async function Page(
         </div>
         {searchParams.labelName && (
           <InferenceTables
-            user={result.user}
+            user={session.user}
             selectedProjects={
               searchParams.selectedProject ||
               projectsWithSelectedLabelName.map((p) => p.id)

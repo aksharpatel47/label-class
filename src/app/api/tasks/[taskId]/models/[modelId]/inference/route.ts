@@ -3,16 +3,14 @@ import { taskInferences, tasks } from "@/db/schema";
 import { validateRequest } from "@/lib/auth/auth";
 import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
-import { parse } from "path";
-import * as context from "next/headers";
 
 export async function GET(
   request: NextRequest,
   props: { params: Promise<{ taskId: string; modelId: string }> }
 ) {
   const params = await props.params;
-  const result = await validateRequest();
-  if (!result) {
+  const session = await validateRequest();
+  if (!session) {
     return new Response(null, { status: 401 });
   }
 

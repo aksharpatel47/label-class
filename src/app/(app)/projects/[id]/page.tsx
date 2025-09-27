@@ -2,7 +2,6 @@ import { fetchNumberOfTasksInProject } from "@/lib/data/tasks";
 import { Pagination } from "./pagination";
 import { ImageTable } from "./imagetable";
 import { fetchProjectLabels } from "@/lib/data/labels";
-import { taskLabelValue } from "@/db/schema";
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;

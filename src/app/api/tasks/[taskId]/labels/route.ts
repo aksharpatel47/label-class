@@ -3,7 +3,6 @@ import { taskLabels } from "@/db/schema";
 import { validateRequest } from "@/lib/auth/auth";
 import { and, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
-import * as context from "next/headers";
 
 async function getResultsFromDb(taskId: string) {
   return await db.query.taskLabels.findMany({
@@ -28,11 +27,14 @@ async function getResultsFromDb(taskId: string) {
 
 export type IGetTaskLabelReponse = Awaited<ReturnType<typeof getResultsFromDb>>;
 
-export async function GET(req: NextRequest, props: { params: Promise<{ taskId: string }> }) {
+export async function GET(
+  req: NextRequest,
+  props: { params: Promise<{ taskId: string }> }
+) {
   const params = await props.params;
-  const result = await validateRequest();
+  const session = await validateRequest();
 
-  if (!result) {
+  if (!session) {
     return new Response(null, { status: 401 });
   }
 

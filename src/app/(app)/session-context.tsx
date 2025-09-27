@@ -1,16 +1,16 @@
 "use client";
 
-import { Session } from "lucia";
+import { ValidateRequestResult } from "@/lib/auth/auth";
 import { createContext } from "react";
 
-export const SessionContext = createContext<Session | null>(null);
+export const SessionContext = createContext<ValidateRequestResult | null>(null);
 
 export function SessionProvider({
   children,
   session,
 }: {
   children: React.ReactNode;
-  session: Session | null;
+  session: ValidateRequestResult;
 }) {
   return (
     <SessionContext.Provider value={session}>

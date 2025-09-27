@@ -1,8 +1,7 @@
 "use server";
 
-import { z } from "zod";
-import { db, sql } from "@/db";
 import { ImageInferenceTypes } from "@/app/lib/models/image";
+import { db, sql } from "@/db";
 import {
   datasetEnum,
   datasetEnumValues,
@@ -12,9 +11,10 @@ import {
   taskLabels,
   tasks,
 } from "@/db/schema";
-import { revalidatePath } from "next/cache";
 import { and, eq, inArray } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
+import { z } from "zod";
 
 const selectionSchema = z.object({
   numImages: z.coerce.number(),
@@ -46,15 +46,6 @@ function shuffle<T>(array: T[]): T[] {
     [array[i], array[j]] = [array[j], array[i]];
   }
   return array;
-}
-
-/**
- * @param array
- * @param count
- * @returns
- */
-function selectAndShuffle<T>(array: T[], count: number): T[] {
-  return shuffle(array).slice(0, count);
 }
 
 async function fetchTasksForTruePositiveImages(

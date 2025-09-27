@@ -1,10 +1,8 @@
 import { db } from "@/db";
 import { projectLabels, projects, tasks } from "@/db/schema";
 import { eq, inArray, sql } from "drizzle-orm";
-import { unstable_noStore } from "next/cache";
 
 export async function fetchProjects() {
-  unstable_noStore();
   return db.query.projects.findMany({
     with: {
       creator: true,
@@ -20,7 +18,6 @@ export async function fetchProjects() {
 }
 
 export async function fetchProjectsWithIds(ids: string[]) {
-  unstable_noStore();
   return db.query.projects.findMany({
     where: inArray(projects.id, ids),
     with: {
@@ -36,7 +33,6 @@ export async function fetchProjectsWithIds(ids: string[]) {
 }
 
 export async function fetchProjectLabelNames() {
-  unstable_noStore();
   const results = await db
     .selectDistinct({
       labelName: projectLabels.labelName,
@@ -52,7 +48,6 @@ export async function fetchProjectLabelNames() {
  * @returns A list of projects that have the specified label name.
  */
 export async function fetchProjectsWithLabelName(labelName: string) {
-  unstable_noStore();
   return db.query.projectLabels
     .findMany({
       where: eq(projectLabels.labelName, labelName),
@@ -64,7 +59,6 @@ export async function fetchProjectsWithLabelName(labelName: string) {
 }
 
 export async function fetchProjectsTaskCounts() {
-  unstable_noStore();
   return db
     .select({
       projectId: projects.id,
@@ -76,7 +70,6 @@ export async function fetchProjectsTaskCounts() {
 }
 
 export async function fetchProjectById(id: string) {
-  unstable_noStore();
   return db.query.projects.findFirst({
     where: eq(projects.id, id),
   });

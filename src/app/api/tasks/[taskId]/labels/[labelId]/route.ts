@@ -4,15 +4,14 @@ import { projectTaskSelections } from "@/db/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { validateRequest } from "@/lib/auth/auth";
-import * as context from "next/headers";
 
 export async function POST(
   request: NextRequest,
   props: { params: Promise<{ taskId: string; labelId: string }> }
 ) {
   const params = await props.params;
-  const result = await validateRequest();
-  if (!result) {
+  const session = await validateRequest();
+  if (!session) {
     return new Response(null, { status: 401 });
   }
 
@@ -31,7 +30,7 @@ export async function POST(
     );
 
   // If present in projectTaskSelections, only allow admin
-  if (selection.length > 0 && result.user.role !== "ADMIN") {
+  if (selection.length > 0 && session.user.role !== "ADMIN") {
     return NextResponse.json(
       {
         error:
@@ -46,7 +45,7 @@ export async function POST(
     .values({
       taskId,
       labelId,
-      labeledBy: result.user.id,
+      labeledBy: session.user.id,
       value: data.value,
     })
     .onConflictDoUpdate({
@@ -54,7 +53,7 @@ export async function POST(
       set: {
         labelId,
         value: data.value,
-        labelUpdatedBy: result.user.id,
+        labelUpdatedBy: session.user.id,
         updatedAt: sql`now()`,
       },
     });
@@ -73,8 +72,8 @@ export async function PATCH(
   props: { params: Promise<{ taskId: string; labelId: string }> }
 ) {
   const params = await props.params;
-  const result = await validateRequest();
-  if (!result) {
+  const session = await validateRequest();
+  if (!session) {
     return new Response(null, { status: 401 });
   }
 
@@ -96,8 +95,8 @@ export async function DELETE(
   props: { params: Promise<{ taskId: string; labelId: string }> }
 ) {
   const params = await props.params;
-  const result = await validateRequest();
-  if (!result) {
+  const session = await validateRequest();
+  if (!session) {
     return new Response(null, { status: 401 });
   }
 

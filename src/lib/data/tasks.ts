@@ -7,7 +7,6 @@ import {
 } from "@/db/schema";
 import { and, asc, eq, gte, inArray, isNull, lte, SQL, sql } from "drizzle-orm";
 import { PgSelectBase, PgTransaction } from "drizzle-orm/pg-core";
-import { unstable_noStore } from "next/cache";
 import postgres from "postgres";
 
 export function addTaskInProject(projectId: string, name: string, url: string) {
@@ -28,7 +27,6 @@ export function addTaskInProject(projectId: string, name: string, url: string) {
 }
 
 export async function fetchTasksInProject(projectId: string, page: number) {
-  unstable_noStore();
   const maxPerPage = 50;
 
   return db.query.tasks.findMany({
@@ -183,12 +181,7 @@ function generateFiltersBasedOnQueryParams(
   if (trainedModel && inferenceValue) {
     const trainedModelId = Number(trainedModel);
 
-    const inferenceValueRange = inferenceValue
-      .slice(0, -1)
-      .split("-")
-      .map(Number)
-      .filter((n) => !isNaN(n))
-      .map((n) => Math.ceil(n * 100));
+    const inferenceValueRange = inferenceValue.split("-").map(Number);
 
     if (
       inferenceValueRange.length === 2 &&

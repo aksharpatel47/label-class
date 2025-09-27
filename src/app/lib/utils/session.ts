@@ -2,8 +2,8 @@ import { validateRequest } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
 
 export async function redirectIfAuthenticated() {
-  const result = await validateRequest();
-  if (result) {
+  const session = await validateRequest();
+  if (session) {
     redirect("/projects");
   }
 }

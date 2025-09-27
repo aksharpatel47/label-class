@@ -1,11 +1,14 @@
 import { validateRequest } from "@/lib/auth/auth";
 import { fetchTasksInProject } from "@/lib/data/tasks";
 import { NextRequest, NextResponse } from "next/server";
-export async function GET(request: NextRequest, props: { params: Promise<{ projectId: string }> }) {
+export async function GET(
+  request: NextRequest,
+  props: { params: Promise<{ projectId: string }> }
+) {
   const params = await props.params;
-  const result = await validateRequest();
+  const session = await validateRequest();
 
-  if (!result) {
+  if (!session) {
     return new Response(null, { status: 401 });
   }
 

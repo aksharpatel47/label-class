@@ -80,9 +80,9 @@ export async function importInference(
   prevState: string | undefined,
   formData: FormData
 ) {
-  const result = await validateRequest();
+  const session = await validateRequest();
 
-  if (!result) {
+  if (!session) {
     return "Not logged in.";
   }
 
@@ -188,8 +188,8 @@ export async function importDataset(
   state: string | undefined,
   formData: FormData
 ) {
-  const result = await validateRequest();
-  if (!result) {
+  const session = await validateRequest();
+  if (!session) {
     return "Not logged in.";
   }
 
@@ -243,8 +243,8 @@ export async function clearDataset(
   state: string | undefined,
   formData: FormData
 ) {
-  const result = await validateRequest();
-  if (!result) {
+  const session = await validateRequest();
+  if (!session) {
     return "Not logged in.";
   }
 

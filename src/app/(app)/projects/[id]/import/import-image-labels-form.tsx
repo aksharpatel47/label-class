@@ -1,5 +1,5 @@
-import { useActionState } from "react";
 "use client";
+import { useActionState } from "react";
 
 import { importData } from "@/app/lib/actions/data";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ export function ImageImportForm(props: {
   const importDataWithUser = importData.bind(
     null,
     props.projectId,
-    props.userId,
+    props.userId
   );
   const [state, dispatch] = useActionState(importDataWithUser, undefined);
   return (

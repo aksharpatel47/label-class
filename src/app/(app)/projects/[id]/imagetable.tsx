@@ -62,7 +62,7 @@ export function ImageTable(props: {
   }/tasks?${urlSearchParams.toString()}`;
 
   const { index, setIndex, nextImage, prevImage } = useImageTableStore();
-  const { data, error, isLoading } = useSwr<Array<Task>>(url, fetcher);
+  const { data, isLoading } = useSwr<Array<Task>>(url, fetcher);
 
   function handleKeyDown(e: KeyboardEvent) {
     console.log(`Handling keydown ${e.key} in ImageTable`);

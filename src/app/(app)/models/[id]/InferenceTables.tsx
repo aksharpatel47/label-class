@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { db } from "@/db";
 import {
+  AuthUser,
   projectLabels,
   projects,
   projectTaskSelections,
@@ -10,8 +11,7 @@ import {
   taskLabels,
   tasks,
 } from "@/db/schema";
-import { and, eq, gte, inArray, sql } from "drizzle-orm";
-import { User } from "lucia";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { Download } from "lucide-react";
 import { CopyToClipboard } from "./copy-to-clipboard-button";
 import { fetchProjectsWithIds } from "@/lib/data/projects";
@@ -20,7 +20,7 @@ export interface IIInferenceTablesProps {
   trainedModelId: number;
   selectedProjects: string[];
   labelName: string;
-  user: User;
+  user: AuthUser;
 }
 
 export async function InferenceTables({

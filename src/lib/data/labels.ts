@@ -5,11 +5,9 @@ import {
   projects,
   projectTaskSelections,
   taskLabels,
-  taskLabelsRelations,
   tasks,
 } from "@/db/schema";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
-import { unstable_noStore } from "next/cache";
 
 export async function addLabelToTask(
   taskId: string,
@@ -18,8 +16,6 @@ export async function addLabelToTask(
   labelValue: string,
   userId: string
 ) {
-  unstable_noStore();
-
   return db
     .insert(taskLabels)
     .values({
@@ -32,7 +28,6 @@ export async function addLabelToTask(
 }
 
 export async function fetchProjectLabels(projectId: string) {
-  unstable_noStore();
   return db.query.projectLabels.findMany({
     where: eq(projectLabels.projectId, projectId),
     orderBy: (p, { asc }) => [asc(p.sequence)],
@@ -44,8 +39,6 @@ export async function fetchProjectLabels(projectId: string) {
  * @param projectId
  */
 export async function fetchTaskLabelStatistics(projectId: string) {
-  unstable_noStore();
-
   return db
     .select({
       labelId: taskLabels.labelId,
@@ -71,8 +64,6 @@ export async function fetchTaskLabelStatistics(projectId: string) {
  * @param projectId
  */
 export async function fetchDatasetStatistics(projectId: string) {
-  unstable_noStore();
-
   return db
     .select({
       dataset: projectTaskSelections.dataset,
@@ -111,8 +102,6 @@ export async function fetchDatasetStatisticsByLabel(
   labelName: string,
   projectIds: string[]
 ) {
-  unstable_noStore();
-
   return db
     .select({
       dataset: projectTaskSelections.dataset,

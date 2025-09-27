@@ -1,6 +1,5 @@
 import { CustomLink } from "@/components/ui/link";
 import { H1 } from "@/components/ui/typography";
-import Link from "next/link";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (

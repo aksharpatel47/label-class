@@ -1,11 +1,13 @@
-import { authUser, userSession, UserSession } from "@/db/schema";
-import { generateRandomString } from "./crypto";
-import { insertUserSession } from "./db";
-import { Cookie, createSessionCookie } from "./cookie";
-import { DEFAULT_SESSION_COOKIE_NAME } from "lucia";
 import { db } from "@/db";
+import { userSession } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { cookies } from "next/headers";
+import { Cookie } from "./cookie";
+import { generateRandomString } from "./crypto";
 import { isWithinExpiration } from "./date";
+import { insertUserSession } from "./db";
+
+const DEFAULT_SESSION_COOKIE_NAME = "auth_session";
 
 const activePeriodDefault = 1000 * 60 * 60 * 24; // 1 day
 const idlePeriodDefault = 1000 * 60 * 60 * 24 * 14; // 14 days
@@ -32,32 +34,32 @@ export async function createSession(userId: string) {
   );
 }
 
-export function setSessionCookie(
+export async function setSessionCookie(
   cookie: Cookie,
   context: typeof import("next/headers")
 ) {
-  context.cookies().set(cookie.name, cookie.value, cookie.attributes);
+  const cookieStore = await context.cookies();
+  cookieStore.set(cookie.name, cookie.value, cookie.attributes);
 }
 
-export function getSessionCookie(context: typeof import("next/headers")) {
-  return context.cookies().get(DEFAULT_SESSION_COOKIE_NAME)?.value ?? null;
+export async function getSessionCookie() {
+  const cookieStore = await cookies();
+  return cookieStore.get(DEFAULT_SESSION_COOKIE_NAME)?.value ?? null;
 }
 
 export async function validateSession(sessionId: string) {
   const dbSession = await db.query.userSession.findFirst({
     where: eq(userSession.id, sessionId),
+    with: {
+      user: true,
+    },
   });
   if (!dbSession) return null;
-  const dbUser = await db.query.authUser.findFirst({
-    where: eq(authUser.id, dbSession.userId),
-  });
-  if (!dbUser) return null;
   const active = isWithinExpiration(dbSession.activeExpires);
 
   if (active) {
     return {
       session: dbSession,
-      user: dbUser,
       fresh: false,
     };
   }
@@ -65,18 +67,24 @@ export async function validateSession(sessionId: string) {
   const { activePeriodExpiresAt, idlePeriodExpiresAt } =
     await getNewSessionExpiration();
 
-  const newDbSession = await db
+  await db
     .update(userSession)
     .set({
       activeExpires: activePeriodExpiresAt.getTime(),
       idleExpires: idlePeriodExpiresAt.getTime(),
     })
-    .where(eq(userSession.id, sessionId))
-    .returning();
+    .where(eq(userSession.id, sessionId));
+
+  const newDbSession = await db.query.userSession.findFirst({
+    where: eq(userSession.id, sessionId),
+    with: {
+      user: true,
+    },
+  });
+  if (!newDbSession) return null;
 
   return {
-    session: newDbSession[0] as UserSession,
-    user: dbUser,
+    session: newDbSession,
     fresh: true,
   };
 }

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import * as context from "next/headers";
-import { unstable_noStore } from "next/cache";
 import { getUserWithKey } from "@/lib/auth/db";
 import { validateScryptHash } from "@/lib/auth/crypto";
 import { createSession, setSessionCookie } from "@/lib/auth/session";
@@ -13,7 +12,6 @@ const loginSchema = z.object({
 });
 
 export const POST = async (req: NextRequest) => {
-  unstable_noStore();
   const result = loginSchema.safeParse(await req.json());
 
   if (!result.success) {

@@ -8,9 +8,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { fetchUsers } from "@/lib/data/users";
-import { authUser } from "@/db/schema";
 import Link from "next/link";
-import next from "next";
 
 export default async function Page() {
   const users = await fetchUsers();

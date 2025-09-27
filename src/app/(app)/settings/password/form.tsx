@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { STATUS_CODES } from "http";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
