@@ -65,7 +65,7 @@ export const POST = async (req: NextRequest) => {
       cookie: {},
     });
 
-    setSessionCookie(sessionCookie, context);
+    await setSessionCookie(sessionCookie, context);
 
     return NextResponse.json({
       message: "Success",
