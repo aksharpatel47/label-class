@@ -25,6 +25,7 @@ export function Tool(props: IToolProps) {
   const inferenceValue = searchParams.get("inferencevalue") || "";
   const dataset = searchParams.get("dataset") || "";
   const labeledon = searchParams.get("labeledon") || "";
+  const assignedUser = searchParams.get("assignedUser") || "";
   const currentValues = {
     label: projectLabel,
     labelvalue: projectLabelValue,
@@ -33,6 +34,7 @@ export function Tool(props: IToolProps) {
     inferencevalue: inferenceValue,
     dataset,
     labeledon,
+    assignedUser,
   };
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [totalTasks, setTotalTasks] = useState<number>(0);

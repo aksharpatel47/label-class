@@ -33,6 +33,7 @@ interface ILabelFiltersProps {
     inferencevalue: string;
     dataset: string;
     labeledon: string;
+    assignedUser: string;
   };
   inferenceValues: string[];
 
@@ -273,6 +274,34 @@ export function LabelFilters(props: ILabelFiltersProps) {
           <Button
             variant="ghost"
             onClick={() => onSelectChange({ dataset: undefined })}
+          >
+            <XCircle />
+          </Button>
+        </div>
+      </div>
+      <div>
+        <Label>Assigned To</Label>
+        <div className="flex">
+          <Select
+            value={props.currentValues.assignedUser}
+            onValueChange={(newValue) =>
+              onSelectChange({ assignedUser: newValue })
+            }
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select Assigned User" />
+            </SelectTrigger>
+            <SelectContent>
+              {props.users.map((user) => (
+                <SelectItem key={user.id} value={user.id.toString()}>
+                  {user.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="ghost"
+            onClick={() => onSelectChange({ assignedUser: undefined })}
           >
             <XCircle />
           </Button>

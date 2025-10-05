@@ -5,7 +5,10 @@ import {
 } from "@/lib/data/tasks";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: NextRequest, props: { params: Promise<{ projectId: string }> }) {
+export async function GET(
+  request: NextRequest,
+  props: { params: Promise<{ projectId: string }> }
+) {
   const params = await props.params;
   const session = await validateRequest();
 
@@ -24,6 +27,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ proje
   const trainedModel = searchParams.get("trainedmodel");
   const inferenceValue = searchParams.get("inferencevalue");
   const dataset = searchParams.get("dataset");
+  const assignedUser = searchParams.get("assignedUser");
 
   const input = {
     currentUserId: session.user.id,
@@ -36,6 +40,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ proje
     trainedModel,
     inferenceValue,
     dataset,
+    assignedUser,
   };
 
   const tasks = await fetchTasksForLabeling(input);

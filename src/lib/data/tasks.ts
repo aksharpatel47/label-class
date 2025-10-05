@@ -60,6 +60,7 @@ interface IFetchTasksForLabeling {
   trainedModel?: string | null;
   inferenceValue?: string | null;
   dataset?: string | null;
+  assignedUser?: string | null;
 }
 
 /**
@@ -88,12 +89,17 @@ function generateFiltersBasedOnQueryParams(
     trainedModel,
     inferenceValue,
     dataset,
+    assignedUser,
   } = queryParams;
 
   const filters: Array<SQL | undefined> = [];
 
   // Always filter by projectId
   filters.push(eq(tasks.projectId, projectId));
+
+  if (assignedUser) {
+    filters.push(eq(tasks.assignedTo, assignedUser));
+  }
 
   // If any label-based filter is present, join taskLabels
   if (labelId) {
