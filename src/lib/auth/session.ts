@@ -39,7 +39,11 @@ export async function setSessionCookie(
   context: typeof import("next/headers")
 ) {
   const cookieStore = await context.cookies();
-  cookieStore.set(cookie.name, cookie.value, cookie.attributes);
+  await cookieStore.set(
+    DEFAULT_SESSION_COOKIE_NAME,
+    cookie.value,
+    cookie.attributes
+  );
 }
 
 export async function getSessionCookie() {

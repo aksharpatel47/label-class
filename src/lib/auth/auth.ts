@@ -57,7 +57,7 @@ export async function validateRequest() {
   if (!result) return null;
   const { session, fresh } = result;
   if (fresh) {
-    const newCookie = createSessionCookie(session, { cookie: {} });
+    const newCookie = createSessionCookie(session);
     setSessionCookie(newCookie, context);
   }
   return session;

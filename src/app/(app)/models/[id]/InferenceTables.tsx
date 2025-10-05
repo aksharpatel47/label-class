@@ -1,6 +1,10 @@
 import { InferenceTable } from "@/app/(app)/models/[id]/InferenceTable";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import {
+  ButtonGroup,
+  ButtonGroupSeparator,
+} from "@/components/ui/button-group";
 import { db } from "@/db";
 import {
   AuthUser,
@@ -12,7 +16,6 @@ import {
   tasks,
 } from "@/db/schema";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { Download } from "lucide-react";
 import { CopyToClipboard } from "./copy-to-clipboard-button";
 import { fetchProjectsWithIds } from "@/lib/data/projects";
 
@@ -214,12 +217,11 @@ export async function InferenceTables({
   return (
     <div className="flex flex-col gap-4">
       {user.role === "ADMIN" && (
-        <div className="flex gap-2 mb-2">
+        <ButtonGroup aria-label="Download button group" className="mb-2">
           <Button asChild>
             <a
               href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?leftThreshold=100&rightThreshold=10000&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
             >
-              <Download className="mr-2 h-4 w-4" />
               Potential Positives (0.01 to 1.00)
             </a>
           </Button>
@@ -227,7 +229,6 @@ export async function InferenceTables({
             <a
               href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?leftThreshold=100&rightThreshold=4999&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
             >
-              <Download className="mr-2 h-4 w-4" />
               Potential Negatives (0.01 to 0.50)
             </a>
           </Button>
@@ -235,7 +236,6 @@ export async function InferenceTables({
             <a
               href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?leftThreshold=5000&rightThreshold=10000&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
             >
-              <Download className="mr-2 h-4 w-4" />
               Potential Positives (0.50 to 1.00)
             </a>
           </Button>
@@ -252,15 +252,17 @@ export async function InferenceTables({
               href={`/api/models/${trainedModelId}/labels/${labelName}/dataset-candidates?${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
               download
             >
-              <Download className="mr-2 h-4 w-4" />
               Dataset Candidates CSV
             </a>
           </Button>
+
+          <ButtonGroupSeparator />
+
           <CopyToClipboard
             inferenceTableData={inferenceTableData}
             keysWithSequence={keysWithSequence}
           />
-        </div>
+        </ButtonGroup>
       )}
       {keysWithSequence.map((key) => (
         <div key={key}>

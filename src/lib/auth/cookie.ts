@@ -18,28 +18,19 @@ const defaultSessionCookieAttributes: SessionCookieAttributes = {
   path: "/",
 };
 
-export const createSessionCookie = (
-  session: UserSession,
-  options: { cookie: SessionCookieConfiguration }
-): Cookie => {
+export const createSessionCookie = (session: UserSession): Cookie => {
   let expires: number;
   if (session === null) {
     expires = 0;
-  } else if (options.cookie.expires !== false) {
-    expires = session.idleExpires;
   } else {
-    expires = Date.now() + 1000 * 60 * 60 * 24 * 365; // + 1 year
+    expires = session.idleExpires;
   }
-  return new Cookie(
-    options.cookie.name ?? DEFAULT_SESSION_COOKIE_NAME,
-    session.id,
-    {
-      ...(options.cookie.attributes ?? defaultSessionCookieAttributes),
-      httpOnly: true,
-      expires: new Date(expires),
-      secure: true,
-    }
-  );
+  return new Cookie(DEFAULT_SESSION_COOKIE_NAME, session.id, {
+    ...defaultSessionCookieAttributes,
+    httpOnly: true,
+    expires: new Date(expires),
+    secure: true,
+  });
 };
 
 export class Cookie {
