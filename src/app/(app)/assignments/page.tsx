@@ -21,7 +21,7 @@ import {
   tasks,
 } from "@/db/schema";
 import { validateRequest } from "@/lib/auth/auth";
-import { and, eq, gte, ilike, isNull, lte, sql } from "drizzle-orm";
+import { and, eq, gte, ilike, inArray, isNull, lte, sql } from "drizzle-orm";
 
 async function addAssignments(
   userId: string,
@@ -29,7 +29,8 @@ async function addAssignments(
   labelName: string,
   leftInferenceValue: number,
   rightInferenceValue: number,
-  limit: number
+  limit: number,
+  projectIds: string[]
 ) {
   // first select matching task ids
   const selected = await db
@@ -72,7 +73,7 @@ async function addAssignments(
     )
     .where(
       and(
-        ilike(projects.name, `region%`),
+        inArray(projects.id, projectIds),
         isNull(taskAssignments.id),
         isNull(taskLabels.id)
       )
@@ -101,7 +102,8 @@ async function possibleTotalAssignments(
   modelId: number,
   labelName: string,
   leftInferenceValue: number,
-  rightInferenceValue: number
+  rightInferenceValue: number,
+  projectIds: string[]
 ) {
   return db
     .select({
@@ -144,7 +146,7 @@ async function possibleTotalAssignments(
     )
     .where(
       and(
-        ilike(projects.name, `region%`),
+        inArray(projects.id, projectIds),
         isNull(taskAssignments.id),
         isNull(taskLabels.id)
       )
@@ -196,6 +198,7 @@ export default async function Page({
     labelName?: string;
     leftInferenceValue?: string;
     rightInferenceValue?: string;
+    selectedProject?: string[];
     limit?: string;
     operation?: "add" | "fetch";
   }>;
@@ -217,7 +220,14 @@ export default async function Page({
     rightInferenceValue,
     limit,
     operation,
+    selectedProject,
   } = await searchParams;
+
+  const projectIds = selectedProject
+    ? selectedProject
+    : await db.query.projects
+        .findMany()
+        .then((projects) => projects.map((p) => p.id));
 
   if (
     operation === "add" &&
@@ -243,7 +253,8 @@ export default async function Page({
       labelName,
       leftInferenceValueNum,
       rightInferenceValueNum,
-      limitNum
+      limitNum,
+      projectIds
     );
 
     return (
@@ -269,7 +280,8 @@ export default async function Page({
       modelIdNum,
       labelName,
       leftInferenceValueNum,
-      rightInferenceValueNum
+      rightInferenceValueNum,
+      projectIds
     );
 
     const totalRemaining = result.reduce(
