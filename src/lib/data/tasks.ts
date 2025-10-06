@@ -1,11 +1,12 @@
 import { db } from "@/db";
 import {
   projectTaskSelections,
+  taskAssignments,
   taskInferences,
   taskLabels,
   tasks,
 } from "@/db/schema";
-import { and, asc, eq, gte, inArray, isNull, lte, SQL, sql } from "drizzle-orm";
+import { and, asc, eq, gte, isNull, lte, SQL, sql } from "drizzle-orm";
 import { PgSelectBase, PgTransaction } from "drizzle-orm/pg-core";
 import postgres from "postgres";
 
@@ -97,8 +98,17 @@ function generateFiltersBasedOnQueryParams(
   // Always filter by projectId
   filters.push(eq(tasks.projectId, projectId));
 
-  if (assignedUser) {
-    filters.push(eq(tasks.assignedTo, assignedUser));
+  if (assignedUser && labelId) {
+    sl = sl
+      .innerJoin(
+        taskAssignments,
+        and(
+          eq(taskAssignments.taskId, tasks.id),
+          eq(taskAssignments.userId, assignedUser),
+          eq(taskAssignments.labelId, labelId)
+        )
+      )
+      .$dynamic();
   }
 
   // If any label-based filter is present, join taskLabels
@@ -265,39 +275,18 @@ export async function fetchTasksForLabeling(
       createdAt: tasks.createdAt,
     })
     .from(tasks)
-    // .leftJoin(taskLabels, eq(tasks.id, taskLabels.taskId))
     .$dynamic();
 
-  const { currentUserId } = queryParams;
   const { sl: newSl, filters } = generateFiltersBasedOnQueryParams(
     sl,
     queryParams
   );
   sl = newSl as typeof sl;
 
-  const results: any = await sl
+  return sl
     .where(and(...filters))
     .orderBy(asc(tasks.id))
     .limit(50);
-
-  if (!results.length) {
-    return results;
-  }
-
-  await db
-    .update(tasks)
-    .set({
-      assignedTo: currentUserId,
-      assignedOn: sql`now()`,
-    })
-    .where(
-      inArray(
-        tasks.id,
-        results.map((t: any) => t.id)
-      )
-    );
-
-  return results;
 }
 
 /**

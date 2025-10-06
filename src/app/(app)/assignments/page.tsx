@@ -1,0 +1,400 @@
+import { H1, H2, H3 } from "@/components/ui/typography";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import Link from "next/link";
+import { db } from "@/db";
+import {
+  authUser,
+  projectLabels,
+  projects,
+  taskAssignments,
+  taskInferences,
+  taskLabels,
+  tasks,
+} from "@/db/schema";
+import { validateRequest } from "@/lib/auth/auth";
+import { and, eq, gte, ilike, isNull, lte, sql } from "drizzle-orm";
+
+async function addAssignments(
+  userId: string,
+  modelId: number,
+  labelName: string,
+  leftInferenceValue: number,
+  rightInferenceValue: number,
+  limit: number
+) {
+  // first select matching task ids
+  const selected = await db
+    .select({
+      id: tasks.id,
+      projectId: tasks.projectId,
+      labelId: projectLabels.id,
+    })
+    .from(tasks)
+    .innerJoin(projects, eq(tasks.projectId, projects.id))
+    .innerJoin(
+      projectLabels,
+      and(
+        eq(projects.id, projectLabels.projectId),
+        eq(projectLabels.labelName, labelName)
+      )
+    )
+    .innerJoin(
+      taskInferences,
+      and(
+        eq(tasks.name, taskInferences.imageName),
+        eq(taskInferences.modelId, modelId),
+        lte(taskInferences.inference, rightInferenceValue),
+        gte(taskInferences.inference, leftInferenceValue)
+      )
+    )
+    .leftJoin(
+      taskLabels,
+      and(
+        eq(taskLabels.taskId, tasks.id),
+        eq(taskLabels.labelId, projectLabels.id)
+      )
+    )
+    .leftJoin(
+      taskAssignments,
+      and(
+        eq(taskAssignments.taskId, tasks.id),
+        eq(taskAssignments.labelId, projectLabels.id)
+      )
+    )
+    .where(
+      and(
+        ilike(projects.name, `region%`),
+        isNull(taskAssignments.id),
+        isNull(taskLabels.id)
+      )
+    )
+    .orderBy(projects.name)
+    .limit(limit);
+
+  if (selected.length === 0) {
+    return [];
+  }
+
+  // then update those tasks by id
+  return db
+    .insert(taskAssignments)
+    .values(
+      selected.map((s) => ({
+        taskId: s.id,
+        userId,
+        labelId: s.labelId,
+      }))
+    )
+    .returning({ updatedId: tasks.id });
+}
+
+async function possibleTotalAssignments(
+  modelId: number,
+  labelName: string,
+  leftInferenceValue: number,
+  rightInferenceValue: number
+) {
+  return db
+    .select({
+      count: sql<number>`count(${tasks.id})::integer`,
+      projectId: tasks.projectId,
+      labelId: projectLabels.id,
+      projectName: projects.name,
+    })
+    .from(tasks)
+    .innerJoin(projects, eq(tasks.projectId, projects.id))
+    .innerJoin(
+      projectLabels,
+      and(
+        eq(projects.id, projectLabels.projectId),
+        eq(projectLabels.labelName, labelName)
+      )
+    )
+    .innerJoin(
+      taskInferences,
+      and(
+        eq(tasks.name, taskInferences.imageName),
+        eq(taskInferences.modelId, modelId),
+        lte(taskInferences.inference, rightInferenceValue),
+        gte(taskInferences.inference, leftInferenceValue)
+      )
+    )
+    .leftJoin(
+      taskLabels,
+      and(
+        eq(taskLabels.taskId, tasks.id),
+        eq(taskLabels.labelId, projectLabels.id)
+      )
+    )
+    .leftJoin(
+      taskAssignments,
+      and(
+        eq(taskAssignments.taskId, tasks.id),
+        eq(taskAssignments.labelId, projectLabels.id)
+      )
+    )
+    .where(
+      and(
+        ilike(projects.name, `region%`),
+        isNull(taskAssignments.id),
+        isNull(taskLabels.id)
+      )
+    )
+    .orderBy(projects.name)
+    .groupBy(tasks.projectId, projectLabels.id, projects.name);
+}
+
+async function fetchCurrentAssignments() {
+  return db
+    .select({
+      count: sql<number>`count(${taskAssignments.id})::integer`,
+      countOfTaskLabelsNotNull: sql<number>`count(${taskLabels.id})::integer`,
+      userId: taskAssignments.userId,
+      userName: authUser.name,
+      projectLabelId: taskAssignments.labelId,
+      projectLabelName: projectLabels.labelName,
+      projectId: projects.id,
+      projectName: projects.name,
+    })
+    .from(taskAssignments)
+    .innerJoin(projectLabels, eq(taskAssignments.labelId, projectLabels.id))
+    .innerJoin(projects, eq(projectLabels.projectId, projects.id))
+    .innerJoin(authUser, eq(taskAssignments.userId, authUser.id))
+    .leftJoin(
+      taskLabels,
+      and(
+        eq(taskLabels.taskId, taskAssignments.taskId),
+        eq(taskLabels.labelId, taskAssignments.labelId)
+      )
+    )
+    .orderBy(projectLabels.labelName, authUser.name)
+    .groupBy(
+      taskAssignments.userId,
+      authUser.name,
+      taskAssignments.labelId,
+      projectLabels.labelName,
+      projects.id,
+      projects.name
+    );
+}
+
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    userId?: string;
+    modelId?: string;
+    labelName?: string;
+    leftInferenceValue?: string;
+    rightInferenceValue?: string;
+    limit?: string;
+    operation?: "add" | "fetch";
+  }>;
+}) {
+  const session = await validateRequest();
+  if (!session) {
+    return <div>Please log in to view assignments.</div>;
+  }
+
+  if (session.user.role !== "ADMIN") {
+    return <div>Access denied. Admins only.</div>;
+  }
+
+  const {
+    userId,
+    modelId,
+    labelName,
+    leftInferenceValue,
+    rightInferenceValue,
+    limit,
+    operation,
+  } = await searchParams;
+
+  if (
+    operation === "add" &&
+    userId &&
+    modelId &&
+    labelName &&
+    leftInferenceValue &&
+    rightInferenceValue &&
+    limit
+  ) {
+    const user = await db.query.authUser.findFirst({
+      where: eq(authUser.id, userId),
+    });
+
+    const modelIdNum = parseInt(modelId, 10);
+    const leftInferenceValueNum = parseInt(leftInferenceValue, 10);
+    const rightInferenceValueNum = parseInt(rightInferenceValue, 10);
+    const limitNum = parseInt(limit, 10);
+
+    const assignments = await addAssignments(
+      userId,
+      modelIdNum,
+      labelName,
+      leftInferenceValueNum,
+      rightInferenceValueNum,
+      limitNum
+    );
+
+    return (
+      <div className="p-4">
+        <H1>Assignments Added</H1>
+        <div>
+          Added {assignments.length} assignments to user {user?.name || "N/A"}.
+        </div>
+      </div>
+    );
+  } else if (
+    operation === "fetch" &&
+    modelId &&
+    labelName &&
+    leftInferenceValue &&
+    rightInferenceValue
+  ) {
+    const modelIdNum = parseInt(modelId, 10);
+    const leftInferenceValueNum = parseInt(leftInferenceValue, 10);
+    const rightInferenceValueNum = parseInt(rightInferenceValue, 10);
+
+    const result = await possibleTotalAssignments(
+      modelIdNum,
+      labelName,
+      leftInferenceValueNum,
+      rightInferenceValueNum
+    );
+
+    return (
+      <div className="p-4">
+        <H1>Possible Total Assignments</H1>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Project Name</TableHead>
+              <TableHead>Total Assigned</TableHead>
+              <TableHead>Completed</TableHead>
+              <TableHead>Remaining</TableHead>
+              <TableHead>Link</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {result.map((r) => (
+              <TableRow key={r.projectId}>
+                <TableCell>{r.projectName}</TableCell>
+                <TableCell>{(0).toLocaleString()}</TableCell>
+                <TableCell>{(0).toLocaleString()}</TableCell>
+                <TableCell>{Number(r.count || 0).toLocaleString()}</TableCell>
+                <TableCell>
+                  <Link
+                    href={`/projects/${r.projectId}/label?label=${r.labelId}&labelvalue=Unlabeled&inferencevalue=${leftInferenceValue}-${rightInferenceValue}&trainedmodel=${modelId}`}
+                    target="_blank"
+                  >
+                    View Project
+                  </Link>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
+
+  const currentAssignments = await fetchCurrentAssignments();
+
+  if (currentAssignments.length > 0) {
+    const compiledData: Map<
+      string,
+      Map<string, Awaited<ReturnType<typeof fetchCurrentAssignments>>>
+    > = new Map();
+
+    currentAssignments
+      .filter((a) => a.countOfTaskLabelsNotNull < a.count)
+      .forEach((assignment) => {
+        const labelName = assignment.projectLabelName;
+        if (!compiledData.has(labelName)) {
+          compiledData.set(labelName, new Map());
+        }
+        const projectLabelMap = compiledData.get(labelName)!;
+        const userName = assignment.userName;
+        if (!projectLabelMap.has(userName)) {
+          projectLabelMap.set(userName, [] as any[]);
+        }
+        projectLabelMap.get(userName)!.push(assignment);
+      });
+
+    return (
+      <div className="p-4">
+        <H1>Current Assignments</H1>
+        {Array.from(compiledData.entries()).map(([labelName, userMap]) => (
+          <div key={labelName} className="mt-8">
+            <H2>{labelName}</H2>
+            {Array.from(userMap.entries()).map(([userName, assignments]) => (
+              <div key={userName}>
+                <H3>{userName}</H3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Project Name</TableHead>
+                      <TableHead>Total Assigned</TableHead>
+                      <TableHead>Completed</TableHead>
+                      <TableHead>Remaining</TableHead>
+                      <TableHead>Link</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {assignments.map((assignment) => (
+                      <TableRow
+                        key={`${assignment.userId}-${assignment.projectLabelId}-${assignment.projectId}`}
+                      >
+                        <TableCell>{assignment.projectName}</TableCell>
+                        <TableCell>
+                          {Number(assignment.count || 0).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          {Number(
+                            assignment.countOfTaskLabelsNotNull || 0
+                          ).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          {(
+                            Number(assignment.count || 0) -
+                            Number(assignment.countOfTaskLabelsNotNull || 0)
+                          ).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            href={`/projects/${assignment.projectId}/label?label=${assignment.projectLabelId}&labelvalue=Unlabeled&assignedUser=${assignment.userId}`}
+                            target="_blank"
+                          >
+                            View Project
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4">
+      <H1>Assignments</H1>
+      <div>
+        Please provide the necessary query parameters to add or fetch
+        assignments.
+      </div>
+    </div>
+  );
+}

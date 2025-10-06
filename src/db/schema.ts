@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   bigint,
   index,
@@ -13,6 +13,7 @@ import {
   uuid,
   varchar,
   boolean,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const authUserRoleEnum = pgEnum("auth_user_role", ["ADMIN", "USER"]);
@@ -113,9 +114,9 @@ export const projectLabels = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
-  (t) => ({
-    proj_label_unq: unique().on(t.projectId, t.labelName),
-  })
+  (table) => [
+    uniqueIndex("proj_label_unq").on(table.projectId, table.labelName),
+  ]
 );
 
 export type ProjectLabel = typeof projectLabels.$inferSelect;
@@ -141,14 +142,13 @@ export const tasks = pgTable(
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
-    assignedTo: text("assigned_to").references(() => authUser.id),
     assignedOn: timestamp("assigned_on", { withTimezone: true }),
   },
-  (t) => ({
-    name_project_unq: unique().on(t.name, t.projectId),
-    project_index: index().on(t.projectId),
-    name_index: index().on(t.name),
-  })
+  (table) => [
+    uniqueIndex("name_project_unq").on(table.name, table.projectId),
+    index("project_index").on(table.projectId),
+    index("name_index").on(table.name),
+  ]
 );
 
 export type Task = typeof tasks.$inferSelect;
@@ -159,12 +159,55 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
     fields: [tasks.projectId],
     references: [projects.id],
   }),
-  assignee: one(authUser, {
-    fields: [tasks.assignedTo],
-    references: [authUser.id],
-  }),
   taskLabels: many(taskLabels),
 }));
+
+export const taskAssignments = pgTable(
+  "task_assignments",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .notNull()
+      .default(sql`uuidv7()`),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => authUser.id),
+    labelId: uuid("label_id")
+      .notNull()
+      .references(() => projectLabels.id),
+    assignedAt: timestamp("assigned_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("unique_task_assignment").on(
+      table.taskId,
+      table.userId,
+      table.labelId
+    ),
+  ]
+);
+
+export type TaskAssignment = typeof taskAssignments.$inferSelect;
+
+export const taskAssignmentsRelations = relations(
+  taskAssignments,
+  ({ one }) => ({
+    task: one(tasks, {
+      fields: [taskAssignments.taskId],
+      references: [tasks.id],
+    }),
+    user: one(authUser, {
+      fields: [taskAssignments.userId],
+      references: [authUser.id],
+    }),
+    label: one(projectLabels, {
+      fields: [taskAssignments.labelId],
+      references: [projectLabels.id],
+    }),
+  })
+);
 
 export const taskLabelEnumValues = [
   "Present",
@@ -196,9 +239,7 @@ export const taskLabels = pgTable(
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }),
   },
-  (t) => ({
-    task_label_unq: unique().on(t.taskId, t.labelId),
-  })
+  (table) => [uniqueIndex("task_label_unq").on(table.taskId, table.labelId)]
 );
 
 export type TaskLabel = typeof taskLabels.$inferSelect;
@@ -251,9 +292,7 @@ export const taskInferences = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (t) => ({
-    task_model_unq: unique().on(t.imageName, t.modelId),
-  })
+  (table) => [uniqueIndex("task_model_unq").on(table.imageName, table.modelId)]
 );
 
 export type TaskInferences = typeof taskInferences.$inferSelect;
@@ -276,9 +315,7 @@ export const tempTasks = pgTable(
     labelId: uuid("label_id").references(() => projectLabels.id),
     labelValue: taskLabelValue("label_value"),
   },
-  (t) => ({
-    task_name_index: index().on(t.taskName),
-  })
+  (table) => [index("task_name_index").on(table.taskName)]
 );
 
 export type TempTask = typeof tempTasks.$inferSelect;
