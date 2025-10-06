@@ -5,9 +5,11 @@ import {
   TableCell,
   TableHead,
   TableHeader,
+  TableFooter,
   TableRow,
 } from "@/components/ui/table";
 import Link from "next/link";
+import { CircleCheck } from "lucide-react";
 import { db } from "@/db";
 import {
   authUser,
@@ -270,6 +272,11 @@ export default async function Page({
       rightInferenceValueNum
     );
 
+    const totalRemaining = result.reduce(
+      (acc, curr) => acc + Number(curr.count || 0),
+      0
+    );
+
     return (
       <div className="p-4">
         <H1>Possible Total Assignments</H1>
@@ -277,18 +284,21 @@ export default async function Page({
           <TableHeader>
             <TableRow>
               <TableHead>Project Name</TableHead>
-              <TableHead>Total Assigned</TableHead>
-              <TableHead>Completed</TableHead>
+              <TableHead>Label Name</TableHead>
+              <TableHead>Probability Greater Than</TableHead>
+              <TableHead>Probability Less Than</TableHead>
               <TableHead>Remaining</TableHead>
               <TableHead>Link</TableHead>
+              <TableHead>Done</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {result.map((r) => (
               <TableRow key={r.projectId}>
                 <TableCell>{r.projectName}</TableCell>
-                <TableCell>{(0).toLocaleString()}</TableCell>
-                <TableCell>{(0).toLocaleString()}</TableCell>
+                <TableCell>{labelName}</TableCell>
+                <TableCell>{leftInferenceValueNum}</TableCell>
+                <TableCell>{rightInferenceValueNum}</TableCell>
                 <TableCell>{Number(r.count || 0).toLocaleString()}</TableCell>
                 <TableCell>
                   <Link
@@ -298,9 +308,29 @@ export default async function Page({
                     View Project
                   </Link>
                 </TableCell>
+                <TableCell>
+                  {Number(r.count || 0) === 0 ? (
+                    <CircleCheck className="text-green-600" size={16} />
+                  ) : null}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell className="font-medium">Totals</TableCell>
+              <TableCell />
+              <TableCell />
+              <TableCell />
+              <TableCell>{totalRemaining.toLocaleString()}</TableCell>
+              <TableCell />
+              <TableCell>
+                {totalRemaining === 0 ? (
+                  <CircleCheck className="text-green-600" size={16} />
+                ) : null}
+              </TableCell>
+            </TableRow>
+          </TableFooter>
         </Table>
       </div>
     );
@@ -314,20 +344,18 @@ export default async function Page({
       Map<string, Awaited<ReturnType<typeof fetchCurrentAssignments>>>
     > = new Map();
 
-    currentAssignments
-      .filter((a) => a.countOfTaskLabelsNotNull < a.count)
-      .forEach((assignment) => {
-        const labelName = assignment.projectLabelName;
-        if (!compiledData.has(labelName)) {
-          compiledData.set(labelName, new Map());
-        }
-        const projectLabelMap = compiledData.get(labelName)!;
-        const userName = assignment.userName;
-        if (!projectLabelMap.has(userName)) {
-          projectLabelMap.set(userName, [] as any[]);
-        }
-        projectLabelMap.get(userName)!.push(assignment);
-      });
+    currentAssignments.forEach((assignment) => {
+      const labelName = assignment.projectLabelName;
+      if (!compiledData.has(labelName)) {
+        compiledData.set(labelName, new Map());
+      }
+      const projectLabelMap = compiledData.get(labelName)!;
+      const userName = assignment.userName;
+      if (!projectLabelMap.has(userName)) {
+        projectLabelMap.set(userName, [] as any[]);
+      }
+      projectLabelMap.get(userName)!.push(assignment);
+    });
 
     return (
       <div className="p-4">
@@ -335,53 +363,92 @@ export default async function Page({
         {Array.from(compiledData.entries()).map(([labelName, userMap]) => (
           <div key={labelName} className="mt-8">
             <H2>{labelName}</H2>
-            {Array.from(userMap.entries()).map(([userName, assignments]) => (
-              <div key={userName}>
-                <H3>{userName}</H3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Project Name</TableHead>
-                      <TableHead>Total Assigned</TableHead>
-                      <TableHead>Completed</TableHead>
-                      <TableHead>Remaining</TableHead>
-                      <TableHead>Link</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {assignments.map((assignment) => (
-                      <TableRow
-                        key={`${assignment.userId}-${assignment.projectLabelId}-${assignment.projectId}`}
-                      >
-                        <TableCell>{assignment.projectName}</TableCell>
+            {Array.from(userMap.entries()).map(([userName, assignments]) => {
+              const totalAssigned = assignments.reduce(
+                (acc, a) => acc + Number(a.count || 0),
+                0
+              );
+              const totalCompleted = assignments.reduce(
+                (acc, a) => acc + Number(a.countOfTaskLabelsNotNull || 0),
+                0
+              );
+              const totalRemaining = totalAssigned - totalCompleted;
+
+              return (
+                <div key={userName}>
+                  <H3>{userName}</H3>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Project Name</TableHead>
+                        <TableHead>Total Assigned</TableHead>
+                        <TableHead>Completed</TableHead>
+                        <TableHead>Remaining</TableHead>
+                        <TableHead>Link</TableHead>
+                        <TableHead>Done</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {assignments.map((assignment) => (
+                        <TableRow
+                          key={`${assignment.userId}-${assignment.projectLabelId}-${assignment.projectId}`}
+                        >
+                          <TableCell>{assignment.projectName}</TableCell>
+                          <TableCell>
+                            {Number(assignment.count || 0).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            {Number(
+                              assignment.countOfTaskLabelsNotNull || 0
+                            ).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            {(
+                              Number(assignment.count || 0) -
+                              Number(assignment.countOfTaskLabelsNotNull || 0)
+                            ).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <Link
+                              href={`/projects/${assignment.projectId}/label?label=${assignment.projectLabelId}&labelvalue=Unlabeled&assignedUser=${assignment.userId}`}
+                              target="_blank"
+                            >
+                              View Project
+                            </Link>
+                          </TableCell>
+                          <TableCell>
+                            {Number(assignment.count || 0) -
+                              Number(
+                                assignment.countOfTaskLabelsNotNull || 0
+                              ) ===
+                            0 ? (
+                              <CircleCheck
+                                className="text-green-600"
+                                size={16}
+                              />
+                            ) : null}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell className="font-medium">Totals</TableCell>
+                        <TableCell>{totalAssigned.toLocaleString()}</TableCell>
+                        <TableCell>{totalCompleted.toLocaleString()}</TableCell>
+                        <TableCell>{totalRemaining.toLocaleString()}</TableCell>
+                        <TableCell />
                         <TableCell>
-                          {Number(assignment.count || 0).toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          {Number(
-                            assignment.countOfTaskLabelsNotNull || 0
-                          ).toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          {(
-                            Number(assignment.count || 0) -
-                            Number(assignment.countOfTaskLabelsNotNull || 0)
-                          ).toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          <Link
-                            href={`/projects/${assignment.projectId}/label?label=${assignment.projectLabelId}&labelvalue=Unlabeled&assignedUser=${assignment.userId}`}
-                            target="_blank"
-                          >
-                            View Project
-                          </Link>
+                          {totalRemaining === 0 ? (
+                            <CircleCheck className="text-green-600" size={16} />
+                          ) : null}
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ))}
+                    </TableFooter>
+                  </Table>
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
