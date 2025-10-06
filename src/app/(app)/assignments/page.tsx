@@ -198,7 +198,7 @@ export default async function Page({
     labelName?: string;
     leftInferenceValue?: string;
     rightInferenceValue?: string;
-    selectedProject?: string[];
+    selectedProject?: string | string[];
     limit?: string;
     operation?: "add" | "fetch";
   }>;
@@ -224,7 +224,9 @@ export default async function Page({
   } = await searchParams;
 
   const projectIds = selectedProject
-    ? selectedProject
+    ? selectedProject instanceof Array
+      ? selectedProject
+      : [selectedProject]
     : await db.query.projects
         .findMany()
         .then((projects) => projects.map((p) => p.id));
