@@ -21,7 +21,7 @@ import {
   tasks,
 } from "@/db/schema";
 import { validateRequest } from "@/lib/auth/auth";
-import { and, eq, gte, ilike, inArray, isNull, lte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 
 async function addAssignments(
   userId: string,
