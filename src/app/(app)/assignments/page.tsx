@@ -208,10 +208,6 @@ export default async function Page({
     return <div>Please log in to view assignments.</div>;
   }
 
-  if (session.user.role !== "ADMIN") {
-    return <div>Access denied. Admins only.</div>;
-  }
-
   const {
     userId,
     modelId,
