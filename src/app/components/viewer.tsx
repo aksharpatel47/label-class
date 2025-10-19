@@ -39,15 +39,20 @@ export function DatasetViewer({
   }
 
   return (
-    <LabelTask
-      task={tasks[index]}
-      nextTask={index + 1 < tasks.length ? tasks[index + 1] : undefined}
-      projectLabels={
-        projectsWithLabels.find((p) => p.id === tasks[index].projectId)
-          ?.projectLabels || []
-      }
-      selectedModelId={selectedModelId}
-      disableKeyboardShortcuts={true}
-    />
+    <div>
+      <div>
+        Total: {tasks.length}. Current: {index + 1}
+      </div>
+      <LabelTask
+        task={tasks[index]}
+        nextTask={index + 1 < tasks.length ? tasks[index + 1] : undefined}
+        projectLabels={
+          projectsWithLabels.find((p) => p.id === tasks[index].projectId)
+            ?.projectLabels || []
+        }
+        selectedModelId={selectedModelId}
+        disableKeyboardShortcuts={true}
+      />
+    </div>
   );
 }

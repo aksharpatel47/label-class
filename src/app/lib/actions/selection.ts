@@ -1,6 +1,7 @@
 "use server";
 
 import { ImageInferenceTypes } from "@/app/lib/models/image";
+import { splitDataset } from "@/app/lib/utils/dataset";
 import { db, sql } from "@/db";
 import {
   datasetEnum,
@@ -34,18 +35,6 @@ interface IState {
     inferenceModelId: number;
   };
   error?: string;
-}
-
-/**
- * @param array
- * @returns
- */
-function shuffle<T>(array: T[]): T[] {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
 }
 
 async function fetchTasksForTruePositiveImages(
@@ -147,9 +136,6 @@ export async function selectionAction(
   }
 
   const { numImages, labelId, inferenceModelId } = result.data;
-  console.log(
-    `numImages: ${numImages}, labelId: ${labelId}, inferenceModelId: ${inferenceModelId}`
-  );
 
   let tasks: Task[] = [];
 
@@ -194,38 +180,6 @@ export async function selectionAction(
       inferenceModelId,
     },
   };
-}
-
-/**
- * splitDataset function splits the dataset into train, validation, and test sets
- * It shuffles the task IDs and divides them into 70% training, 15% validation, and 15% test sets.
- * If the length of tasks is 1, it returns the single task in the train set and empty arrays for validation and test.
- * If the length of tasks is 2, it returns one task in the train set and one in the validation set, leaving the test set empty.
- * If the length of tasks is 3 or more, it splits them into the specified proportions.
- * In any case, it should ensure the priority of the train set, followed by validation, and then test sets.
- * @param taskIds
- */
-function splitDataset(taskIds: string[]) {
-  taskIds = shuffle(taskIds);
-  const datasetLength = taskIds.length;
-
-  let result = {
-    train: [] as string[],
-    valid: [] as string[],
-    test: [] as string[],
-  };
-
-  const trainCount = Math.max(1, Math.floor(datasetLength * 0.7));
-
-  result.train = taskIds.slice(0, trainCount);
-
-  if (datasetLength > trainCount) {
-    const validCount = Math.ceil((datasetLength - trainCount) * 0.5);
-    result.valid = taskIds.slice(trainCount, trainCount + validCount);
-    result.test = taskIds.slice(trainCount + validCount);
-  }
-
-  return result;
 }
 
 interface IAddImagesState {

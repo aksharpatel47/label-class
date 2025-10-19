@@ -7,6 +7,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ProjectLabel, Task } from "@/db/schema";
 import { ValidateRequestResult } from "@/lib/auth/auth";
 import { Flag, Map } from "lucide-react";
+import Image from "next/image";
 import { useContext, useEffect } from "react";
 import { toast } from "sonner";
 import { create } from "zustand";
@@ -341,15 +342,21 @@ export function LabelTask({
           toast.error(`Failed to load inference data: ${error.message}`);
         });
     }
-  }, [task.id, selectedModelId]);
-
-  function handleKeyDown(e: KeyboardEvent) {
-    if (projectLabelKeys.hasOwnProperty(Number(e.key))) {
-      cycleLabelValue(task.id, projectLabels[Number(e.key) - 1].id, session!);
-    }
-  }
+  }, [
+    task.id,
+    selectedModelId,
+    setInferenceResult,
+    setInitialLabels,
+    setLoadingInitialLabels,
+  ]);
 
   useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (projectLabelKeys.hasOwnProperty(Number(e.key))) {
+        cycleLabelValue(task.id, projectLabels[Number(e.key) - 1].id, session!);
+      }
+    }
+
     if (disableKeyboardShortcuts) {
       return;
     }
@@ -358,17 +365,27 @@ export function LabelTask({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [task.id]);
+  }, [
+    task.id,
+    disableKeyboardShortcuts,
+    cycleLabelValue,
+    projectLabels,
+    projectLabelKeys,
+    session,
+  ]); // Reattach listener if task ID or disable flag changes
 
   const coordinate = extractLatLng(task.imageUrl);
 
   return (
     <div className={className + " mt-2"}>
       <div className="flex">
-        <img
+        <Image
           src={task.imageUrl}
           alt={task.id}
-          className="flex-1 w-[800px] h-[800px] object-contain"
+          height={800}
+          width={800}
+          className="flex-1 object-contain"
+          unoptimized
         />
 
         <div className="flex flex-col flex-1 pl-8 gap-4">
@@ -455,10 +472,13 @@ export function LabelTask({
           {nextTask && (
             <>
               <div>Next Image...</div>
-              <img
+              <Image
                 src={nextTask.imageUrl}
                 alt={nextTask.id}
-                className="h-[100px] w-[100px]"
+                height={100}
+                width={100}
+                className="object-contain"
+                unoptimized
               />
             </>
           )}

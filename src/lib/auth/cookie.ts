@@ -29,7 +29,7 @@ export const createSessionCookie = (session: UserSession): Cookie => {
     ...defaultSessionCookieAttributes,
     httpOnly: true,
     expires: new Date(expires),
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
   });
 };
 

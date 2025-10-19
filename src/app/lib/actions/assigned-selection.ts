@@ -10,7 +10,7 @@ import {
   taskLabelValue,
 } from "@/db/schema";
 import z from "zod";
-import { splitDataset } from "./selection";
+import { splitDataset } from "@/app/lib/utils/dataset";
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
 import { and, eq, inArray } from "drizzle-orm";
@@ -35,7 +35,7 @@ async function fetchAssignedTasksIds(
     inner join task_labels tl on t.id = tl.task_id
     where t.project_id = ${projectId}
         and ta.label_id = ${labelId}
-        and ta.assigned_user_id = ${assignedUserId}
+        and ta.user_id = ${assignedUserId}
         and tl.label_value = ${labelValue}
         and tl.label_id = ${labelId}
     `;

@@ -15,9 +15,8 @@
     {
       "name": "Launch via NPM",
       "request": "launch",
-      "runtimeArgs": ["run-script", "dev"],
-      "runtimeExecutable": "npm",
-      "skipFiles": ["<node_internals>/**"],
+      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "bun",
       "type": "node",
       "env": {
         "DATABASE_URL": "postgres://postgres:postgres@localhost:55432/postgres"
@@ -26,8 +25,8 @@
     {
       "name": "Migrate",
       "request": "launch",
-      "runtimeArgs": ["run-script", "migrate:apply"],
-      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "migrate:apply"],
+      "runtimeExecutable": "bun",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
       "env": {

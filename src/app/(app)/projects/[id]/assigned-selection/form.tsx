@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useActionState } from "react";
 import {
   Select,
   SelectContent,
@@ -10,20 +10,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { AuthUser, ProjectLabel, taskLabelEnumValues } from "@/db/schema";
+import {
+  AuthUser,
+  ProjectLabel,
+  taskLabelEnumValues,
+  TaskLabelValue,
+} from "@/db/schema";
+import { assignedSelectionAction } from "@/app/lib/actions/assigned-selection";
 
-export interface IAssignedSelectionInitialValues {
-  labelId?: string;
-  userId?: string;
-  labelValue?: string;
-  dataset?: string;
+export interface IAssignedSelectionFormValues {
+  labelId: string;
+  userId: string;
+  labelValue: TaskLabelValue;
+  dataset: string;
 }
 
 interface IAssignedSelectionFormProps {
   projectId: string;
   projectLabels: ProjectLabel[];
   users: AuthUser[];
-  initialValues?: IAssignedSelectionInitialValues;
+  initialValues?: IAssignedSelectionFormValues;
 }
 
 export function AssignedSelectionForm({
@@ -33,27 +39,25 @@ export function AssignedSelectionForm({
   initialValues,
 }: IAssignedSelectionFormProps) {
   const router = useRouter();
-  const [currentValues, setCurrentValues] = useState({
-    labelId: initialValues?.labelId ?? "",
-    userId: initialValues?.userId ?? "",
-    labelValue: initialValues?.labelValue ?? "",
-    dataset: initialValues?.dataset ?? "split",
-  });
+  const [state, formAction, isPending] = useActionState(
+    assignedSelectionAction,
+    undefined
+  );
 
-  const onSelectChange = (newValues: { [key: string]: string | undefined }) => {
-    setCurrentValues((prev) => ({
-      ...prev,
-      ...newValues,
-    }));
+  const currentValues = {
+    ...initialValues,
   };
 
-  const handleApply = () => {
+  const onSelectChange = (newValues: { [key: string]: string | undefined }) => {
+    const updatedValues = {
+      ...currentValues,
+      ...newValues,
+    };
+
     const params = new URLSearchParams();
-    if (currentValues.labelId) params.set("labelId", currentValues.labelId);
-    if (currentValues.userId) params.set("userId", currentValues.userId);
-    if (currentValues.labelValue)
-      params.set("labelValue", currentValues.labelValue);
-    if (currentValues.dataset) params.set("dataset", currentValues.dataset);
+    Object.entries(updatedValues).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+    });
 
     router.push(
       `/projects/${projectId}/assigned-selection?${params.toString()}`
@@ -61,8 +65,15 @@ export function AssignedSelectionForm({
   };
 
   return (
-    <div>
-      <form className="flex gap-2 w-[1000px]">
+    <div className="flex flex-col gap-2">
+      <form action={formAction} className="flex gap-2 w-[1000px]">
+        <input type="hidden" name="projectId" value={projectId} />
+        <input
+          type="hidden"
+          name="assignedUserId"
+          value={currentValues.userId}
+        />
+
         <Select
           name="labelId"
           value={currentValues.labelId}
@@ -130,11 +141,13 @@ export function AssignedSelectionForm({
           </SelectContent>
         </Select>
 
-        <Button type="button" onClick={handleApply}>
-          Apply
+        <Button type="submit" disabled={isPending}>
+          {isPending ? "Selecting..." : "Select"}
         </Button>
-        <Button type="button">Select</Button>
       </form>
+      {state?.error && (
+        <div className="text-red-500 text-sm">{state.error}</div>
+      )}
     </div>
   );
 }

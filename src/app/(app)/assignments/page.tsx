@@ -23,6 +23,17 @@ import {
 import { validateRequest } from "@/lib/auth/auth";
 import { and, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 
+/**
+ *
+ * @param userId
+ * @param modelId
+ * @param labelName
+ * @param leftInferenceValue
+ * @param rightInferenceValue
+ * @param limit
+ * @param projectIds
+ * @returns
+ */
 async function addAssignments(
   userId: string,
   modelId: number,
@@ -208,277 +219,279 @@ export default async function Page({
     return <div>Please log in to view assignments.</div>;
   }
 
+  const {
+    userId,
+    modelId,
+    labelName,
+    leftInferenceValue,
+    rightInferenceValue,
+    limit,
+    operation,
+    selectedProject,
+  } = await searchParams;
+
+  const projectIds = selectedProject
+    ? selectedProject instanceof Array
+      ? selectedProject
+      : [selectedProject]
+    : await db.query.projects
+        .findMany()
+        .then((projects) => projects.map((p) => p.id));
+
+  if (
+    operation === "add" &&
+    userId &&
+    modelId &&
+    labelName &&
+    leftInferenceValue &&
+    rightInferenceValue &&
+    limit
+  ) {
+    const user = await db.query.authUser.findFirst({
+      where: eq(authUser.id, userId),
+    });
+
+    const modelIdNum = parseInt(modelId, 10);
+    const leftInferenceValueNum = parseInt(leftInferenceValue, 10);
+    const rightInferenceValueNum = parseInt(rightInferenceValue, 10);
+    const limitNum = parseInt(limit, 10);
+
+    const assignments = await addAssignments(
+      userId,
+      modelIdNum,
+      labelName,
+      leftInferenceValueNum,
+      rightInferenceValueNum,
+      limitNum,
+      projectIds
+    );
+
+    return (
+      <div className="p-4">
+        <H1>Assignments Added</H1>
+        <div>
+          Added {assignments.length} assignments to user {user?.name || "N/A"}.
+        </div>
+      </div>
+    );
+  } else if (
+    operation === "fetch" &&
+    modelId &&
+    labelName &&
+    leftInferenceValue &&
+    rightInferenceValue
+  ) {
+    const modelIdNum = parseInt(modelId, 10);
+    const leftInferenceValueNum = parseInt(leftInferenceValue, 10);
+    const rightInferenceValueNum = parseInt(rightInferenceValue, 10);
+
+    const result = await possibleTotalAssignments(
+      modelIdNum,
+      labelName,
+      leftInferenceValueNum,
+      rightInferenceValueNum,
+      projectIds
+    );
+
+    const totalRemaining = result.reduce(
+      (acc, curr) => acc + Number(curr.count || 0),
+      0
+    );
+
+    return (
+      <div className="p-4">
+        <H1>Possible Total Assignments</H1>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Project Name</TableHead>
+              <TableHead>Label Name</TableHead>
+              <TableHead>Probability Greater Than</TableHead>
+              <TableHead>Probability Less Than</TableHead>
+              <TableHead>Remaining</TableHead>
+              <TableHead>Link</TableHead>
+              <TableHead>Done</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {result.map((r) => (
+              <TableRow key={r.projectId}>
+                <TableCell>{r.projectName}</TableCell>
+                <TableCell>{labelName}</TableCell>
+                <TableCell>{leftInferenceValueNum}</TableCell>
+                <TableCell>{rightInferenceValueNum}</TableCell>
+                <TableCell>{Number(r.count || 0).toLocaleString()}</TableCell>
+                <TableCell>
+                  <Link
+                    href={`/projects/${r.projectId}/label?label=${r.labelId}&labelvalue=Unlabeled&inferencevalue=${leftInferenceValue}-${rightInferenceValue}&trainedmodel=${modelId}`}
+                    target="_blank"
+                  >
+                    View Project
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  {Number(r.count || 0) === 0 ? (
+                    <CircleCheck className="text-green-600" size={16} />
+                  ) : null}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell className="font-medium">Totals</TableCell>
+              <TableCell />
+              <TableCell />
+              <TableCell />
+              <TableCell>{totalRemaining.toLocaleString()}</TableCell>
+              <TableCell />
+              <TableCell>
+                {totalRemaining === 0 ? (
+                  <CircleCheck className="text-green-600" size={16} />
+                ) : null}
+              </TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </div>
+    );
+  }
+
+  const currentAssignments = await fetchCurrentAssignments();
+
+  if (currentAssignments.length > 0) {
+    const compiledData: Map<
+      string,
+      Map<string, Awaited<ReturnType<typeof fetchCurrentAssignments>>>
+    > = new Map();
+
+    currentAssignments.forEach((assignment) => {
+      const labelName = assignment.projectLabelName;
+      if (!compiledData.has(labelName)) {
+        compiledData.set(labelName, new Map());
+      }
+      const projectLabelMap = compiledData.get(labelName)!;
+      const userName = assignment.userName;
+      if (!projectLabelMap.has(userName)) {
+        projectLabelMap.set(userName, [] as any[]);
+      }
+      projectLabelMap.get(userName)!.push(assignment);
+    });
+
+    return (
+      <div className="p-4">
+        <H1>Current Assignments</H1>
+        {Array.from(compiledData.entries()).map(([labelName, userMap]) => (
+          <div key={labelName} className="mt-8">
+            <H2>{labelName}</H2>
+            {Array.from(userMap.entries()).map(([userName, assignments]) => {
+              const totalAssigned = assignments.reduce(
+                (acc, a) => acc + Number(a.count || 0),
+                0
+              );
+              const totalCompleted = assignments.reduce(
+                (acc, a) => acc + Number(a.countOfTaskLabelsNotNull || 0),
+                0
+              );
+              const totalRemaining = totalAssigned - totalCompleted;
+
+              return (
+                <div key={userName}>
+                  <H3>{userName}</H3>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Project Name</TableHead>
+                        <TableHead>Total Assigned</TableHead>
+                        <TableHead>Completed</TableHead>
+                        <TableHead>Remaining</TableHead>
+                        <TableHead>Link To Label</TableHead>
+                        <TableHead>Link To Review</TableHead>
+                        <TableHead>Done</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {assignments.map((assignment) => (
+                        <TableRow
+                          key={`${assignment.userId}-${assignment.projectLabelId}-${assignment.projectId}`}
+                        >
+                          <TableCell>{assignment.projectName}</TableCell>
+                          <TableCell>
+                            {Number(assignment.count || 0).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            {Number(
+                              assignment.countOfTaskLabelsNotNull || 0
+                            ).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            {(
+                              Number(assignment.count || 0) -
+                              Number(assignment.countOfTaskLabelsNotNull || 0)
+                            ).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <Link
+                              href={`/projects/${assignment.projectId}/label?label=${assignment.projectLabelId}&labelvalue=Unlabeled&assignedUser=${assignment.userId}`}
+                              target="_blank"
+                            >
+                              View Assignments
+                            </Link>
+                          </TableCell>
+                          <TableCell>
+                            <Link
+                              href={`/projects/${assignment.projectId}/assigned-selection?labelId=${assignment.projectLabelId}&userId=${assignment.userId}`}
+                              target="_blank"
+                            >
+                              Review Assignments
+                            </Link>
+                          </TableCell>
+                          <TableCell>
+                            {Number(assignment.count || 0) -
+                              Number(
+                                assignment.countOfTaskLabelsNotNull || 0
+                              ) ===
+                            0 ? (
+                              <CircleCheck
+                                className="text-green-600"
+                                size={16}
+                              />
+                            ) : null}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell className="font-medium">Totals</TableCell>
+                        <TableCell>{totalAssigned.toLocaleString()}</TableCell>
+                        <TableCell>{totalCompleted.toLocaleString()}</TableCell>
+                        <TableCell>{totalRemaining.toLocaleString()}</TableCell>
+                        <TableCell />
+                        <TableCell>
+                          {totalRemaining === 0 ? (
+                            <CircleCheck className="text-green-600" size={16} />
+                          ) : null}
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div>
+    <div className="p-4">
       <H1>Assignments</H1>
-      <div>No assignments found.</div>
+      <div>
+        Please provide the necessary query parameters to add or fetch
+        assignments.
+      </div>
     </div>
   );
-
-  // const {
-  //   userId,
-  //   modelId,
-  //   labelName,
-  //   leftInferenceValue,
-  //   rightInferenceValue,
-  //   limit,
-  //   operation,
-  //   selectedProject,
-  // } = await searchParams;
-
-  // const projectIds = selectedProject
-  //   ? selectedProject instanceof Array
-  //     ? selectedProject
-  //     : [selectedProject]
-  //   : await db.query.projects
-  //       .findMany()
-  //       .then((projects) => projects.map((p) => p.id));
-
-  // if (
-  //   operation === "add" &&
-  //   userId &&
-  //   modelId &&
-  //   labelName &&
-  //   leftInferenceValue &&
-  //   rightInferenceValue &&
-  //   limit
-  // ) {
-  //   const user = await db.query.authUser.findFirst({
-  //     where: eq(authUser.id, userId),
-  //   });
-
-  //   const modelIdNum = parseInt(modelId, 10);
-  //   const leftInferenceValueNum = parseInt(leftInferenceValue, 10);
-  //   const rightInferenceValueNum = parseInt(rightInferenceValue, 10);
-  //   const limitNum = parseInt(limit, 10);
-
-  //   const assignments = await addAssignments(
-  //     userId,
-  //     modelIdNum,
-  //     labelName,
-  //     leftInferenceValueNum,
-  //     rightInferenceValueNum,
-  //     limitNum,
-  //     projectIds
-  //   );
-
-  //   return (
-  //     <div className="p-4">
-  //       <H1>Assignments Added</H1>
-  //       <div>
-  //         Added {assignments.length} assignments to user {user?.name || "N/A"}.
-  //       </div>
-  //     </div>
-  //   );
-  // } else if (
-  //   operation === "fetch" &&
-  //   modelId &&
-  //   labelName &&
-  //   leftInferenceValue &&
-  //   rightInferenceValue
-  // ) {
-  //   const modelIdNum = parseInt(modelId, 10);
-  //   const leftInferenceValueNum = parseInt(leftInferenceValue, 10);
-  //   const rightInferenceValueNum = parseInt(rightInferenceValue, 10);
-
-  //   const result = await possibleTotalAssignments(
-  //     modelIdNum,
-  //     labelName,
-  //     leftInferenceValueNum,
-  //     rightInferenceValueNum,
-  //     projectIds
-  //   );
-
-  //   const totalRemaining = result.reduce(
-  //     (acc, curr) => acc + Number(curr.count || 0),
-  //     0
-  //   );
-
-  //   return (
-  //     <div className="p-4">
-  //       <H1>Possible Total Assignments</H1>
-  //       <Table>
-  //         <TableHeader>
-  //           <TableRow>
-  //             <TableHead>Project Name</TableHead>
-  //             <TableHead>Label Name</TableHead>
-  //             <TableHead>Probability Greater Than</TableHead>
-  //             <TableHead>Probability Less Than</TableHead>
-  //             <TableHead>Remaining</TableHead>
-  //             <TableHead>Link</TableHead>
-  //             <TableHead>Done</TableHead>
-  //           </TableRow>
-  //         </TableHeader>
-  //         <TableBody>
-  //           {result.map((r) => (
-  //             <TableRow key={r.projectId}>
-  //               <TableCell>{r.projectName}</TableCell>
-  //               <TableCell>{labelName}</TableCell>
-  //               <TableCell>{leftInferenceValueNum}</TableCell>
-  //               <TableCell>{rightInferenceValueNum}</TableCell>
-  //               <TableCell>{Number(r.count || 0).toLocaleString()}</TableCell>
-  //               <TableCell>
-  //                 <Link
-  //                   href={`/projects/${r.projectId}/label?label=${r.labelId}&labelvalue=Unlabeled&inferencevalue=${leftInferenceValue}-${rightInferenceValue}&trainedmodel=${modelId}`}
-  //                   target="_blank"
-  //                 >
-  //                   View Project
-  //                 </Link>
-  //               </TableCell>
-  //               <TableCell>
-  //                 {Number(r.count || 0) === 0 ? (
-  //                   <CircleCheck className="text-green-600" size={16} />
-  //                 ) : null}
-  //               </TableCell>
-  //             </TableRow>
-  //           ))}
-  //         </TableBody>
-  //         <TableFooter>
-  //           <TableRow>
-  //             <TableCell className="font-medium">Totals</TableCell>
-  //             <TableCell />
-  //             <TableCell />
-  //             <TableCell />
-  //             <TableCell>{totalRemaining.toLocaleString()}</TableCell>
-  //             <TableCell />
-  //             <TableCell>
-  //               {totalRemaining === 0 ? (
-  //                 <CircleCheck className="text-green-600" size={16} />
-  //               ) : null}
-  //             </TableCell>
-  //           </TableRow>
-  //         </TableFooter>
-  //       </Table>
-  //     </div>
-  //   );
-  // }
-
-  // const currentAssignments = await fetchCurrentAssignments();
-
-  // if (currentAssignments.length > 0) {
-  //   const compiledData: Map<
-  //     string,
-  //     Map<string, Awaited<ReturnType<typeof fetchCurrentAssignments>>>
-  //   > = new Map();
-
-  //   currentAssignments.forEach((assignment) => {
-  //     const labelName = assignment.projectLabelName;
-  //     if (!compiledData.has(labelName)) {
-  //       compiledData.set(labelName, new Map());
-  //     }
-  //     const projectLabelMap = compiledData.get(labelName)!;
-  //     const userName = assignment.userName;
-  //     if (!projectLabelMap.has(userName)) {
-  //       projectLabelMap.set(userName, [] as any[]);
-  //     }
-  //     projectLabelMap.get(userName)!.push(assignment);
-  //   });
-
-  //   return (
-  //     <div className="p-4">
-  //       <H1>Current Assignments</H1>
-  //       {Array.from(compiledData.entries()).map(([labelName, userMap]) => (
-  //         <div key={labelName} className="mt-8">
-  //           <H2>{labelName}</H2>
-  //           {Array.from(userMap.entries()).map(([userName, assignments]) => {
-  //             const totalAssigned = assignments.reduce(
-  //               (acc, a) => acc + Number(a.count || 0),
-  //               0
-  //             );
-  //             const totalCompleted = assignments.reduce(
-  //               (acc, a) => acc + Number(a.countOfTaskLabelsNotNull || 0),
-  //               0
-  //             );
-  //             const totalRemaining = totalAssigned - totalCompleted;
-
-  //             return (
-  //               <div key={userName}>
-  //                 <H3>{userName}</H3>
-  //                 <Table>
-  //                   <TableHeader>
-  //                     <TableRow>
-  //                       <TableHead>Project Name</TableHead>
-  //                       <TableHead>Total Assigned</TableHead>
-  //                       <TableHead>Completed</TableHead>
-  //                       <TableHead>Remaining</TableHead>
-  //                       <TableHead>Link</TableHead>
-  //                       <TableHead>Done</TableHead>
-  //                     </TableRow>
-  //                   </TableHeader>
-  //                   <TableBody>
-  //                     {assignments.map((assignment) => (
-  //                       <TableRow
-  //                         key={`${assignment.userId}-${assignment.projectLabelId}-${assignment.projectId}`}
-  //                       >
-  //                         <TableCell>{assignment.projectName}</TableCell>
-  //                         <TableCell>
-  //                           {Number(assignment.count || 0).toLocaleString()}
-  //                         </TableCell>
-  //                         <TableCell>
-  //                           {Number(
-  //                             assignment.countOfTaskLabelsNotNull || 0
-  //                           ).toLocaleString()}
-  //                         </TableCell>
-  //                         <TableCell>
-  //                           {(
-  //                             Number(assignment.count || 0) -
-  //                             Number(assignment.countOfTaskLabelsNotNull || 0)
-  //                           ).toLocaleString()}
-  //                         </TableCell>
-  //                         <TableCell>
-  //                           <Link
-  //                             href={`/projects/${assignment.projectId}/label?label=${assignment.projectLabelId}&labelvalue=Unlabeled&assignedUser=${assignment.userId}`}
-  //                             target="_blank"
-  //                           >
-  //                             View Project
-  //                           </Link>
-  //                         </TableCell>
-  //                         <TableCell>
-  //                           {Number(assignment.count || 0) -
-  //                             Number(
-  //                               assignment.countOfTaskLabelsNotNull || 0
-  //                             ) ===
-  //                           0 ? (
-  //                             <CircleCheck
-  //                               className="text-green-600"
-  //                               size={16}
-  //                             />
-  //                           ) : null}
-  //                         </TableCell>
-  //                       </TableRow>
-  //                     ))}
-  //                   </TableBody>
-  //                   <TableFooter>
-  //                     <TableRow>
-  //                       <TableCell className="font-medium">Totals</TableCell>
-  //                       <TableCell>{totalAssigned.toLocaleString()}</TableCell>
-  //                       <TableCell>{totalCompleted.toLocaleString()}</TableCell>
-  //                       <TableCell>{totalRemaining.toLocaleString()}</TableCell>
-  //                       <TableCell />
-  //                       <TableCell>
-  //                         {totalRemaining === 0 ? (
-  //                           <CircleCheck className="text-green-600" size={16} />
-  //                         ) : null}
-  //                       </TableCell>
-  //                     </TableRow>
-  //                   </TableFooter>
-  //                 </Table>
-  //               </div>
-  //             );
-  //           })}
-  //         </div>
-  //       ))}
-  //     </div>
-  //   );
-  // }
-
-  // return (
-  //   <div className="p-4">
-  //     <H1>Assignments</H1>
-  //     <div>
-  //       Please provide the necessary query parameters to add or fetch
-  //       assignments.
-  //     </div>
-  //   </div>
-  // );
 }

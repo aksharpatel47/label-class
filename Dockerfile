@@ -1,25 +1,27 @@
 # Build Next.js project
-FROM node:22-alpine AS build
+FROM oven/bun:1.3-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+COPY bun.lock ./
+RUN bun install
 COPY . .
-RUN npm run build
+RUN bun run build
 
 # Create production image
-FROM node:22-alpine AS production
+FROM oven/bun:1.3-alpine AS production
 WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=build /app/package*.json ./
+COPY --from=build /app/bun.lock ./
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public
 COPY --from=build /app/next.config.js ./
 COPY --from=build /app/src/db ./src/db
 COPY --from=build /app/drizzle.config.ts ./drizzle.config.ts
 
-RUN npm install
+RUN bun install --production
 
 EXPOSE 3000
 ENV PORT 3000
-CMD ["npm", "start"]
+CMD ["bun", "start"]

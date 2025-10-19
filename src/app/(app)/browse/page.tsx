@@ -21,7 +21,7 @@ import {
 } from "@/db/schema";
 import { fetchProjectsWithIds } from "@/lib/data/projects";
 import { and, eq, getTableColumns, gte, inArray, lte } from "drizzle-orm";
-import { DatasetViewer } from "./components/viewer";
+import { DatasetViewer } from "../../components/viewer";
 
 export default async function Page(props: {
   searchParams: Promise<{

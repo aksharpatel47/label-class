@@ -27,6 +27,23 @@ export async function addLabelToTask(
     .onConflictDoNothing();
 }
 
+export async function fetchProjectWithLabels(projectId: string) {
+  const project = await db.query.projects.findFirst({
+    where: eq(projects.id, projectId),
+    with: {
+      projectLabels: {
+        orderBy: (p, { asc }) => [asc(p.sequence)],
+      },
+    },
+  });
+
+  if (!project) {
+    throw new Error("Project not found");
+  }
+
+  return project;
+}
+
 export async function fetchProjectLabels(projectId: string) {
   return db.query.projectLabels.findMany({
     where: eq(projectLabels.projectId, projectId),
