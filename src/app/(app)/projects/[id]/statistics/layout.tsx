@@ -1,6 +1,4 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import { validateRequest } from "@/lib/auth/auth";
 
 export default async function StatisticsLayout(props: {
   children: React.ReactNode;
@@ -12,11 +10,7 @@ export default async function StatisticsLayout(props: {
 
   const { children } = props;
 
-  const session = await validateRequest();
-
-  if (!session) {
-    redirect("/login");
-  }
+  // Parent layout already validates authentication
 
   const { id } = params;
 

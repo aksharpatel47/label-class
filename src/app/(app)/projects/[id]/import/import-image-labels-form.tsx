@@ -15,16 +15,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { useSession } from "@/app/(app)/session-context";
 
 export function ImageImportForm(props: {
-  userId: string;
   projectId: string;
   projectLabels: ProjectLabel[];
 }) {
+  const session = useSession();
   const importDataWithUser = importData.bind(
     null,
     props.projectId,
-    props.userId
+    session.user.id
   );
   const [state, dispatch] = useActionState(importDataWithUser, undefined);
   return (

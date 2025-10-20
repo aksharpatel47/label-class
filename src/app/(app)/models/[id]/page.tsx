@@ -6,7 +6,6 @@ import {
   fetchProjectsWithLabelName,
 } from "@/lib/data/projects";
 import { InferenceTables } from "./InferenceTables";
-import { validateRequest } from "@/lib/auth/auth";
 
 export default async function Page(props: {
   params: Promise<{ id: string }>;
@@ -14,14 +13,6 @@ export default async function Page(props: {
 }) {
   const searchParams = await props.searchParams;
   const params = await props.params;
-  const session = await validateRequest();
-  if (!session) {
-    return (
-      <div className="text-red-500">
-        You must be logged in to view this page.
-      </div>
-    );
-  }
   const modelId = parseInt(params.id);
   const projects = await fetchProjects();
   const projectLabelNames = await fetchProjectLabelNames();
@@ -42,7 +33,6 @@ export default async function Page(props: {
         </div>
         {searchParams.labelName && (
           <InferenceTables
-            user={session.user}
             selectedProjects={
               searchParams.selectedProject ||
               projectsWithSelectedLabelName.map((p) => p.id)

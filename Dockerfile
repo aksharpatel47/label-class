@@ -23,5 +23,5 @@ COPY --from=build /app/drizzle.config.ts ./drizzle.config.ts
 RUN bun install --production
 
 EXPOSE 3000
-ENV PORT 3000
+ENV PORT=3000
 CMD ["bun", "start"]

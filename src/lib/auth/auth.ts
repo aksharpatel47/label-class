@@ -55,11 +55,13 @@ export async function validateRequest() {
   if (!sessionId) return null;
   const result = await validateSession(sessionId);
   if (!result) return null;
-  const { session, fresh } = result;
-  if (fresh) {
-    const newCookie = createSessionCookie(session);
-    setSessionCookie(newCookie, context);
-  }
+  const { session } = result;
+  // Skip cookie refresh during render - only read session
+  // Cookie refresh will happen in middleware or server actions if needed
+  // if (fresh) {
+  //   const newCookie = createSessionCookie(session);
+  //   await setSessionCookie(newCookie, context);
+  // }
   return session;
 }
 

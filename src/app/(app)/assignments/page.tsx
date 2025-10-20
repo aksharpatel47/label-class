@@ -20,7 +20,6 @@ import {
   taskLabels,
   tasks,
 } from "@/db/schema";
-import { validateRequest } from "@/lib/auth/auth";
 import { and, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 
 /**
@@ -214,11 +213,7 @@ export default async function Page({
     operation?: "add" | "fetch";
   }>;
 }) {
-  const session = await validateRequest();
-  if (!session) {
-    return <div>Please log in to view assignments.</div>;
-  }
-
+  // Parent layout already validates authentication
   const {
     userId,
     modelId,

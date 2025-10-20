@@ -1,13 +1,7 @@
 import Link from "next/link";
-import {
-  redirectIfAuthenticated,
-  redirectIfUnauthenticated,
-} from "@/app/lib/utils/session";
 
 export default async function Home() {
-  await redirectIfAuthenticated();
-  await redirectIfUnauthenticated();
-
+  // Middleware handles authentication redirects
   return (
     <div>
       <Link href="/login">Login</Link>

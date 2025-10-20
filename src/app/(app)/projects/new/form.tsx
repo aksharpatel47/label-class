@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { H2 } from "@/components/ui/typography";
+import { useSession } from "@/app/(app)/session-context";
 
-export function NewProjectForm({ userId }: { userId: string }) {
-  const createProjectByUserId = createProject.bind(null, userId);
+export function NewProjectForm() {
+  const session = useSession();
+  const createProjectByUserId = createProject.bind(null, session.user.id);
 
   return (
     <div className="flex justify-center">

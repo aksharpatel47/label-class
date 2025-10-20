@@ -1,13 +1,7 @@
 import { InferenceTable } from "@/app/(app)/models/[id]/InferenceTable";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import {
-  ButtonGroup,
-  ButtonGroupSeparator,
-} from "@/components/ui/button-group";
 import { db } from "@/db";
 import {
-  AuthUser,
   projectLabels,
   projects,
   projectTaskSelections,
@@ -16,21 +10,19 @@ import {
   tasks,
 } from "@/db/schema";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { CopyToClipboard } from "./copy-to-clipboard-button";
 import { fetchProjectsWithIds } from "@/lib/data/projects";
+import { AdminButtons } from "./admin-buttons";
 
 export interface IIInferenceTablesProps {
   trainedModelId: number;
   selectedProjects: string[];
   labelName: string;
-  user: AuthUser;
 }
 
 export async function InferenceTables({
   trainedModelId,
   selectedProjects,
   labelName,
-  user,
 }: IIInferenceTablesProps) {
   if (!selectedProjects || !labelName || !trainedModelId) {
     return <div>No projects selected.</div>;
@@ -216,54 +208,13 @@ export async function InferenceTables({
 
   return (
     <div className="flex flex-col gap-4">
-      {user.role === "ADMIN" && (
-        <ButtonGroup aria-label="Download button group" className="mb-2">
-          <Button asChild>
-            <a
-              href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?leftThreshold=100&rightThreshold=10000&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
-            >
-              Potential Positives (0.01 to 1.00)
-            </a>
-          </Button>
-          <Button asChild>
-            <a
-              href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?leftThreshold=100&rightThreshold=4999&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
-            >
-              Potential Negatives (0.01 to 0.50)
-            </a>
-          </Button>
-          <Button asChild>
-            <a
-              href={`/api/models/${trainedModelId}/labels/${labelName}/potential-positives?leftThreshold=5000&rightThreshold=10000&${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
-            >
-              Potential Positives (0.50 to 1.00)
-            </a>
-          </Button>
-          <Button asChild>
-            <a
-              href={`/api/models/${trainedModelId}/labels/${labelName}/inference-tables-excel?${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
-              download
-            >
-              Download Inference Tables Excel
-            </a>
-          </Button>
-          <Button asChild>
-            <a
-              href={`/api/models/${trainedModelId}/labels/${labelName}/dataset-candidates?${selectedProjects.map((id) => `selectedProject=${encodeURIComponent(id)}`).join("&")}`}
-              download
-            >
-              Dataset Candidates CSV
-            </a>
-          </Button>
-
-          <ButtonGroupSeparator />
-
-          <CopyToClipboard
-            inferenceTableData={inferenceTableData}
-            keysWithSequence={keysWithSequence}
-          />
-        </ButtonGroup>
-      )}
+      <AdminButtons
+        trainedModelId={trainedModelId}
+        selectedProjects={selectedProjects}
+        labelName={labelName}
+        inferenceTableData={inferenceTableData}
+        keysWithSequence={keysWithSequence}
+      />
       {keysWithSequence.map((key) => (
         <div key={key}>
           <InferenceTable
