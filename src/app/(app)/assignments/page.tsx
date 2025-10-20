@@ -21,6 +21,7 @@ import {
   tasks,
 } from "@/db/schema";
 import { and, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
+import { validateRequest } from "@/lib/auth/auth";
 
 /**
  *
@@ -354,13 +355,26 @@ export default async function Page({
 
   const currentAssignments = await fetchCurrentAssignments();
 
-  if (currentAssignments.length > 0) {
+  // Get session user for filtering
+  const session = await validateRequest();
+  const sessionUserId = session?.userId;
+  const ADMIN_USER_ID = "jwdwb06toekzjna";
+
+  // Filter assignments based on user role
+  const filteredAssignments = currentAssignments.filter((assignment) => {
+    if (sessionUserId === ADMIN_USER_ID) {
+      return true; // Admin sees all assignments
+    }
+    return assignment.projectLabelName === "Buffer"; // Non-admin only sees "Buffer" label
+  });
+
+  if (filteredAssignments.length > 0) {
     const compiledData: Map<
       string,
       Map<string, Awaited<ReturnType<typeof fetchCurrentAssignments>>>
     > = new Map();
 
-    currentAssignments.forEach((assignment) => {
+    filteredAssignments.forEach((assignment) => {
       const labelName = assignment.projectLabelName;
       if (!compiledData.has(labelName)) {
         compiledData.set(labelName, new Map());
