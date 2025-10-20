@@ -8,11 +8,10 @@ import {
   userSession,
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import * as context from "next/headers";
 import { cookies } from "next/headers";
-import { createSessionCookie, DEFAULT_SESSION_COOKIE_NAME } from "./cookie";
+import { DEFAULT_SESSION_COOKIE_NAME } from "./cookie";
 import { generateRandomString, generateScryptHash } from "./crypto";
-import { getSessionCookie, setSessionCookie, validateSession } from "./session";
+import { getSessionCookie, validateSession } from "./session";
 
 export async function createUser(options: {
   key: {
