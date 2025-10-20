@@ -19,6 +19,10 @@ export function DatasetViewer({
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
+    setIndex(0);
+  }, [tasks]);
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "ArrowLeft") {
         setIndex((prevIndex) => Math.max(0, prevIndex - 1));
