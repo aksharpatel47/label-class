@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -17,6 +17,7 @@ import {
   TaskLabelValue,
 } from "@/db/schema";
 import { assignedSelectionAction } from "@/app/lib/actions/assigned-selection";
+import { toast } from "sonner";
 
 export interface IAssignedSelectionFormValues {
   labelId: string;
@@ -47,6 +48,14 @@ export function AssignedSelectionForm({
   const currentValues = {
     ...initialValues,
   };
+
+  useEffect(() => {
+    if (state?.error) {
+      toast.error(state.error);
+    } else if (state?.success) {
+      toast.success(state.success);
+    }
+  }, [state]);
 
   const onSelectChange = (newValues: { [key: string]: string | undefined }) => {
     const updatedValues = {
@@ -145,9 +154,6 @@ export function AssignedSelectionForm({
           {isPending ? "Selecting..." : "Select"}
         </Button>
       </form>
-      {state?.error && (
-        <div className="text-red-500 text-sm">{state.error}</div>
-      )}
     </div>
   );
 }

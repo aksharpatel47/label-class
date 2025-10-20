@@ -12,7 +12,6 @@ import {
 import z from "zod";
 import { splitDataset } from "@/app/lib/utils/dataset";
 import { revalidatePath } from "next/cache";
-import { redirect, RedirectType } from "next/navigation";
 import { and, eq, inArray } from "drizzle-orm";
 
 const assignedSelectionSchema = z.object({
@@ -42,7 +41,7 @@ async function fetchAssignedTasksIds(
 }
 
 export async function assignedSelectionAction(
-  prevState: any | undefined,
+  _prevState: any | undefined,
   formData: FormData
 ) {
   const parsedObject = assignedSelectionSchema.safeParse(
@@ -97,5 +96,5 @@ export async function assignedSelectionAction(
     );
 
   revalidatePath(`/projects/${projectId}/assigned-selection`, "page");
-  redirect(`/projects/${projectId}/statistics/dataset`, RedirectType.push);
+  return { success: "Tasks successfully added to selection" };
 }
