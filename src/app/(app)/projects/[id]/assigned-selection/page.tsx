@@ -83,6 +83,7 @@ export default async function Page(props: {
         initialValues={initialSearchParams}
       />
       <DatasetViewer
+        key={`${initialSearchParams.labelId}-${initialSearchParams.userId}-${initialSearchParams.labelValue}-${initialSearchParams.dataset}`}
         tasks={assignedTasks}
         projectsWithLabels={[projectWithLabels]}
       />
