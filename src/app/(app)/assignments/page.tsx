@@ -359,10 +359,11 @@ export default async function Page({
   const session = await validateRequest();
   const sessionUserId = session?.userId;
   const ADMIN_USER_ID = "jwdwb06toekzjna";
+  const isAdmin = sessionUserId === ADMIN_USER_ID;
 
   // Filter assignments based on user role
   const filteredAssignments = currentAssignments.filter((assignment) => {
-    if (sessionUserId === ADMIN_USER_ID) {
+    if (isAdmin) {
       return true; // Admin sees all assignments
     }
     return assignment.projectLabelName === "Buffer"; // Non-admin only sees "Buffer" label
@@ -415,7 +416,7 @@ export default async function Page({
                         <TableHead>Completed</TableHead>
                         <TableHead>Remaining</TableHead>
                         <TableHead>Link To Label</TableHead>
-                        <TableHead>Link To Review</TableHead>
+                        {isAdmin && <TableHead>Link To Review</TableHead>}
                         <TableHead>Done</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -447,14 +448,16 @@ export default async function Page({
                               View Assignments
                             </Link>
                           </TableCell>
-                          <TableCell>
-                            <Link
-                              href={`/projects/${assignment.projectId}/assigned-selection?labelId=${assignment.projectLabelId}&userId=${assignment.userId}`}
-                              target="_blank"
-                            >
-                              Review Assignments
-                            </Link>
-                          </TableCell>
+                          {isAdmin && (
+                            <TableCell>
+                              <Link
+                                href={`/projects/${assignment.projectId}/assigned-selection?labelId=${assignment.projectLabelId}&userId=${assignment.userId}`}
+                                target="_blank"
+                              >
+                                Review Assignments
+                              </Link>
+                            </TableCell>
+                          )}
                           <TableCell>
                             {Number(assignment.count || 0) -
                               Number(
@@ -477,6 +480,7 @@ export default async function Page({
                         <TableCell>{totalCompleted.toLocaleString()}</TableCell>
                         <TableCell>{totalRemaining.toLocaleString()}</TableCell>
                         <TableCell />
+                        {isAdmin && <TableCell />}
                         <TableCell>
                           {totalRemaining === 0 ? (
                             <CircleCheck className="text-green-600" size={16} />
