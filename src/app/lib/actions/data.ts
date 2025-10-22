@@ -80,12 +80,6 @@ export async function importInference(
   prevState: string | undefined,
   formData: FormData
 ) {
-  const session = await validateRequest();
-
-  if (!session) {
-    return "Not logged in.";
-  }
-
   const file = formData.get("file") as File;
 
   if (!file) {
