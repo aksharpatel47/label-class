@@ -505,8 +505,9 @@ export interface LatLng {
  * @returns    The coordinates, or `null` if none found
  */
 export function extractLatLng(url: string): LatLng | null {
-  // (start or underscore), ±DDD(.ddd…)?  underscore, ±DDD(.ddd…)?
-  const regex = /(?:^|_)(-?\d{1,3}(?:\.\d+)?)[_](-?\d{1,3}(?:\.\d+)?)/;
+  // Match lat_lng pattern: ±DDD(.ddd…)?_±DDD(.ddd…)?
+  // Uses lookbehind to ensure we're at start of string or after underscore
+  const regex = /(?:^|(?<=_))(-?\d{1,3}(?:\.\d+)?)_(-?\d{1,3}(?:\.\d+)?)/;
   const match = url.match(regex);
   if (!match) return null;
 
