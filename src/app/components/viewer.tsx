@@ -40,8 +40,23 @@ export function DatasetViewer({
 
   return (
     <div>
-      <div>
-        Total: {tasks.length}. Current: {index + 1}
+      <div className="flex items-center gap-2">
+        <span>
+          Total: {tasks.length}. Current: {index + 1}
+        </span>
+        <input
+          type="number"
+          min="1"
+          max={tasks.length}
+          value={index + 1}
+          onChange={(e) => {
+            const newIndex = parseInt(e.target.value) - 1;
+            if (!isNaN(newIndex) && newIndex >= 0 && newIndex < tasks.length) {
+              setIndex(newIndex);
+            }
+          }}
+          className="w-20 px-2 py-1 border rounded"
+        />
       </div>
       <LabelTask
         task={tasks[index]}
