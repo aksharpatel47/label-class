@@ -9,7 +9,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   const labels = await fetchProjectLabels(params.id);
   const users = await fetchUsers();
   const trainedModels = await fetchTrainedModels(false);
-  const labelValues = ["Unlabeled", ...taskLabelValue.enumValues];
+  const labelValues = ["Any", "Unlabeled", ...taskLabelValue.enumValues];
 
   return (
     <div>

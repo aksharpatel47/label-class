@@ -39,7 +39,7 @@ export async function fetchTasksInProject(projectId: string, page: number) {
 }
 
 export function fetchNumberOfTasksInProject(
-  projectId: string
+  projectId: string,
 ): Promise<number> {
   return db
     .select({
@@ -74,7 +74,7 @@ interface IFetchTasksForLabeling {
  */
 function generateFiltersBasedOnQueryParams(
   oSQL: PgSelectBase<any, any, any, any, any>,
-  queryParams: IFetchTasksForLabeling
+  queryParams: IFetchTasksForLabeling,
 ): {
   sl: PgSelectBase<any, any, any, any, any>;
   filters: Array<SQL | undefined>;
@@ -105,8 +105,8 @@ function generateFiltersBasedOnQueryParams(
         and(
           eq(taskAssignments.taskId, tasks.id),
           eq(taskAssignments.userId, assignedUser),
-          eq(taskAssignments.labelId, labelId)
-        )
+          eq(taskAssignments.labelId, labelId),
+        ),
       )
       .$dynamic();
   }
@@ -115,13 +115,14 @@ function generateFiltersBasedOnQueryParams(
   if (labelId) {
     const joinCondition = and(
       eq(tasks.id, taskLabels.taskId),
-      eq(taskLabels.labelId, labelId)
+      eq(taskLabels.labelId, labelId),
     );
     if (labelValue === "Unlabeled") {
       // If labelId is present but labelValue is 'Unlabeled', we need to
       // left join taskLabels to find tasks without this labelId
       sl = sl.leftJoin(taskLabels, joinCondition).$dynamic();
     } else {
+      // For 'Any' and specific values, use inner join to get only labeled tasks
       sl = sl.innerJoin(taskLabels, joinCondition).$dynamic();
     }
   } else if (labeledBy || labeledOn) {
@@ -135,8 +136,8 @@ function generateFiltersBasedOnQueryParams(
         taskInferences,
         and(
           eq(tasks.name, taskInferences.imageName),
-          eq(taskInferences.modelId, Number(trainedModel))
-        )
+          eq(taskInferences.modelId, Number(trainedModel)),
+        ),
       )
       .$dynamic();
   }
@@ -157,8 +158,8 @@ function generateFiltersBasedOnQueryParams(
         23,
         59,
         59,
-        999
-      )
+        999,
+      ),
     );
     const gteDate = new Date(
       Date.UTC(
@@ -168,21 +169,24 @@ function generateFiltersBasedOnQueryParams(
         0,
         0,
         0,
-        0
-      )
+        0,
+      ),
     );
     filters.push(
       and(
         gte(taskLabels.createdAt, gteDate),
-        lte(taskLabels.createdAt, lteDate)
-      )
+        lte(taskLabels.createdAt, lteDate),
+      ),
     );
   }
 
-  // Filter by labelId and labelValue (including 'Unlabeled')
+  // Filter by labelId and labelValue (including 'Unlabeled' and 'Any')
   if (labelId && labelValue === "Unlabeled") {
     // Only tasks with no label for this labelId
     filters.push(isNull(taskLabels.labelId));
+  } else if (labelId && labelValue === "Any") {
+    // Tasks with any label value (Present, Absent, Difficult, or Skip)
+    // No additional filter needed - just the inner join ensures a label exists
   } else if (labelId && labelValue) {
     // Only tasks with this labelId and labelValue
     filters.push(eq(taskLabels.value, labelValue as any));
@@ -208,8 +212,8 @@ function generateFiltersBasedOnQueryParams(
         and(
           eq(taskInferences.modelId, trainedModelId),
           gte(taskInferences.inference, inferenceValueRange[0]),
-          lte(taskInferences.inference, inferenceValueRange[1])
-        )
+          lte(taskInferences.inference, inferenceValueRange[1]),
+        ),
       );
     }
   }
@@ -219,7 +223,7 @@ function generateFiltersBasedOnQueryParams(
     sl = sl
       .leftJoin(
         projectTaskSelections,
-        eq(tasks.id, projectTaskSelections.taskId)
+        eq(tasks.id, projectTaskSelections.taskId),
       )
       .$dynamic();
 
@@ -231,8 +235,8 @@ function generateFiltersBasedOnQueryParams(
       filters.push(
         and(
           eq(projectTaskSelections.dataset, dataset as any),
-          eq(projectTaskSelections.labelId, labelId)
-        )
+          eq(projectTaskSelections.labelId, labelId),
+        ),
       );
     }
   }
@@ -241,7 +245,7 @@ function generateFiltersBasedOnQueryParams(
 }
 
 export async function fetchTotalTasksForLabeling(
-  queryParams: IFetchTasksForLabeling
+  queryParams: IFetchTasksForLabeling,
 ) {
   let sl = db
     .select({ count: sql<number>`cast(count(*) as integer)` })
@@ -265,7 +269,7 @@ export async function fetchTotalTasksForLabeling(
 }
 
 export async function fetchTasksForLabeling(
-  queryParams: IFetchTasksForLabeling
+  queryParams: IFetchTasksForLabeling,
 ) {
   let sl = db
     .select({
@@ -279,7 +283,7 @@ export async function fetchTasksForLabeling(
 
   const { sl: newSl, filters } = generateFiltersBasedOnQueryParams(
     sl,
-    queryParams
+    queryParams,
   );
   sl = newSl as typeof sl;
 
@@ -302,7 +306,7 @@ export function addInferencesForTasks(tx: postgres.TransactionSql) {
 export function addLabelsForTasks(
   tx: PgTransaction<any, any, any>,
   projectId: string,
-  labeledBy: string
+  labeledBy: string,
 ) {
   //language=PostgreSQL
   return tx.execute(sql`
@@ -324,7 +328,7 @@ export function addLabelsForTasks(
 export function addDatasetForTasks(
   tx: PgTransaction<any, any, any>,
   projectId: string,
-  labelId: string
+  labelId: string,
 ) {
   //language=PostgreSQL
   return tx.execute(sql`
