@@ -16,8 +16,8 @@ export default async function RootLayout({
   }
 
   return (
-    <div className="flex flex-col ml-8 mr-8 mt-8">
-      <div className="flex gap-4 mb-8 items-center justify-between">
+    <div className="flex flex-col ml-2 mr-2 mt-2">
+      <div className="flex gap-4 mb-2 items-center justify-between">
         <div className="flex gap-4 items-center ">
           <NavLinks />
         </div>
