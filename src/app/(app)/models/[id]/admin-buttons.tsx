@@ -35,10 +35,6 @@ export function AdminButtons({
     .map((id) => `selectedProject=${encodeURIComponent(id)}`)
     .join("&");
 
-  const inferenceTablesHref = `/api/models/${trainedModelId}/labels/${labelName}/inference-tables-excel${
-    selectedProjectsQuery ? `?${selectedProjectsQuery}` : ""
-  }`;
-
   const datasetCandidatesHref = `/api/models/${trainedModelId}/labels/${labelName}/dataset-candidates${
     selectedProjectsQuery ? `?${selectedProjectsQuery}` : ""
   }`;
