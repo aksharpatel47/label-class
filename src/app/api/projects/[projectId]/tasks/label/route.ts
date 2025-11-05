@@ -26,6 +26,8 @@ export async function GET(
   const labeledBy = searchParams.get("user");
   const trainedModel = searchParams.get("trainedmodel");
   const inferenceValue = searchParams.get("inferencevalue");
+  const leftInferenceValue = searchParams.get("leftInferenceValue");
+  const rightInferenceValue = searchParams.get("rightInferenceValue");
   const dataset = searchParams.get("dataset");
   const assignedUser = searchParams.get("assignedUser");
 
@@ -39,6 +41,8 @@ export async function GET(
     labelValue,
     trainedModel,
     inferenceValue,
+    leftInferenceValue,
+    rightInferenceValue,
     dataset,
     assignedUser,
   };

@@ -22,16 +22,37 @@ export function Tool(props: IToolProps) {
   const projectLabelValue = searchParams.get("labelvalue") || "";
   const user = searchParams.get("user") || "";
   const trainedModel = searchParams.get("trainedmodel") || "";
-  const inferenceValue = searchParams.get("inferencevalue") || "";
   const dataset = searchParams.get("dataset") || "";
   const labeledon = searchParams.get("labeledon") || "";
   const assignedUser = searchParams.get("assignedUser") || "";
+  const leftInferenceValueParam =
+    searchParams.get("leftInferenceValue") || "";
+  const rightInferenceValueParam =
+    searchParams.get("rightInferenceValue") || "";
+  const legacyInferenceValue = searchParams.get("inferencevalue") || "";
+
+  let leftInferenceValue = leftInferenceValueParam;
+  let rightInferenceValue = rightInferenceValueParam;
+
+  if (
+    leftInferenceValue === "" &&
+    rightInferenceValue === "" &&
+    legacyInferenceValue
+  ) {
+    const [legacyLeft, legacyRight] = legacyInferenceValue.split("-");
+    if (legacyLeft && legacyRight) {
+      leftInferenceValue = legacyLeft;
+      rightInferenceValue = legacyRight;
+    }
+  }
+
   const currentValues = {
     label: projectLabel,
     labelvalue: projectLabelValue,
     user,
     trainedmodel: trainedModel,
-    inferencevalue: inferenceValue,
+    leftInferenceValue,
+    rightInferenceValue,
     dataset,
     labeledon,
     assignedUser,
@@ -201,22 +222,6 @@ export function Tool(props: IToolProps) {
         projectLabels={props.projectLabels}
         labelValues={props.labelValues}
         currentValues={currentValues}
-        inferenceValues={[
-          "0.00-9.99%",
-          "10.00-19.99%",
-          "20.00-29.99%",
-          "30.00-39.99%",
-          "40.00-49.99%",
-          "50.00-59.99%",
-          "60.00-69.99%",
-          "70.00-79.99%",
-          "80.00-89.99%",
-          "90.00-100.00%",
-          "0.00-49.99%",
-          "1.00-49.99%",
-          "1.00-100.00%",
-          "50.00-100.00%",
-        ]}
         onSelectChange={handleSelectChange}
         onApplyClick={handleApplyClick}
       />

@@ -52,13 +52,7 @@ export async function GET(
   const csvRowHeader = [
     "project_name,potential_unlabeled_positives,train_present,train_absent,valid_present,valid_absent,test_present,test_absent,link_to_label",
   ];
-  // Convert threshold to percentage for URL (e.g., 100 -> 1.00%, 5000 -> 50.00%, 4999 -> 49.99%)
-  const leftThresholdPercent = (leftThresholdValue / 100.0).toFixed(2);
-  const rightThresholdPercent = (rightThresholdValue / 100.0).toFixed(2);
-  // Encode as >=X% and <=Y% for URL
-  const encodedThreshold = encodeURIComponent(
-    `${leftThresholdPercent}-${rightThresholdPercent}%`
-  );
+
   const csvRows = positives.map((p) => {
     return [
       p.projectName,
@@ -69,7 +63,7 @@ export async function GET(
       p.validAbsent,
       p.testPresent,
       p.testAbsent,
-      `https://walkit-labels.aksharpatel47.com/projects/${p.projectId}/label?label=${p.labelId}&labelvalue=Unlabeled&trainedmodel=${modelId}&inferencevalue=${encodedThreshold}`,
+      `https://walkit-labels.aksharpatel47.com/projects/${p.projectId}/label?label=${p.labelId}&labelvalue=Unlabeled&trainedmodel=${modelId}&leftInferenceValue=${leftThresholdValue}&rightInferenceValue=${rightThresholdValue}`,
     ].join(",");
   });
 
@@ -94,7 +88,7 @@ export async function GET(
     .concat([totalRow])
     .join("\n");
 
-  const fileName = `${labelName.toLowerCase().replace(/\s+/g, "_")}_potential_unlabeled_positives_${leftThresholdPercent}-${rightThresholdPercent}pct.csv`;
+  const fileName = `${labelName.toLowerCase().replace(/\s+/g, "_")}_potential_unlabeled_positives_${leftThresholdValue}-${rightThresholdValue}.csv`;
 
   return new Response(csvContent, {
     headers: {

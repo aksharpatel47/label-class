@@ -319,7 +319,7 @@ export default async function Page({
                 <TableCell>{Number(r.count || 0).toLocaleString()}</TableCell>
                 <TableCell>
                   <Link
-                    href={`/projects/${r.projectId}/label?label=${r.labelId}&labelvalue=Unlabeled&inferencevalue=${leftInferenceValue}-${rightInferenceValue}&trainedmodel=${modelId}`}
+                    href={`/projects/${r.projectId}/label?label=${r.labelId}&labelvalue=Unlabeled&trainedmodel=${modelId}&leftInferenceValue=${leftInferenceValue}&rightInferenceValue=${rightInferenceValue}`}
                     target="_blank"
                   >
                     View Project

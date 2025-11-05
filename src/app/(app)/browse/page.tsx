@@ -34,6 +34,8 @@ export default async function Page(props: {
     flag?: "true";
     trainedModelId?: string;
     inferenceValue?: string;
+    leftInferenceValue?: string;
+    rightInferenceValue?: string;
   }>;
 }) {
   const searchParams = await props.searchParams;
@@ -113,27 +115,52 @@ export default async function Page(props: {
     whereConditions.push(inArray(taskLabels.value, taskLabelEnumValues));
   }
 
-  if (searchParams.trainedModelId && searchParams.inferenceValue) {
-    query = query
-      .innerJoin(
-        taskInferences,
-        and(
-          eq(taskInferences.imageName, tasks.name),
-          eq(taskInferences.modelId, parseInt(searchParams.trainedModelId))
+  let inferenceThresholdLabel = "";
+
+  if (searchParams.trainedModelId) {
+    const leftParam = searchParams.leftInferenceValue;
+    const rightParam = searchParams.rightInferenceValue;
+    const legacyInferenceValue = searchParams.inferenceValue;
+
+    let leftThreshold: number | null = null;
+    let rightThreshold: number | null = null;
+
+    if (leftParam && rightParam) {
+      leftThreshold = Number(leftParam);
+      rightThreshold = Number(rightParam);
+    } else if (legacyInferenceValue) {
+      const [legacyLeft, legacyRight] = legacyInferenceValue
+        .split("-")
+        .map(Number);
+      leftThreshold = legacyLeft ?? null;
+      rightThreshold = legacyRight ?? null;
+    }
+
+    if (
+      leftThreshold !== null &&
+      rightThreshold !== null &&
+      !Number.isNaN(leftThreshold) &&
+      !Number.isNaN(rightThreshold)
+    ) {
+      query = query
+        .innerJoin(
+          taskInferences,
+          and(
+            eq(taskInferences.imageName, tasks.name),
+            eq(taskInferences.modelId, parseInt(searchParams.trainedModelId))
+          )
         )
-      )
-      .$dynamic();
+        .$dynamic();
 
-    const [leftThreshold, rightThreshold] = searchParams.inferenceValue
-      .split("-")
-      .map(Number);
+      whereConditions.push(
+        and(
+          gte(taskInferences.inference, leftThreshold),
+          lte(taskInferences.inference, rightThreshold)
+        )!
+      );
 
-    whereConditions.push(
-      and(
-        gte(taskInferences.inference, leftThreshold),
-        lte(taskInferences.inference, rightThreshold)
-      )!
-    );
+      inferenceThresholdLabel = `${(leftThreshold / 100).toFixed(2)}% - ${(rightThreshold / 100).toFixed(2)}%`;
+    }
   }
 
   const results = await query
@@ -195,10 +222,10 @@ export default async function Page(props: {
             {searchParams.trainedModelId}
           </div>
         )}
-        {searchParams.inferenceValue && (
+        {inferenceThresholdLabel && (
           <div>
-            <H4>Inference Value</H4>
-            {searchParams.inferenceValue}
+            <H4>Inference Threshold</H4>
+            {inferenceThresholdLabel}
           </div>
         )}
         <div>Found {results.length} results</div>

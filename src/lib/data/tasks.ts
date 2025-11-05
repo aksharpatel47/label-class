@@ -60,6 +60,8 @@ interface IFetchTasksForLabeling {
   labelValue?: string | null;
   trainedModel?: string | null;
   inferenceValue?: string | null;
+  leftInferenceValue?: string | null;
+  rightInferenceValue?: string | null;
   dataset?: string | null;
   assignedUser?: string | null;
 }
@@ -89,6 +91,8 @@ function generateFiltersBasedOnQueryParams(
     labelValue,
     trainedModel,
     inferenceValue,
+    leftInferenceValue,
+    rightInferenceValue,
     dataset,
     assignedUser,
   } = queryParams;
@@ -198,12 +202,27 @@ function generateFiltersBasedOnQueryParams(
   }
 
   // Model inference-based filters
-  if (trainedModel && inferenceValue) {
+  if (trainedModel) {
     const trainedModelId = Number(trainedModel);
 
-    const inferenceValueRange = inferenceValue.split("-").map(Number);
+    const parsedLeft = leftInferenceValue ? Number(leftInferenceValue) : null;
+    const parsedRight = rightInferenceValue ? Number(rightInferenceValue) : null;
+
+    let inferenceValueRange: number[] | null = null;
 
     if (
+      parsedLeft !== null &&
+      !Number.isNaN(parsedLeft) &&
+      parsedRight !== null &&
+      !Number.isNaN(parsedRight)
+    ) {
+      inferenceValueRange = [parsedLeft, parsedRight];
+    } else if (inferenceValue) {
+      inferenceValueRange = inferenceValue.split("-").map(Number);
+    }
+
+    if (
+      inferenceValueRange &&
       inferenceValueRange.length === 2 &&
       inferenceValueRange[0] < inferenceValueRange[1] &&
       trainedModelId > 0

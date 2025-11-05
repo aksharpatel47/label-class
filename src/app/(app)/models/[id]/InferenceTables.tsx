@@ -105,7 +105,8 @@ export async function InferenceTables({
         "/browse?" +
         new URLSearchParams([
           ...paramTuples,
-          ["inferenceValue", "5000-10000"],
+          ["leftInferenceValue", "5000"],
+          ["rightInferenceValue", "10000"],
           ["labelValue", "Present"],
         ]).toString(),
       fn: 0,
@@ -113,7 +114,8 @@ export async function InferenceTables({
         "/browse?" +
         new URLSearchParams([
           ...paramTuples,
-          ["inferenceValue", "0-4999"],
+          ["leftInferenceValue", "0"],
+          ["rightInferenceValue", "4999"],
           ["labelValue", "Present"],
         ]).toString(),
       fp: 0,
@@ -122,7 +124,8 @@ export async function InferenceTables({
         new URLSearchParams([
           ...paramTuples,
           ["labelValue", "Absent"],
-          ["inferenceValue", "5000-10000"],
+          ["leftInferenceValue", "5000"],
+          ["rightInferenceValue", "10000"],
         ]).toString(),
       tn: 0,
       tnLink:
@@ -130,7 +133,8 @@ export async function InferenceTables({
         new URLSearchParams([
           ...paramTuples,
           ["labelValue", "Absent"],
-          ["inferenceValue", "0-4999"],
+          ["leftInferenceValue", "0"],
+          ["rightInferenceValue", "4999"],
         ]).toString(),
     };
   });
@@ -150,19 +154,19 @@ export async function InferenceTables({
           name: (foundProject ? foundProject.name : "") + " - " + dataset,
           tp: 0,
           tpLink: foundProject
-            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=5000-10000&dataset=${dataset}`
+            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&leftInferenceValue=5000&rightInferenceValue=10000&dataset=${dataset}`
             : "",
           fn: 0,
           fnLink: foundProject
-            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&inferencevalue=0-4999&dataset=${dataset}`
+            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Present&trainedmodel=${trainedModelId}&leftInferenceValue=0&rightInferenceValue=4999&dataset=${dataset}`
             : "",
           fp: 0,
           fpLink: foundProject
-            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=5000-10000&dataset=${dataset}`
+            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&leftInferenceValue=5000&rightInferenceValue=10000&dataset=${dataset}`
             : "",
           tn: 0,
           tnLink: foundProject
-            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&inferencevalue=0-4999&dataset=${dataset}`
+            ? `/projects/${projectId}/label?label=${foundProjectLabelId}&labelvalue=Absent&trainedmodel=${trainedModelId}&leftInferenceValue=0&rightInferenceValue=4999&dataset=${dataset}`
             : "",
         };
       }

@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Popover,
@@ -30,12 +31,12 @@ interface ILabelFiltersProps {
     labelvalue: string;
     user: string;
     trainedmodel: string;
-    inferencevalue: string;
+    leftInferenceValue: string;
+    rightInferenceValue: string;
     dataset: string;
     labeledon: string;
     assignedUser: string;
   };
-  inferenceValues: string[];
 
   onSelectChange(newValues: { [key: string]: string | undefined }): void;
 }
@@ -219,35 +220,80 @@ export function LabelFilters(props: ILabelFiltersProps) {
       </div>
 
       <div>
-        <Label>Inference Value</Label>
-        <div className="flex">
-          <Select
-            value={props.currentValues.inferencevalue}
-            onValueChange={(newValue) =>
-              onSelectChange({ inferencevalue: newValue })
-            }
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select Inference Value" />
-            </SelectTrigger>
-            <SelectContent>
-              {props.inferenceValues.map((inferenceValue) => (
-                <SelectItem
-                  key={inferenceValue}
-                  value={inferenceValue
-                    .slice(0, -1)
-                    .split("-")
-                    .map((s) => Math.floor(Number(s) * 100))
-                    .join("-")}
-                >
-                  {inferenceValue}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <Label>Inference Threshold</Label>
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            min="0"
+            max="10000"
+            placeholder="Left"
+            value={props.currentValues.leftInferenceValue ?? ""}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (value === "") {
+                onSelectChange({
+                  leftInferenceValue: undefined,
+                  inferencevalue: undefined,
+                });
+                return;
+              }
+
+              const numericValue = Number(value);
+              if (Number.isNaN(numericValue)) {
+                return;
+              }
+
+              const scaledValue = Math.max(
+                0,
+                Math.min(10000, Math.round(numericValue))
+              );
+              onSelectChange({
+                leftInferenceValue: scaledValue.toString(),
+                inferencevalue: undefined,
+              });
+            }}
+          />
+          <span>-</span>
+          <Input
+            type="number"
+            min="0"
+            max="10000"
+            placeholder="Right"
+            value={props.currentValues.rightInferenceValue ?? ""}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (value === "") {
+                onSelectChange({
+                  rightInferenceValue: undefined,
+                  inferencevalue: undefined,
+                });
+                return;
+              }
+
+              const numericValue = Number(value);
+              if (Number.isNaN(numericValue)) {
+                return;
+              }
+
+              const scaledValue = Math.max(
+                0,
+                Math.min(10000, Math.round(numericValue))
+              );
+              onSelectChange({
+                rightInferenceValue: scaledValue.toString(),
+                inferencevalue: undefined,
+              });
+            }}
+          />
           <Button
             variant="ghost"
-            onClick={() => onSelectChange({ inferencevalue: undefined })}
+            onClick={() =>
+              onSelectChange({
+                leftInferenceValue: undefined,
+                rightInferenceValue: undefined,
+                inferencevalue: undefined,
+              })
+            }
           >
             <XCircle />
           </Button>
