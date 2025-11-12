@@ -4,6 +4,8 @@ import { LabelTask } from "@/app/components/tasktool";
 import { Task } from "@/db/schema";
 import { fetchProjectsWithIds } from "@/lib/data/projects";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface DatasetViewerProps {
   tasks: Task[];
@@ -42,7 +44,7 @@ export function DatasetViewer({
     <div>
       <div className="flex items-center gap-2">
         <span>Total: {tasks.length}</span>
-        <input
+        <Input
           type="number"
           min="1"
           max={tasks.length}
@@ -53,8 +55,39 @@ export function DatasetViewer({
               setIndex(newIndex);
             }
           }}
-          className="w-20 px-2 py-1 border rounded"
+          className="w-20"
         />
+        <Button
+          onClick={() => {
+            if (tasks.length === 0) return;
+
+            const headers = Object.keys(tasks[0]).join(",");
+            const rows = tasks.map((task) =>
+              Object.values(task)
+                .map((value) => {
+                  const stringValue = String(value ?? "");
+                  return stringValue.includes(",") || stringValue.includes('"')
+                    ? `"${stringValue.replace(/"/g, '""')}"`
+                    : stringValue;
+                })
+                .join(","),
+            );
+            const csv = [headers, ...rows].join("\n");
+            const blob = new Blob([csv], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `tasks_${new Date().toISOString().split("T")[0]}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }}
+          disabled={tasks.length === 0}
+          size="sm"
+        >
+          Download CSV
+        </Button>
       </div>
       <LabelTask
         task={tasks[index]}

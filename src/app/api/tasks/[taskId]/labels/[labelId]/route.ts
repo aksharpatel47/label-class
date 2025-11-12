@@ -5,9 +5,14 @@ import { and, eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { validateRequest } from "@/lib/auth/auth";
 
+/**
+ * Creates or updates a task label, ensuring dataset selections stay admin-only.
+ * Validates the user session, enforces project selection restrictions, and
+ * bumps the parent task's `updatedAt` timestamp when a label changes.
+ */
 export async function POST(
   request: NextRequest,
-  props: { params: Promise<{ taskId: string; labelId: string }> }
+  props: { params: Promise<{ taskId: string; labelId: string }> },
 ) {
   const params = await props.params;
   const session = await validateRequest();
@@ -25,8 +30,8 @@ export async function POST(
     .where(
       and(
         eq(projectTaskSelections.taskId, taskId),
-        eq(projectTaskSelections.labelId, labelId)
-      )
+        eq(projectTaskSelections.labelId, labelId),
+      ),
     );
 
   // If present in projectTaskSelections, only allow admin
@@ -36,7 +41,7 @@ export async function POST(
         error:
           "Forbidden: Image & Label is part of a dataset. Only an admin can update this label.",
       },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
@@ -69,7 +74,7 @@ export async function POST(
 // using PATCH to set the value of `flag` in taskLabels
 export async function PATCH(
   request: NextRequest,
-  props: { params: Promise<{ taskId: string; labelId: string }> }
+  props: { params: Promise<{ taskId: string; labelId: string }> },
 ) {
   const params = await props.params;
   const session = await validateRequest();
@@ -92,7 +97,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  props: { params: Promise<{ taskId: string; labelId: string }> }
+  props: { params: Promise<{ taskId: string; labelId: string }> },
 ) {
   const params = await props.params;
   const session = await validateRequest();
@@ -109,8 +114,8 @@ export async function DELETE(
     .where(
       and(
         eq(projectTaskSelections.taskId, taskId),
-        eq(projectTaskSelections.labelId, labelId)
-      )
+        eq(projectTaskSelections.labelId, labelId),
+      ),
     );
 
   // If present in projectTaskSelections, restrict deleting the project label.
@@ -120,7 +125,7 @@ export async function DELETE(
         error:
           "Forbidden: Image & Label is part of a dataset. Use 'Difficult' or 'Skip' labels instead to exclude from training.",
       },
-      { status: 403 }
+      { status: 403 },
     );
   }
 

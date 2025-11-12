@@ -41,7 +41,7 @@ async function addAssignments(
   leftInferenceValue: number,
   rightInferenceValue: number,
   limit: number,
-  projectIds: string[]
+  projectIds: string[],
 ) {
   // first select matching task ids
   const selected = await db
@@ -56,8 +56,8 @@ async function addAssignments(
       projectLabels,
       and(
         eq(projects.id, projectLabels.projectId),
-        eq(projectLabels.labelName, labelName)
-      )
+        eq(projectLabels.labelName, labelName),
+      ),
     )
     .innerJoin(
       taskInferences,
@@ -65,29 +65,29 @@ async function addAssignments(
         eq(tasks.name, taskInferences.imageName),
         eq(taskInferences.modelId, modelId),
         lte(taskInferences.inference, rightInferenceValue),
-        gte(taskInferences.inference, leftInferenceValue)
-      )
+        gte(taskInferences.inference, leftInferenceValue),
+      ),
     )
     .leftJoin(
       taskLabels,
       and(
         eq(taskLabels.taskId, tasks.id),
-        eq(taskLabels.labelId, projectLabels.id)
-      )
+        eq(taskLabels.labelId, projectLabels.id),
+      ),
     )
     .leftJoin(
       taskAssignments,
       and(
         eq(taskAssignments.taskId, tasks.id),
-        eq(taskAssignments.labelId, projectLabels.id)
-      )
+        eq(taskAssignments.labelId, projectLabels.id),
+      ),
     )
     .where(
       and(
         inArray(projects.id, projectIds),
         isNull(taskAssignments.id),
-        isNull(taskLabels.id)
-      )
+        isNull(taskLabels.id),
+      ),
     )
     .orderBy(projects.name)
     .limit(limit);
@@ -104,7 +104,7 @@ async function addAssignments(
         taskId: s.id,
         userId,
         labelId: s.labelId,
-      }))
+      })),
     )
     .returning({ updatedId: tasks.id });
 }
@@ -114,7 +114,7 @@ async function possibleTotalAssignments(
   labelName: string,
   leftInferenceValue: number,
   rightInferenceValue: number,
-  projectIds: string[]
+  projectIds: string[],
 ) {
   return db
     .select({
@@ -129,8 +129,8 @@ async function possibleTotalAssignments(
       projectLabels,
       and(
         eq(projects.id, projectLabels.projectId),
-        eq(projectLabels.labelName, labelName)
-      )
+        eq(projectLabels.labelName, labelName),
+      ),
     )
     .innerJoin(
       taskInferences,
@@ -138,29 +138,29 @@ async function possibleTotalAssignments(
         eq(tasks.name, taskInferences.imageName),
         eq(taskInferences.modelId, modelId),
         lte(taskInferences.inference, rightInferenceValue),
-        gte(taskInferences.inference, leftInferenceValue)
-      )
+        gte(taskInferences.inference, leftInferenceValue),
+      ),
     )
     .leftJoin(
       taskLabels,
       and(
         eq(taskLabels.taskId, tasks.id),
-        eq(taskLabels.labelId, projectLabels.id)
-      )
+        eq(taskLabels.labelId, projectLabels.id),
+      ),
     )
     .leftJoin(
       taskAssignments,
       and(
         eq(taskAssignments.taskId, tasks.id),
-        eq(taskAssignments.labelId, projectLabels.id)
-      )
+        eq(taskAssignments.labelId, projectLabels.id),
+      ),
     )
     .where(
       and(
         inArray(projects.id, projectIds),
         isNull(taskAssignments.id),
-        isNull(taskLabels.id)
-      )
+        isNull(taskLabels.id),
+      ),
     )
     .orderBy(projects.name)
     .groupBy(tasks.projectId, projectLabels.id, projects.name);
@@ -186,8 +186,8 @@ async function fetchCurrentAssignments() {
       taskLabels,
       and(
         eq(taskLabels.taskId, taskAssignments.taskId),
-        eq(taskLabels.labelId, taskAssignments.labelId)
-      )
+        eq(taskLabels.labelId, taskAssignments.labelId),
+      ),
     )
     .orderBy(projectLabels.labelName, authUser.name)
     .groupBy(
@@ -196,7 +196,7 @@ async function fetchCurrentAssignments() {
       taskAssignments.labelId,
       projectLabels.labelName,
       projects.id,
-      projects.name
+      projects.name,
     );
 }
 
@@ -259,7 +259,7 @@ export default async function Page({
       leftInferenceValueNum,
       rightInferenceValueNum,
       limitNum,
-      projectIds
+      projectIds,
     );
 
     return (
@@ -286,12 +286,12 @@ export default async function Page({
       labelName,
       leftInferenceValueNum,
       rightInferenceValueNum,
-      projectIds
+      projectIds,
     );
 
     const totalRemaining = result.reduce(
       (acc, curr) => acc + Number(curr.count || 0),
-      0
+      0,
     );
 
     return (
@@ -397,11 +397,11 @@ export default async function Page({
             {Array.from(userMap.entries()).map(([userName, assignments]) => {
               const totalAssigned = assignments.reduce(
                 (acc, a) => acc + Number(a.count || 0),
-                0
+                0,
               );
               const totalCompleted = assignments.reduce(
                 (acc, a) => acc + Number(a.countOfTaskLabelsNotNull || 0),
-                0
+                0,
               );
               const totalRemaining = totalAssigned - totalCompleted;
 
@@ -431,7 +431,7 @@ export default async function Page({
                           </TableCell>
                           <TableCell>
                             {Number(
-                              assignment.countOfTaskLabelsNotNull || 0
+                              assignment.countOfTaskLabelsNotNull || 0,
                             ).toLocaleString()}
                           </TableCell>
                           <TableCell>
@@ -461,7 +461,7 @@ export default async function Page({
                           <TableCell>
                             {Number(assignment.count || 0) -
                               Number(
-                                assignment.countOfTaskLabelsNotNull || 0
+                                assignment.countOfTaskLabelsNotNull || 0,
                               ) ===
                             0 ? (
                               <CircleCheck
