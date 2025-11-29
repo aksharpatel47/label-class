@@ -80,6 +80,7 @@ export const projects = pgTable("projects", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+  imageDir: varchar("image_dir", { length: 128 }),
   sequence: smallint("sequence").notNull().default(0),
   updatedAt: timestamp("updated_at", { withTimezone: true }),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -116,7 +117,7 @@ export const projectLabels = pgTable(
   },
   (table) => [
     uniqueIndex("proj_label_unq").on(table.projectId, table.labelName),
-  ]
+  ],
 );
 
 export type ProjectLabel = typeof projectLabels.$inferSelect;
@@ -148,7 +149,7 @@ export const tasks = pgTable(
     uniqueIndex("name_project_unq").on(table.name, table.projectId),
     index("project_index").on(table.projectId),
     index("name_index").on(table.name),
-  ]
+  ],
 );
 
 export type Task = typeof tasks.$inferSelect;
@@ -184,9 +185,9 @@ export const taskAssignments = pgTable(
     uniqueIndex("unique_task_assignment").on(
       table.taskId,
       table.userId,
-      table.labelId
+      table.labelId,
     ),
-  ]
+  ],
 );
 
 export type TaskAssignment = typeof taskAssignments.$inferSelect;
@@ -206,7 +207,7 @@ export const taskAssignmentsRelations = relations(
       fields: [taskAssignments.labelId],
       references: [projectLabels.id],
     }),
-  })
+  }),
 );
 
 export const taskLabelEnumValues = [
@@ -239,7 +240,7 @@ export const taskLabels = pgTable(
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }),
   },
-  (table) => [uniqueIndex("task_label_unq").on(table.taskId, table.labelId)]
+  (table) => [uniqueIndex("task_label_unq").on(table.taskId, table.labelId)],
 );
 
 export type TaskLabel = typeof taskLabels.$inferSelect;
@@ -292,7 +293,7 @@ export const taskInferences = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [uniqueIndex("task_model_unq").on(table.imageName, table.modelId)]
+  (table) => [uniqueIndex("task_model_unq").on(table.imageName, table.modelId)],
 );
 
 export type TaskInferences = typeof taskInferences.$inferSelect;
@@ -315,7 +316,7 @@ export const tempTasks = pgTable(
     labelId: uuid("label_id").references(() => projectLabels.id),
     labelValue: taskLabelValue("label_value"),
   },
-  (table) => [index("task_name_index").on(table.taskName)]
+  (table) => [index("task_name_index").on(table.taskName)],
 );
 
 export type TempTask = typeof tempTasks.$inferSelect;
@@ -335,7 +336,7 @@ export const projectTaskSelections = pgTable(
   },
   (t) => ({
     task_label_unq: unique().on(t.taskId, t.labelId),
-  })
+  }),
 );
 
 export type ProjectTaskSelectionInsert =
@@ -353,7 +354,7 @@ export const projectTaskSelectionsRelations = relations(
       fields: [projectTaskSelections.labelId],
       references: [projectLabels.id],
     }),
-  })
+  }),
 );
 
 export const userSessionRelations = relations(userSession, ({ one }) => ({

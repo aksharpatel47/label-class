@@ -1,5 +1,5 @@
 # Build Next.js project
-FROM oven/bun:1.3-alpine AS build
+FROM oven/bun:1.3.3-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 COPY bun.lock ./
@@ -8,7 +8,7 @@ COPY . .
 RUN bun run build
 
 # Create production image
-FROM oven/bun:1.3-alpine AS production
+FROM oven/bun:1.3.3-alpine AS production
 WORKDIR /app
 ENV NODE_ENV=production
 
