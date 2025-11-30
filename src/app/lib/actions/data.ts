@@ -12,7 +12,7 @@ export async function importData(
   projectId: string,
   userId: string,
   prevState: string | undefined,
-  formData: FormData
+  formData: FormData,
 ) {
   const file = formData.get("file") as File;
   if (!file) {
@@ -21,7 +21,15 @@ export async function importData(
   const label = formData.get("label") as string;
 
   const fileContents = await file.text();
-  const rows = fileContents.split("\n").slice(1);
+  const rows = fileContents
+    .split("\n")
+    .slice(1)
+    .filter((row) => row.trim() !== "");
+
+  if (rows.length === 0) {
+    return "CSV file contains no data rows.";
+  }
+
   const firstRow = rows[0].split(",");
 
   if (firstRow.length < 2) {
@@ -34,16 +42,28 @@ export async function importData(
   const tasksToInsert: string[] = rows
     .map((row) => {
       const rowValues = row.split(",");
-      const imageName = rowValues[0];
-      const imageUrl = rowValues[1];
+      if (rowValues.length < 2) {
+        return null;
+      }
+      const imageName = rowValues[0]?.trim();
+      const imageUrl = rowValues[1]?.trim();
+
+      if (!imageName || !imageUrl) {
+        return null;
+      }
+
       return {
         name: imageName,
         imageUrl,
         projectId,
       };
     })
-    .filter((task) => task.name && task.imageUrl)
+    .filter((task): task is NonNullable<typeof task> => task !== null)
     .map((task) => `${task.name}\t${task.imageUrl}\t${projectId}\n`);
+
+  if (tasksToInsert.length === 0) {
+    return "No valid tasks found in CSV file.";
+  }
 
   await db.transaction(async (tx) => {
     // language=PostgreSQL
@@ -52,17 +72,31 @@ export async function importData(
     await pipeline(Readable.from(tasksToInsert), query);
 
     if (label && label !== "None") {
-      const tempTaskRows: string[] = rows.map((row) => {
-        const rowValues = row.split(",");
-        const imageName = rowValues[0];
-        const labelValue: any = rowValues[2];
-        return `${imageName}\t${labelValue}\t${projectId}\t${label}\n`;
-      });
+      const tempTaskRows: string[] = rows
+        .map((row) => {
+          const rowValues = row.split(",");
+          if (rowValues.length < 3) {
+            return null;
+          }
+          const imageName = rowValues[0]?.trim();
+          const labelValue = rowValues[2]?.trim();
+
+          if (!imageName || !labelValue) {
+            return null;
+          }
+
+          return `${imageName}\t${labelValue}\t${projectId}\t${label}\n`;
+        })
+        .filter((row): row is string => row !== null);
+
+      if (tempTaskRows.length === 0) {
+        return;
+      }
 
       const tempTaskReadable = Readable.from(tempTaskRows);
 
       console.log(
-        `Inserting ${tempTaskRows.length} tasks into the temp_tasks table.`
+        `Inserting ${tempTaskRows.length} tasks into the temp_tasks table.`,
       );
 
       // language=PostgreSQL
@@ -78,7 +112,7 @@ export async function importData(
 export async function importInference(
   modelId: number,
   prevState: string | undefined,
-  formData: FormData
+  formData: FormData,
 ) {
   const file = formData.get("file") as File;
 
@@ -130,13 +164,13 @@ export async function importInference(
 
   const tempInferenceRows: string[] = Array.from(inferenceMap.entries()).map(
     ([imageName, { inference, modelId }]) =>
-      `${imageName}\t${inference}\t${modelId}\n`
+      `${imageName}\t${inference}\t${modelId}\n`,
   );
 
   const tempInferences = Readable.from(tempInferenceRows);
 
   console.log(
-    `Inserting ${tempInferenceRows.length} unique inferences into the temp_tasks table (deduplicating from ${rows.length} total rows).`
+    `Inserting ${tempInferenceRows.length} unique inferences into the temp_tasks table (deduplicating from ${rows.length} total rows).`,
   );
 
   await dbSQL.begin(async (tx) => {
@@ -149,7 +183,7 @@ export async function importInference(
     await pipeline(tempInferences, query);
 
     console.log(
-      `Inserted inferences from the temp_tasks table to the task_inferences table.`
+      `Inserted inferences from the temp_tasks table to the task_inferences table.`,
     );
     // Insert the inferences into the task_inferences table
     // language=PostgreSQL
@@ -166,7 +200,7 @@ export async function importInference(
         `;
 
     console.log(
-      `Inserted inferences into the task_inferences table for model ${modelId} from the temp_tasks table.`
+      `Inserted inferences into the task_inferences table for model ${modelId} from the temp_tasks table.`,
     );
 
     await tx`truncate temp_tasks`;
@@ -180,7 +214,7 @@ export async function importInference(
 export async function importDataset(
   projectId: string,
   state: string | undefined,
-  formData: FormData
+  formData: FormData,
 ) {
   const session = await validateRequest();
   if (!session) {
@@ -217,7 +251,7 @@ export async function importDataset(
     .filter((task) => task.taskName && task.dataset)
     .map(
       (task) =>
-        `${task.taskName}\t${task.labelId}\t${task.dataset}\t${projectId}\n`
+        `${task.taskName}\t${task.labelId}\t${task.dataset}\t${projectId}\n`,
     );
 
   await db.transaction(async (tx) => {
@@ -235,7 +269,7 @@ export async function importDataset(
 export async function clearDataset(
   projectId: string,
   state: string | undefined,
-  formData: FormData
+  formData: FormData,
 ) {
   const session = await validateRequest();
   if (!session) {
@@ -253,7 +287,7 @@ export async function clearDataset(
             from project_task_selections
             where task_id in (select id from tasks where project_id = ${projectId})
               and label_id = ${labelId};
-        `
+        `,
   );
 
   return "Done";
