@@ -20,7 +20,7 @@ COPY --from=build /app/next.config.js ./
 COPY --from=build /app/src/db ./src/db
 COPY --from=build /app/drizzle.config.ts ./drizzle.config.ts
 
-RUN bun install --production
+RUN bun install --production --ignore-scripts
 
 EXPOSE 3000
 ENV PORT=3000

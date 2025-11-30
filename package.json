@@ -12,7 +12,7 @@
     "migrate:create": "drizzle-kit generate",
     "migrate:apply": "drizzle-kit migrate",
     "migrate:drop": "drizzle-kit drop",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
