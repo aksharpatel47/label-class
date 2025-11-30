@@ -25,11 +25,11 @@ export function Tool(props: IToolProps) {
   const dataset = searchParams.get("dataset") || "";
   const labeledon = searchParams.get("labeledon") || "";
   const assignedUser = searchParams.get("assignedUser") || "";
-  const leftInferenceValueParam =
-    searchParams.get("leftInferenceValue") || "";
+  const leftInferenceValueParam = searchParams.get("leftInferenceValue") || "";
   const rightInferenceValueParam =
     searchParams.get("rightInferenceValue") || "";
   const legacyInferenceValue = searchParams.get("inferencevalue") || "";
+  const createdAt = searchParams.get("createdAt") || "";
 
   let leftInferenceValue = leftInferenceValueParam;
   let rightInferenceValue = rightInferenceValueParam;
@@ -56,6 +56,7 @@ export function Tool(props: IToolProps) {
     dataset,
     labeledon,
     assignedUser,
+    createdAt,
   };
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [totalTasks, setTotalTasks] = useState<number>(0);
@@ -68,7 +69,7 @@ export function Tool(props: IToolProps) {
   async function handleApplyClick() {
     setLoadingTasks(true);
     const res = await fetch(
-      `/api/projects/${props.projectId}/tasks/label?${searchParams.toString()}`
+      `/api/projects/${props.projectId}/tasks/label?${searchParams.toString()}`,
     );
     const newTasks = await res.json();
     setIndex(0);
@@ -88,6 +89,10 @@ export function Tool(props: IToolProps) {
 
     if (urlSearchParams.get("after")) {
       urlSearchParams.delete("after");
+    }
+
+    if (urlSearchParams.get("createdAt")) {
+      urlSearchParams.delete("createdAt");
     }
 
     for (const [key, value] of Object.entries(newValues)) {
@@ -111,7 +116,7 @@ export function Tool(props: IToolProps) {
     }
 
     const res = await fetch(
-      `/api/projects/${props.projectId}/tasks/label?${newSearchParams.toString()}`
+      `/api/projects/${props.projectId}/tasks/label?${newSearchParams.toString()}`,
     );
 
     let response = await res.json();

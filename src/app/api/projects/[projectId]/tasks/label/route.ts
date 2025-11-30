@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  props: { params: Promise<{ projectId: string }> }
+  props: { params: Promise<{ projectId: string }> },
 ) {
   const params = await props.params;
   const session = await validateRequest();
@@ -30,6 +30,7 @@ export async function GET(
   const rightInferenceValue = searchParams.get("rightInferenceValue");
   const dataset = searchParams.get("dataset");
   const assignedUser = searchParams.get("assignedUser");
+  const createdAt = searchParams.get("createdAt");
 
   const input = {
     currentUserId: session.user.id,
@@ -45,6 +46,7 @@ export async function GET(
     rightInferenceValue,
     dataset,
     assignedUser,
+    createdAt,
   };
 
   const tasks = await fetchTasksForLabeling(input);

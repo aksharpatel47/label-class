@@ -6,6 +6,7 @@ import {
   taskLabels,
   tasks,
 } from "@/db/schema";
+import { addDays } from "date-fns";
 import { and, asc, eq, gte, isNull, lte, SQL, sql } from "drizzle-orm";
 import { PgSelectBase, PgTransaction } from "drizzle-orm/pg-core";
 import postgres from "postgres";
@@ -64,6 +65,7 @@ interface IFetchTasksForLabeling {
   rightInferenceValue?: string | null;
   dataset?: string | null;
   assignedUser?: string | null;
+  createdAt?: string | null;
 }
 
 /**
@@ -95,12 +97,18 @@ function generateFiltersBasedOnQueryParams(
     rightInferenceValue,
     dataset,
     assignedUser,
+    createdAt,
   } = queryParams;
 
   const filters: Array<SQL | undefined> = [];
 
   // Always filter by projectId
   filters.push(eq(tasks.projectId, projectId));
+
+  if (createdAt) {
+    filters.push(gte(tasks.createdAt, new Date(createdAt)));
+    filters.push(lte(tasks.createdAt, addDays(new Date(createdAt), 1)));
+  }
 
   if (assignedUser && labelId) {
     sl = sl
@@ -206,7 +214,9 @@ function generateFiltersBasedOnQueryParams(
     const trainedModelId = Number(trainedModel);
 
     const parsedLeft = leftInferenceValue ? Number(leftInferenceValue) : null;
-    const parsedRight = rightInferenceValue ? Number(rightInferenceValue) : null;
+    const parsedRight = rightInferenceValue
+      ? Number(rightInferenceValue)
+      : null;
 
     let inferenceValueRange: number[] | null = null;
 
